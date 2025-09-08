@@ -17,17 +17,18 @@
       # coq-library-undecidability
       nixpkgs,
     }:
-    flake-utils.lib.eachDefaultSystem (system: {
-      # devShells.default = pkgs.mkShell {
-      #     packages = with self.legacyPackages.${system}; [
-      #       vscoq-language-server
-      #       coq-library-undecidability
-      #       coq
-      #     ];
-      #   };
+    flake-utils.lib.eachDefaultSystem (system:
+    let pkgs = nixpkgs.legacyPackages.${system}; in {
+      devShells.default = pkgs.mkShell {
+          packages = with self.legacyPackages.${system}; [
+            vscoq-language-server
+            coq-library-undecidability
+            coq
+          ];
+        };
       legacyPackages =
         let
-          pkgs = nixpkgs.legacyPackages.${system};
+          # pkgs = nixpkgs.legacyPackages.${system};
           opam-coq-archive = pkgs.fetchFromGitHub {
             "owner" = "rocq-prover";
             "repo" = "opam";
@@ -44,7 +45,6 @@
                 ];
               }
               {
-                # rocq-prover = "8.20";
                 coq-library-undecidability = "*"; # "1.1.2+8.20";
                 ocaml-base-compiler = "*"; # "4.14.1+flambda";
                 vscoq-language-server = "*";
