@@ -271,22 +271,26 @@ Print ka_power.
 Definition pair_length (s : list T * list T) :=
   match s with (l1, l2) => Nat.add (List.length l1) (List.length l2) end.
 
-Fixpoint ka_power_pred lenS e n s :=
-  match n with
-  | 0%nat => s = ([], [])
-  | S n => ∃ s1 s2, s = pair_append s1 s2 /\ lang_interp (pair_length s1) e s1 /\ ka_power_pred (pair_length s2) e n s2
-  end
+Definition ka_pred_empty (s : list T * list T) := s = ([], []).
 
-with lang_interp lenS term s :=
+Definition ka_pred_mul P Q s :=
+  ∃ s1 s2, s = pair_append s1 s2 ∧ P s1 ∧ Q s2.
+
+Definition ka_pred_power P n :=
+  Nat.iter n (ka_pred_mul P) ka_pred_empty.
+
+Definition ka_pred_star P s := ∃ n, ka_pred_power P n s.
+
+Fixpoint lang_interp term s :=
   match term with
   | 0 => False
   | 1 => s = ([], [])
   | L e => s = ([e], [])
   | R e => s = ([], [e])
-  | e1 + e2 => lang_interp (pair_length s) e1 s \/ lang_interp (pair_length s) e2 s
-  | e1 ⋅ e2 => ∃ s1 s2, s = pair_append s1 s2 /\ lang_interp (pair_length s1) e1 s1 /\ lang_interp (pair_length s2) e2 s2
+  | e1 + e2 => lang_interp e1 s \/ lang_interp e2 s
+  | e1 ⋅ e2 => ∃ s1 s2, s = pair_append s1 s2 /\ lang_interp e1 s1 /\ lang_interp e2 s2
   (* | e✶ => λ s, ∃ (n : nat), lang_interp_power e n s *)
-  | e✶ => ∃ n, ka_power_pred (pair_length s) e n s
+  | e✶ => ka_pred_star (lang_interp e) s
   (* λ s, True *)
   (* λ s, ∃ n, ka_power_pred e n s *)
   (* λ s, ∃ n, lang_interp (ka_power e n) s *)
