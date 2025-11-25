@@ -1,51 +1,65 @@
-
 {
-  description = "Build a rocq (coq) package";
-  inputs.opam-nix.url = "github:tweag/opam-nix";
-  inputs.opam-repository.url = "github:ocaml/opam-repository";
-  inputs.opam-repository.flake = false;
-  inputs.nixpkgs.url = "github:nixos/nixpkgs";
-  inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.opam-coq-archive.url = "github:rocq-prover/opam/";
-  inputs.opam-coq-archive.flake = false;
+  description = "Description for the project";
 
-  outputs =
-    {
-      self,
-      opam-nix,
-      flake-utils,
-      opam-repository,
-      opam-coq-archive,
-      nixpkgs,
-    }:
-    flake-utils.lib.eachDefaultSystem (system:
-    let pkgs = nixpkgs.legacyPackages.${system}; in {
-      devShells.default = pkgs.mkShell {
-          packages = with self.legacyPackages.${system}; [
-            vscoq-language-server
-            coq-library-undecidability
-            coq
-          ];
+  inputs = {
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    coq-library-undecidability.url = "github:uds-psl/coq-library-undecidability/rocq-9.0";
+    coq-library-undecidability.flake = false;
+  };
+
+  outputs = inputs@{ self, flake-parts, nixpkgs, coq-library-undecidability, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        # To import an internal flake module: ./other.nix
+        # To import an external flake module:
+        #   1. Add foo to inputs
+        #   2. Add foo as a parameter to the outputs function
+        #   3. Add here: foo.flakeModule
+
+      ];
+      systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ];
+      perSystem = { config, self', inputs', pkgs, system, ... }: {
+        _module.args.pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ self.overlays.default ];
         };
-      legacyPackages =
-        let
-          inherit (opam-nix.lib.${system}) queryToScope;
-          scope =
-            queryToScope
-              {
-                repos = [
-                  "${opam-repository}"
-                  "${opam-coq-archive}/released"
-                ];
-              }
-              {
-                coq-library-undecidability = "*"; # "1.1.2+8.20";
-                ocaml-base-compiler = "*"; # "4.14.1+flambda";
-                vscoq-language-server = "*";
-              };
-        in
-        scope;
 
-        packages.default = self.legacyPackages.${system}.coq-library-undecidability;
-    });
+        # Per-system attributes can be defined here. The self' and inputs'
+        # module parameters provide easy access to attributes of the same
+        # system.
+
+        # Equivalent to  inputs'.nixpkgs.legacyPackages.hello;
+        packages.default = pkgs.coqPackages.coq-ka-comm-undec;
+      };
+      flake = {
+        # The usual flake attributes can be defined here, including system-
+        # agnostic ones like nixosModule and system-enumerating ones, although
+        # those are more easily expressed in perSystem.
+
+        overlays.default = final: prev: {
+          coqPackages = prev.coqPackages.overrideScope (final: prev: {
+            coq-ka-comm-undec = prev.mkCoqDerivation {
+              pname = "coq-ka-comm-undec";
+              defaultVersion = "dev";
+              release.dev.src = ./.;
+              propagatedBuildInputs = [
+                final.coq
+                final.coq-library-undecidability
+              ];
+            };
+            coq-library-undecidability = prev.mkCoqDerivation {
+              pname = "coq-library-undecidability";
+              defaultVersion = "dev";
+              release.dev.src = coq-library-undecidability;
+              propagatedBuildInputs = [
+                final.coq
+                final.metarocq-template-rocq
+              ];
+            };
+          });
+        };
+
+      };
+    };
 }
