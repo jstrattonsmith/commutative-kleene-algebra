@@ -1139,6 +1139,35 @@ Proof.
     apply Plus_Assoc.
 Qed.
 
+Lemma zero_star : (@K_Zero T)✶ ≡ @K_One T.
+Proof.
+  rewrite Star.
+  rewrite Dot_Z2.
+  rewrite Plus_Com.
+  rewrite Plus_Id.
+  reflexivity.
+Qed.
+
+Lemma one_star : (@K_One T)✶ ≡ @K_One T.
+Proof.
+Admitted.
+
+Lemma finite_star : ∀ (t : ka_term T), t ≡ 0 ∨ t ≡ 1 ∨ not (finite_term (t✶)).
+Proof.
+  intros t.
+  induction t;
+  try (left; reflexivity);
+  try (right; left; reflexivity);
+  right; right; intros [ls H].
+  - induction ls as [| c l IHl].
+    + specialize (H ([], [])).
+      simpl in H.
+      rewrite H.
+      unfold ka_pred_left, ka_pred_star.
+      exists 0%nat.
+      reflexivity.
++ Admitted.
+
 (* Theorem 6' *)
 Theorem finite_def : ∀ t,
   (∃ ls, t ≡ cstring_sum ls)
@@ -1196,6 +1225,25 @@ Proof.
       rewrite cstring_app_commute.
       rewrite H1; rewrite H2.
       reflexivity.
+    + admit.
+    + intros [ls H].
+      induction t.
+      * exists [([], [])].
+        unfold cstring_sum.
+        simpl.
+        rewrite zero_star.
+        rewrite Plus_Com; rewrite Plus_Id;
+        rewrite Dot_Id2.
+        reflexivity.
+      * exists [([], [])].
+        unfold cstring_sum;
+        simpl.
+        rewrite one_star.
+        rewrite Plus_Com; rewrite Plus_Id;
+        rewrite Dot_Id2.
+        reflexivity.
+      *
+
     (* + rewrite finite_term_dist_over_dot. intros [H1 H2].
       apply IHt1 in H1 as [l1 H1].
       apply IHt2 in H2 as [l2 H2].
@@ -1227,6 +1275,7 @@ Proof.
   have Hft1' := Hft'.
   apply finite_def in Hft1 as [ls Htsum], Hft1' as [ls' Htsum'].
   destruct Hft as [s Ht], Hft' as [s' Ht'].
+  rewrite Hli in Ht.
   rewrite Htsum.
   rewrite Htsum'.
   unfold cstring_sum.
