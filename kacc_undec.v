@@ -134,6 +134,11 @@ Global Existing Instance Ka_Star.
 
 Add Parametric Relation T : (ka_term T) ka_eq as ka_eq.
 
+Lemma Ka_refl' {T} (t : ka_term T) : t ≡ t.
+Proof. reflexivity. Qed.
+
+Global Hint Resolve Ka_refl' : core.
+
 Lemma Plus_Id' : ∀ T (t : ka_term T), t + 0 ≡ t.
 Proof.
   intros T t.
@@ -1058,6 +1063,125 @@ Definition term_product (ls : list (ka_term T)) := fold_right (λ t t', t⋅t') 
 Definition term_sum (ls : list (ka_term T)) := fold_right (λ t t', t+t') 0 ls.
 
 Definition cstring_sum (ls : list (list T * list T)) := term_sum (map string_to_ka_term ls).
+
+Fixpoint empty_bool (t : ka_term T) :=
+  match t with
+  | K_Zero => true
+  | K_One => false
+  | L _ => false
+  | R _ => false
+  | K_Plus t1 t2 => empty_bool t1 && empty_bool t2
+  | K_Dot t1 t2 => empty_bool t1 || empty_bool t2
+  | K_Star _ => false
+  end.
+
+Global Instance empty_bool_proper : Proper (@ka_eq T ==> eq) empty_bool.
+Proof.
+move=> t1 t2; elim: t1 t2 / => //=.
+- congruence.
+- congruence.
+- congruence.
+- by move=> ?; rewrite Bool.orb_false_r.
+- by move=> ?; rewrite Bool.orb_true_r.
+- by move=> ???; rewrite Bool.orb_assoc.
+- by move=> ??; rewrite Bool.andb_comm.
+- by move=> ???; rewrite Bool.andb_assoc.
+- by move=> ?; rewrite Bool.andb_diag.
+- by move=> ???; rewrite Bool.orb_andb_distrib_r.
+- by move=> ???; rewrite Bool.orb_andb_distrib_l.
+Qed.
+
+Lemma empty_boolP t : empty_bool t = true ↔ t ≡ 0.
+Proof.
+split => [|-> //=].
+elim: t => //=.
+- move=> t1 IH1 t2 IH2 /andb_true_iff [/IH1 -> /IH2 ->].
+  exact: Plus_Id.
+- move=> t1 IH1 t2 IH2 /orb_true_iff [/IH1 ->|/IH2 ->];
+  by rewrite ?Dot_Z1 ?Dot_Z2.
+Qed.
+
+Fixpoint below_one (t : ka_term T) :=
+  match t with
+  | K_Zero => true
+  | K_One => true
+  | L _ => false
+  | R _ => false
+  | K_Plus t1 t2 => below_one t1 && below_one t2
+  | K_Dot t1 t2 => empty_bool t1 || empty_bool t2 || below_one t1 && below_one t2
+  | K_Star t => empty_bool t
+  end.
+
+Lemma empty_bool_below_one t : empty_bool t = true → below_one t = true.
+Proof.
+elim: t => //=.
+- by move=> t1 IH1 t2 IH2 /andb_true_iff [/IH1 -> /IH2 ->].
+- move=> t1 IH1 t2 IH2 /orb_true_iff [->|->] //=.
+  by rewrite orb_true_r.
+Qed.
+
+Global Instance below_one_proper : Proper (@ka_eq T ==> eq) below_one.
+Proof.
+move=> t1 t2; elim: t1 t2 / => //=.
+- congruence.
+- congruence.
+- by move=> t11 t12 e1 -> t21 t22 e2 ->; rewrite e1 e2.
+- by move=> ?? {2}->.
+- move=> t; rewrite orb_false_r andb_true_r.
+  case e: empty_bool => //=.
+  by rewrite empty_bool_below_one.
+- move=> t; case e: empty_bool => //=.
+  by rewrite empty_bool_below_one.
+- by move=> t; rewrite orb_true_r.
+- move=> t1 t2 t3.
+  case e1: (empty_bool t1) => //=.
+  case e2: (empty_bool t2) => //=.
+  case e3: (empty_bool t3) => //=.
+  by rewrite andb_assoc.
+- by move=> ??; rewrite andb_comm.
+- by move=> ???; rewrite andb_assoc.
+- by move=> ?; rewrite andb_diag.
+- move=> t1 t2 t3.
+  case e1: (empty_bool t1) => //=.
+  case e2: (empty_bool t2) => //=.
+    by rewrite (empty_bool_below_one e2) andb_true_l.
+  case e3: (empty_bool t3) => //=.
+    by rewrite (empty_bool_below_one e3) !andb_true_r.
+  by case: (below_one t1).
+- move=> t1 t2 t3.
+  case e1: (empty_bool t1) => //=.
+    by rewrite (empty_bool_below_one e1) /=.
+  case e2: (empty_bool t2) => //=.
+    by rewrite (empty_bool_below_one e2) !andb_true_r.
+  case e3: (empty_bool t3) => //=.
+  case: (below_one t3).
+  + by rewrite !andb_true_r.
+  + by rewrite !andb_false_r.
+- move=> t; rewrite orb_false_r.
+  case e: empty_bool => //=.
+  by rewrite andb_false_r.
+Qed.
+
+Lemma below_oneP t : below_one t = true ↔ t ≡ 0 ∨ t ≡ 1.
+Proof.
+split => [|- [->|->] //=].
+elim: t => //=; eauto.
+- move=> t1 IH1 t2 IH2 /andb_true_iff [/IH1 [] -> /IH2 [] ->].
+  + by rewrite Plus_Id; eauto.
+  + by rewrite Plus_Id; eauto.
+  + by rewrite Plus_Id'; eauto.
+  + by rewrite Plus_Idemp; eauto.
+- move=> t1 IH1 t2 IH2 /orb_true_iff [].
+  + by case/orb_true_iff=> [] /empty_boolP ->;
+    rewrite ?Dot_Z1 ?Dot_Z2; eauto.
+  + case/andb_true_iff=> /IH1 [] -> /IH2 [] ->.
+    * by rewrite Dot_Z1; eauto.
+    * by rewrite Dot_Z2; eauto.
+    * by rewrite Dot_Z1; eauto.
+    * by rewrite Dot_Id1; eauto.
+- move=> t IH /empty_boolP ->; right.
+  by rewrite Star Dot_Z2 Plus_Id'.
+Qed.
 
 Definition finite_term t := ∃ ls, ∀ s, In s ls <-> lang_interp t s.
 
