@@ -1062,6 +1062,12 @@ Definition term_product (ls : list (ka_term T)) := fold_right (λ t t', t⋅t') 
 
 Definition term_sum (ls : list (ka_term T)) := fold_right (λ t t', t+t') 0 ls.
 
+Lemma term_sum_app ls1 ls2 : term_sum (ls1 ++ ls2) ≡ term_sum ls1 + term_sum ls2.
+Proof.
+elim: ls1 => [|s1 ls1 IH] /=; first by rewrite Plus_Id.
+by rewrite IH Plus_Assoc.
+Qed.
+
 Definition cstring_sum (ls : list (list T * list T)) := term_sum (map string_to_ka_term ls).
 
 Fixpoint empty_bool (t : ka_term T) :=
@@ -1183,11 +1189,68 @@ elim: t => //=; eauto.
   by rewrite Star Dot_Z2 Plus_Id'.
 Qed.
 
+Fixpoint finite_bool t :=
+  match t with
+  | 0 => true
+  | 1 => true
+  | L _ => true
+  | R _ => true
+  | t1 + t2 => finite_bool t1 && finite_bool t2
+  | t1 ⋅ t2 => empty_bool t1 || empty_bool t2 || finite_bool t1 && finite_bool t2
+  | t ✶ => empty_bool t
+  end.
+
+Lemma empty_bool_finite_bool t : empty_bool t = true → finite_bool t = true.
+Proof.
+elim: t => //=.
+- by move=> t1 IH1 t2 IH2 /andb_true_iff [/IH1 -> /IH2 ->].
+- move=> t1 IH1 t2 IH2 /orb_true_iff [/[dup] /IH1 -> ->|/[dup] /IH2 -> ->] //=.
+  by rewrite orb_true_r.
+Qed.
+
+Global Instance finite_bool_proper : Proper (ka_eq ==> eq) finite_bool.
+Proof.
+move=> t1 t2; elim: t1 t2 / => //=; try congruence.
+- by move=> t11 t12 e1 -> t21 t22 e2 ->; rewrite e1 e2.
+- by move=> ?? {2}->.
+- move=> t; rewrite orb_false_r andb_true_r.
+  case e: empty_bool => //=.
+  by rewrite empty_bool_finite_bool.
+- move=> t; case e: empty_bool => //=.
+  by rewrite empty_bool_finite_bool.
+- by move=> t; rewrite orb_true_r.
+- move=> t1 t2 t3.
+  case e1: (empty_bool t1) => //=.
+  case e2: (empty_bool t2) => //=.
+  case e3: (empty_bool t3) => //=.
+  by rewrite andb_assoc.
+- by move=> ??; rewrite andb_comm.
+- by move=> ???; rewrite andb_assoc.
+- by move=> ?; rewrite andb_diag.
+- move=> t1 t2 t3.
+  case e1: (empty_bool t1) => //=.
+  case e2: (empty_bool t2) => //=.
+    by rewrite (empty_bool_finite_bool e2).
+  case e3: (empty_bool t3) => //=.
+    by rewrite (empty_bool_finite_bool e3) !andb_true_r.
+  by case: (finite_bool t1).
+- move=> t1 t2 t3.
+  case e1: (empty_bool t1) => //=.
+    by rewrite (empty_bool_finite_bool e1).
+  case e2: (empty_bool t2) => //=.
+    by rewrite (empty_bool_finite_bool e2) //= !andb_true_r.
+  case e3: (empty_bool t3) => //=.
+  by case: (finite_bool t3); rewrite ?andb_true_r ?andb_false_r.
+- by move=> t; rewrite orb_false_r andb_comm absorption_orb.
+Qed.
+
 Definition finite_term t := ∃ ls, ∀ s, In s ls <-> lang_interp t s.
 
 (* Lemma test : ∀ (P Q R : (list T * list T) -> Prop), (∀ s, P s <-> Q s) -> (∀ s, P s <-> Q s ∨ R s).
 Proof.
   intros. *)
+
+
 
 Lemma finite_terms__finite_sum : ∀ t t', finite_term t ∧ finite_term t' -> finite_term (t + t').
 Proof.
@@ -1291,6 +1354,60 @@ Proof.
       exists 0%nat.
       reflexivity.
 + Admitted.
+
+Lemma finite_build_term side s :
+  side = L ∨ side = R → finite_bool (build_term side 1 s) = true.
+Proof.
+move=> e; elim: s => //= x s ->.
+by case: e => -> /=; rewrite orb_true_r.
+Qed.
+
+Lemma finite_string_to_ka_term s : finite_bool (string_to_ka_term s) = true.
+Proof.
+case: s => s1 s2 /=.
+rewrite !finite_build_term ?orb_true_r; eauto.
+Qed.
+
+Lemma finite_cstring_sum ls : finite_bool (cstring_sum ls) = true.
+Proof.
+by elim: ls => //= l ls ->; rewrite finite_string_to_ka_term.
+Qed.
+
+Theorem finite_def' t : finite_bool t = true ↔  ∃ ls, t ≡ cstring_sum ls.
+Proof.
+split => [|[ls ->]]; last by rewrite finite_cstring_sum.
+elim: t => //=.
+- by move=> _; exists [].
+- by move=> _; exists [([], [])]; rewrite /cstring_sum /= Dot_Id1 Plus_Id'.
+- move=> x _; exists [([x], [])]; rewrite /cstring_sum /=.
+  by rewrite !Dot_Id1 Plus_Id'.
+- move=> x _; exists [([], [x])]; rewrite /cstring_sum /=.
+  by rewrite Dot_Id1 Dot_Id2 Plus_Id'.
+- move=> t1 IH1 t2 IH2 /andb_true_iff [fin1 fin2].
+  have [[ls1 e1] [ls2 e2]] := (IH1 fin1, IH2 fin2).
+  by exists (ls1 ++ ls2); rewrite e1 e2 cstring_app_commute.
+- move=> t1 IH1 t2 IH2 /orb_true_iff [] H.
+  + exists []; case/orb_true_iff: H=> /empty_boolP ->;
+    by rewrite ?Dot_Z1 ?Dot_Z2.
+  + case/andb_true_iff: H => fin1 fin2.
+    have [[ls1 e1] [ls2 e2]] := (IH1 fin1, IH2 fin2).
+    exists (concat (map (λ s1, map (λ s2, pair_append s1 s2) ls2) ls1)).
+    rewrite {}e1 {}e2.
+    elim: ls1 {IH1 IH2 t1 t2 fin1 fin2} => //= [|s1 ls1 IH1] in ls2 *.
+      by rewrite Dot_Z2.
+    rewrite /cstring_sum /= Dist_R IH1 map_app term_sum_app.
+    rewrite map_map.
+    suff ->: string_to_ka_term s1 ⋅ cstring_sum ls2 ≡
+      term_sum (map (λ s2, string_to_ka_term (pair_append s1 s2)) ls2) by [].
+    elim: ls2 {IH1 ls1} => [|s2 ls2 IH] //=.
+      by rewrite Dot_Z1.
+    by rewrite /cstring_sum /= Dist_L IH string_to_term__pair_append__commute.
+- move=> t _ /empty_boolP e; exists [([], [])]; rewrite {}e.
+  by rewrite Star Dot_Z2 Plus_Id' /cstring_sum /= Dot_Id1 Plus_Id'.
+Qed.
+
+Theorem problem : ¬ ∃ ls, 1 ✶ ≡ cstring_sum ls.
+Proof. by move=> /finite_def' /=. Qed.
 
 (* Theorem 6' *)
 Theorem finite_def : ∀ t,
