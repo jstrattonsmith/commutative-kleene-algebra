@@ -46,6 +46,7 @@
               propagatedBuildInputs = [
                 final.coq
                 final.coq-library-undecidability
+                final.stdpp
               ];
             };
             coq-library-undecidability = prev.mkCoqDerivation {
