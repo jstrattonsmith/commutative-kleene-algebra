@@ -226,6 +226,9 @@ Definition string_to_ka_term ls :=
     (build_term L 1 l1)⋅(build_term R 1 l2)
   end.
 
+(* QUEST: thoughts on notation here? *)
+Notation "↑ x" := (string_to_ka_term x) (at level 60):ka_scope.
+
 Definition interp (n : nat) (P : list mm2_instr) :=
   match nth n P mm2_inc_a with
   | mm2_inc_a => R a ⋅ (lr a)✶ ⋅ (lr b)✶ ⋅ R (Q_M (S n))
@@ -320,8 +323,11 @@ Fixpoint lang_interp term :=
   | e✶ => ka_pred_star (lang_interp e)
   end.
 
+(* QUEST: is this notation reasonable? *)
+Notation "s ∈ t" := (lang_interp t s) (at level 60): ka_scope.
+
 (* used *)
-Lemma l_i_dot_1_r : ∀ (x : ka_term T) s, lang_interp (x ⋅ 1) s <-> lang_interp x s.
+Lemma l_i_dot_1_r : ∀ (x : ka_term T) s, s ∈ x ⋅ 1 <-> s ∈ x.
 Proof.
   split; intros; simpl in *.
   - destruct H as [s1 [s2 [H1 [H2 H3]]]];
@@ -332,7 +338,7 @@ Proof.
 Qed.
 
 (* used *)
-Lemma l_i_dot_1_l : ∀ (x : ka_term T) s, lang_interp (1 ⋅ x) s <-> lang_interp x s.
+Lemma l_i_dot_1_l : ∀ (x : ka_term T) s, s ∈ 1 ⋅ x <-> s ∈ x.
 Proof.
   split; intros; simpl in *.
   - destruct H as [s1 [s2 [H1 [H2 H3]]]];
@@ -343,7 +349,7 @@ Proof.
 Qed.
 
 (* QUEST: do we need bidirectionality here? I don't think this holds...but wanted to check *)
-Theorem l_i_equality : ∀ t1 t2, t1 ≡ t2 -> ∀ s, lang_interp t1 s <-> lang_interp t2 s.
+Theorem l_i_equality : ∀ t1 t2, t1 ≡ t2 -> ∀ s, s ∈ t1 <-> s ∈ t2.
 Proof.
   intros t1 t2 H.
   induction H.
@@ -446,15 +452,19 @@ Proof.
   reflexivity.
 Qed.
 
-(* used *)
-Lemma leq_plus : ∀ (x1 x2 : ka_term T), x1 ≤ x1 + x2.
+Lemma leq_leq_plus (t1 t2 t3 : ka_term T) : t1 ≤ t2 -> t1 ≤ t2 + t3.
 Proof.
-  intros.
-  unfold ka_leq.
-  rewrite Plus_Com;
-  rewrite Plus_Assoc;
-  rewrite Plus_Idemp.
-  reflexivity.
+  move=> H.
+  unfold ka_leq in *.
+  rewrite -{2} H.
+  rewrite Plus_Com.
+  rewrite [X in _ ≡ X + _] Plus_Com.
+  apply Plus_Assoc.
+Qed.
+
+Lemma t_leq_t_plus (t t' : ka_term T) : t ≤ t + t'.
+Proof.
+  apply leq_leq_plus; apply leq_reflex.
 Qed.
 
 (* used *)
@@ -462,11 +472,11 @@ Lemma one_leq_star : ∀ (t : ka_term T), 1 ≤ t ✶.
 Proof.
   intros.
   rewrite Star.
-  apply leq_plus.
+  apply t_leq_t_plus.
 Qed.
 
 (* used *)
-Lemma li_term_to_string_true : ∀ s, lang_interp (string_to_ka_term s) s.
+Lemma li_term_to_string_true : ∀ s, s ∈ ↑s.
 Proof.
   intros.
   destruct s as (sl, sr).
@@ -516,7 +526,7 @@ Qed.
 
 (* used *)
 Lemma string_to_term__pair_append__commute : ∀ s s',
-  string_to_ka_term (pair_append s s') ≡ (string_to_ka_term s) ⋅ (string_to_ka_term s').
+  ↑(pair_append s s') ≡ (↑s) ⋅ (↑s').
 Proof.
   intros.
   destruct s as (s1, s1'), s' as (s2, s2').
@@ -571,7 +581,7 @@ Proof.
   rewrite Dot_Id1.
   rewrite Plus_Com.
   rewrite - Plus_Assoc.
-  apply leq_plus.
+  apply t_leq_t_plus.
 Qed.
 
 (* unused *)
@@ -579,19 +589,6 @@ Lemma leq_term__leq_term_star : ∀ (t t': ka_term T), t ≤ t' -> t ≤ t'✶.
 Proof.
   intros.
   apply leq_trans with (t2:=t'); [assumption | apply term_leq_term_star].
-Qed.
-
-Lemma leq1__leq2__leq1_dot_2 : ∀ (t1 t2 t3 t4 : ka_term T),
-  t1 ≤ t3 -> t2 ≤ t4 -> t1⋅t2 ≤ t3⋅t4.
-Proof.
-  intros t1 t2 t3 t4 H1 H2.
-  unfold ka_leq in H1, H2.
-  rewrite - H1.
-  rewrite - H2.
-  rewrite Dist_R; repeat (rewrite Dist_L).
-  repeat (rewrite Plus_Assoc).
-  rewrite Plus_Com.
-  apply leq_plus.
 Qed.
 
 (* unused *)
@@ -618,7 +615,7 @@ Proof.
   intros.
   rewrite [X in _ ≤ X] Star.
   rewrite Plus_Com.
-  apply leq_plus.
+  apply t_leq_t_plus.
 Qed.
 
 (* used, but unused *)
@@ -629,7 +626,7 @@ Proof.
   rewrite - H.
   rewrite Dist_L.
   rewrite Plus_Com.
-  apply leq_plus.
+  apply t_leq_t_plus.
 Qed.
 
 (* unused *)
@@ -640,7 +637,7 @@ Proof.
   rewrite - H.
   rewrite Dist_R.
   rewrite Plus_Com.
-  apply leq_plus.
+  apply t_leq_t_plus.
 Qed.
 
 (* unused *)
@@ -656,11 +653,11 @@ Proof.
     { apply leq__leq_dot_L. apply IHn. }
     apply leq_trans with (t2:=t⋅t✶).
     + assumption.
-    + rewrite Plus_Com. apply leq_plus.
+    + rewrite Plus_Com. apply t_leq_t_plus.
 Qed.
 
 (* Theorem 5 *)
-Theorem term_lang_equiv : ∀ s t, string_to_ka_term s ≤ t <-> lang_interp t s.
+Theorem term_lang_equiv : ∀ s t, ↑s ≤ t <-> s ∈ t.
 Proof.
   intros; split; intros H.
   - unfold ka_leq in H.
@@ -678,10 +675,10 @@ Proof.
     + simpl in H; unfold ka_pred_add in H. destruct H as [H1 | H2].
       * apply IHt1 in H1.
         apply leq_trans with (t2:=t1);
-        [assumption | apply leq_plus].
+        [assumption | apply t_leq_t_plus].
       * apply IHt2 in H2.
         apply leq_trans with (t2:=t2);
-        [assumption | rewrite Plus_Com; apply leq_plus].
+        [assumption | rewrite Plus_Com; apply t_leq_t_plus].
     + simpl in H. unfold ka_pred_mul in H.
       destruct H as [s1 [s2 [Hs1s2 [HLI1 HLI2]]]].
       apply IHt1 in HLI1; apply IHt2 in HLI2.
@@ -702,9 +699,9 @@ Proof.
         apply IHt in HLI1.
         destruct s1 as (s1, s1'), s2 as (s2, s2').
         rewrite string_to_term__pair_append__commute.
-        assert (H : string_to_ka_term (s1, s1') ⋅ string_to_ka_term (s2, s2') ≤ t⋅t✶).
+        assert (H : (↑(s1, s1')) ⋅ (↑(s2, s2')) ≤ t⋅t✶).
         {
-          apply leq1__leq2__leq1_dot_2; assumption.
+          apply leq_leq_dot; assumption.
         }
         apply leq_trans with (t2:=t⋅t✶);
         [assumption | apply t_tstar__leq__tstar].
@@ -787,7 +784,7 @@ Proof.
 Qed.
 
 (* Corollary 8' *)
-Lemma either_empty_or_nonzero : ∀ (t : ka_term T), t ≡ 0 ∨ ∃ s, lang_interp t s.
+Lemma either_empty_or_nonzero : ∀ (t : ka_term T), t ≡ 0 ∨ ∃ s, s ∈ t.
 Proof.
   intros t.
   induction t.
@@ -827,7 +824,7 @@ Proof.
 Qed.
 
 
-Lemma interp_build_term_l : ∀ s, lang_interp (build_term L 1 s) (s, []).
+Lemma interp_build_term_l : ∀ s, (s, []) ∈ build_term L 1 s.
 Proof.
   intros s. induction s as [| c s IHs].
   - reflexivity.
@@ -837,7 +834,7 @@ Proof.
     repeat split; intuition.
 Qed.
 
-Lemma interp_build_term_r : ∀ s, lang_interp (build_term R 1 s) ([], s).
+Lemma interp_build_term_r : ∀ s, ([], s) ∈ build_term R 1 s.
 Proof.
   intros s. induction s as [| c s IHs].
   - reflexivity.
@@ -847,18 +844,8 @@ Proof.
     repeat split; intuition.
 Qed.
 
-(* would be nice to prove *)
-(* Lemma test : ∀ (t t' : ka_term T), t ≤ t' -> t ≡ t' ∨ ∃ s, lang_interp t' s ∧ not (lang_interp t s).
-Proof.
-  intros.
-  unfold ka_leq in H.
-  have eq_langs := l_i_equality H.
-  simpl in eq_langs.
-  unfold ka_pred_add in eq_langs.
-  left. *)
-
 (* Corollary 8'' *)
-Lemma no_string_leq_0 : ∀ s, not (string_to_ka_term s ≤ 0).
+Lemma no_string_leq_0 : ∀ s, not (↑s ≤ 0).
 Proof.
   intros s H.
   unfold ka_leq in H.
@@ -877,7 +864,7 @@ Proof.
 Qed.
 
 (* unused *)
-Lemma no_string_equiv_0 : ∀ s, string_to_ka_term s ≢ 0.
+Lemma no_string_equiv_0 : ∀ s, ↑s ≢ 0.
 Proof.
   intros s H.
   rewrite <- Plus_Id in H. (* QUEST: ssreflect way of writing this? *)
@@ -991,7 +978,7 @@ Qed.
 
 (* QUEST: is there a nice way to merge these two lemmas? *)
 Lemma lang_interp_build_l : ∀ (s1 s2 s3 : list T),
-  lang_interp (build_term L 1 s1) (s2, s3) -> s2 = s1 ∧ s3 = [].
+  (s2, s3) ∈ build_term L 1 s1 -> s2 = s1 ∧ s3 = [].
 Proof.
   intros s1 s2 s3 H. simpl in H.
   generalize dependent s2;
@@ -1011,7 +998,7 @@ Proof.
 Qed.
 
 Lemma lang_interp_build_r : ∀ (s1 s2 s3 : list T),
-  lang_interp (build_term R 1 s1) (s2, s3) -> s1 = s3 ∧ s2 = [].
+  (s2, s3) ∈ build_term R 1 s1 -> s1 = s3 ∧ s2 = [].
 Proof.
   intros s1 s2 s3 H. simpl in H.
   generalize dependent s2;
@@ -1030,7 +1017,7 @@ Proof.
     subst. intuition.
 Qed.
 
-Lemma string_interp_self : ∀ s s', lang_interp (string_to_ka_term s) s' <-> s = s'.
+Lemma string_interp_self : ∀ s s', s' ∈ (↑s) <-> s = s'.
 Proof.
   intros.
   split.
@@ -1069,6 +1056,7 @@ by rewrite IH Plus_Assoc.
 Qed.
 
 Definition cstring_sum (ls : list (list T * list T)) := term_sum (map string_to_ka_term ls).
+Notation "## ls" := (cstring_sum ls) (at level 30):ka_scope.
 
 Fixpoint empty_bool (t : ka_term T) :=
   match t with
@@ -1313,7 +1301,7 @@ Proof.
 Admitted.
 
 Lemma cstring_app_commute : ∀ l1 l2,
-  cstring_sum (l1 ++ l2) ≡ (cstring_sum l1) + (cstring_sum l2).
+  ##(l1 ++ l2) ≡ (##l1) + (##l2).
 Proof.
   intros.
   induction l1 as [| c1 l1 IHl1].
@@ -1339,7 +1327,8 @@ Lemma one_star : (@K_One T)✶ ≡ @K_One T.
 Proof.
 Admitted.
 
-Lemma finite_star : ∀ (t : ka_term T), t ≡ 0 ∨ t ≡ 1 ∨ not (finite_term (t✶)).
+Lemma star_term_interp_empty : ∀ (t : ka_term T),
+  ([], []) ∈ t✶.
 Proof.
   intros t.
   induction t;
@@ -1362,7 +1351,7 @@ move=> e; elim: s => //= x s ->.
 by case: e => -> /=; rewrite orb_true_r.
 Qed.
 
-Lemma finite_string_to_ka_term s : finite_bool (string_to_ka_term s) = true.
+Lemma finite_string_to_ka_term s : finite_bool (↑s) = true.
 Proof.
 case: s => s1 s2 /=.
 rewrite !finite_build_term ?orb_true_r; eauto.
