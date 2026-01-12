@@ -219,37 +219,62 @@ End ProdMonoid.
 
 (** Semi Lattices *)
 
-Record SemiLatticeMixin T `{!Equiv T, Union T, Empty T} := {
-  mixin_semi_lattice_assoc : Assoc (≡) ((∪) : T → T → T);
-  mixin_semi_lattice_comm : Comm (≡) ((∪) : T → _);
-  mixin_semi_lattice_left_id : LeftId (≡) (∅ : T) (∪);
-  mixin_semi_lattice_idemp : ∀ x : T, x ∪ x ≡ x;
-  mixin_semi_lattice_proper : Proper ((≡) ==> (≡) ==> (≡)) (@union T _);
+Record SemiLatticeMixin T `{!Equiv T, Join T, Bottom T, SqSubsetEq T} := {
+  mixin_semi_lattice_assoc : Assoc (≡@{T}) (⊔);
+  mixin_semi_lattice_comm : Comm (≡@{T}) (⊔);
+  mixin_semi_lattice_left_id : LeftId (≡@{T}) (⊥) (⊔);
+  mixin_semi_lattice_idemp : IdemP (≡@{⊤}) (⊔);
+  mixin_semi_lattice_proper : Proper ((≡) ==> (≡) ==> (≡@{T})) (⊔);
+  mixin_semi_lattice_sqsubseteq_iff : ∀ x y : T, x ⊑ y ↔ x ⊔ y ≡ y;
 }.
-Arguments SemiLatticeMixin T {_ _ _}.
+Arguments SemiLatticeMixin T {_ _ _ _}.
 
 Structure semi_lattice : Type := SemiLattice' {
   semi_lattice_car :> Type;
   semi_lattice_equiv : Equiv semi_lattice_car;
-  semi_lattice_union : Union semi_lattice_car;
-  semi_lattice_empty : Empty semi_lattice_car;
+  semi_lattice_join : Join semi_lattice_car;
+  semi_lattice_bottom : Bottom semi_lattice_car;
+  semi_lattice_sqsubseteq : SqSubsetEq semi_lattice_car;
   semi_lattice_setoid_mixin : SetoidMixin semi_lattice_car;
   semi_lattice_mixin : SemiLatticeMixin semi_lattice_car;
 }.
 Global Arguments semi_lattice_car : simpl never.
 Global Arguments semi_lattice_equiv : simpl never.
-Global Arguments semi_lattice_union : simpl never.
-Global Arguments semi_lattice_empty : simpl never.
+Global Arguments semi_lattice_join : simpl never.
+Global Arguments semi_lattice_bottom : simpl never.
+Global Arguments semi_lattice_sqsubseteq : simpl never.
 Global Arguments semi_lattice_setoid_mixin : simpl never.
 Global Arguments semi_lattice_mixin : simpl never.
 (* FIXME(Coq #6294) : we need the new unification algorithm here. *)
-Global Hint Extern 0 (Union _) =>
-  refine (@semi_lattice_union _); shelve : typeclass_instances.
-Global Hint Extern 0 (Empty _) =>
-  refine (@semi_lattice_empty _); shelve : typeclass_instances.
+Global Hint Extern 0 (Join _) =>
+  refine (@semi_lattice_join _); shelve : typeclass_instances.
+Global Hint Extern 0 (Bottom _) =>
+  refine (@semi_lattice_bottom _); shelve : typeclass_instances.
+Global Hint Extern 0 (SqSubsetEq _) =>
+  refine (@semi_lattice_sqsubseteq _); shelve : typeclass_instances.
 Coercion semi_lattice_setoid (T : semi_lattice) :=
   @Setoid T (≡) (semi_lattice_setoid_mixin T).
 Canonical Structure semi_lattice_setoid.
+
+Section DefaultSqSubsetEq.
+
+Context `{!Equiv T, Join T, Bottom T}.
+Implicit Types x y z : T.
+
+Definition default_sqsubseteq_aux :
+  {R : relation T | ∀ x y, R x y ↔ x ⊔ y ≡ y}.
+Proof. by exists (λ x y, x ⊔ y ≡ y). Qed.
+
+Definition default_sqsubseteq : SqSubsetEq T :=
+  proj1_sig default_sqsubseteq_aux.
+
+Lemma default_sqsubseteq_eq x y : default_sqsubseteq x y ↔ x ⊔ y ≡ y.
+Proof. exact: (proj2_sig default_sqsubseteq_aux). Qed.
+
+Definition default_semi_lattice_mixin HA HC HI HId HP :=
+  @Build_SemiLatticeMixin T _ _ _ _ HA HC HI HId HP default_sqsubseteq_eq.
+
+End DefaultSqSubsetEq.
 
 Section SemiLatticeTheory.
 
@@ -257,84 +282,88 @@ Variables T : semi_lattice.
 
 Implicit Types x y z : T.
 
-Global Instance semi_lattice_assoc : Assoc (≡) (@union T _).
+Global Instance semi_lattice_assoc : Assoc (≡@{T}) (⊔).
 Proof. exact: (mixin_semi_lattice_assoc (semi_lattice_mixin T)). Defined.
 
-Global Instance semi_lattice_comm : Comm (≡) (@union T _).
+Global Instance semi_lattice_comm : Comm (≡@{T}) (⊔).
 Proof. exact: (mixin_semi_lattice_comm (semi_lattice_mixin T)). Defined.
 
-Global Instance semi_lattice_left_id : LeftId (≡) (@empty T _) (∪).
+Global Instance semi_lattice_left_id : LeftId (≡@{T}) (⊥) (⊔).
 Proof. exact: (mixin_semi_lattice_left_id (semi_lattice_mixin T)). Defined.
 
-Lemma semi_lattice_idemp (x : T) : x ∪ x ≡ x.
+Global Instance semi_lattice_idemp : IdemP (≡@{T}) (⊔).
 Proof. exact: (mixin_semi_lattice_idemp (semi_lattice_mixin T)). Defined.
 
-Global Instance semi_lattice_proper :
-  Proper ((≡) ==> (≡) ==> (≡)) (@union T _).
+Global Instance semi_lattice_proper : Proper ((≡) ==> (≡) ==> (≡@{T})) (⊔).
 Proof. exact: (mixin_semi_lattice_proper (semi_lattice_mixin T)). Defined.
 
-Global Instance semi_lattice_right_id : RightId (≡) (@empty T _) (∪).
+Global Instance semi_lattice_right_id : RightId (≡@{T}) (⊥) (⊔).
 Proof. by move=> x; rewrite comm left_id. Qed.
 
-Global Instance semi_lattice_subseteq : SubsetEq T :=
-  λ x y, x ∪ y ≡ y.
-
-Global Instance semi_lattice_subseteq_proper :
-  Proper ((≡) ==> (≡) ==> iff) (@subseteq T _).
+Lemma sqsubseteq_iff x y : x ⊑ y ↔ x ⊔ y ≡ y.
 Proof.
-move=> x1 x2 ex y1 y2 ey; rewrite /subseteq /semi_lattice_subseteq.
-by rewrite ex ey.
+exact: (mixin_semi_lattice_sqsubseteq_iff (semi_lattice_mixin T)).
+Defined.
+
+Global Instance semi_lattice_sqsubseteq_proper :
+  Proper ((≡) ==> (≡@{T}) ==> iff) (⊑).
+Proof.
+by move=> x1 x2 ex y1 y2 ey; rewrite !sqsubseteq_iff ex ey.
 Qed.
 
-Global Instance semi_lattice_subseteq_refl : Reflexive (@subseteq T _).
-Proof. move=> x; exact: semi_lattice_idemp. Qed.
+Global Instance semi_lattice_sqsubseteq_refl : Reflexive (@sqsubseteq T _).
+Proof. by move=> x; rewrite sqsubseteq_iff idemp. Qed.
 
-Global Instance semi_lattice_subseteq_trans : Transitive (@subseteq T _).
+Global Instance semi_lattice_sqsubseteq_trans : Transitive (@sqsubseteq T _).
 Proof.
-rewrite /subseteq /semi_lattice_subseteq => x y z e1 e2.
+move=> x y z; rewrite !sqsubseteq_iff => e1 e2.
 by rewrite -{1}e2 assoc e1.
 Qed.
 
-Global Instance semi_lattice_subseteq_antisym :
-  Antisymmetric T (≡) (@subseteq T _).
+Global Instance sqsubseteq_preorder : PreOrder (⊑@{T}).
+Proof. constructor; apply _. Qed.
+
+Global Instance semi_lattice_sqsubseteq_antisym : AntiSymm (≡@{T}) (⊑).
 Proof.
-rewrite /subseteq /semi_lattice_subseteq => x y e1 e2.
-by rewrite -e1 -{1}e2 comm.
+by move=> x y; rewrite !sqsubseteq_iff => {2}<- {1}<-; rewrite comm.
 Qed.
 
-Lemma union_subseteq x y z : x ∪ y ⊆ z ↔ x ⊆ z ∧ y ⊆ z.
+Lemma join_sqsubseteq x y z : x ⊔ y ⊑ z ↔ x ⊑ z ∧ y ⊑ z.
 Proof.
-rewrite /subseteq /semi_lattice_subseteq; split; last first.
+rewrite !sqsubseteq_iff; split; last first.
   by case=> ez1 ez2; rewrite -assoc ez2.
 move=> ez; split; rewrite -{1}ez.
-- by rewrite !assoc semi_lattice_idemp.
-- by rewrite !assoc [y ∪ x]comm -[x ∪ y ∪ y]assoc semi_lattice_idemp.
+- by rewrite !assoc idemp.
+- by rewrite !assoc [y ⊔ x]comm -[x ⊔ y ⊔ y]assoc idemp.
 Qed.
 
-Lemma subseteq_union_left x y : x ⊆ x ∪ y.
+Lemma sqsubseteq_join_left x y : x ⊑ x ⊔ y.
 Proof.
-have: x ∪ y ⊆ x ∪ y by [].
-by rewrite union_subseteq; case.
+have: x ⊔ y ⊑ x ⊔ y by [].
+by rewrite join_sqsubseteq; case.
 Qed.
 
-Lemma subseteq_union_right x y : y ⊆ x ∪ y.
+Lemma sqsubseteq_join_right x y : y ⊑ x ⊔ y.
 Proof.
-have: x ∪ y ⊆ x ∪ y by [].
-by rewrite union_subseteq; case.
+have: x ⊔ y ⊑ x ⊔ y by [].
+by rewrite join_sqsubseteq; case.
 Qed.
 
-Lemma empty_subseteq x : ∅ ⊆ x.
-Proof. exact: semi_lattice_left_id. Qed.
+Lemma bottom_sqsubseteq x : ⊥ ⊑ x.
+Proof. by rewrite sqsubseteq_iff semi_lattice_left_id. Qed.
 
-Lemma union_list_subseteq (xs : list T) y :
-  ⋃ xs ⊆ y ↔ ∀ x, x ∈ xs → x ⊆ y.
+Definition join_list : list T → T := foldr join ⊥.
+
+Notation "⨆" := join_list.
+Lemma join_list_sqsubseteq (xs : list T) y :
+  ⨆ xs ⊑ y ↔ ∀ x, x ∈ xs → x ⊑ y.
 Proof.
 elim: xs => [|x xs IH] /=; split.
 - by move=> _ ?; rewrite elem_of_nil.
-- move=> _; exact: empty_subseteq.
-- rewrite union_subseteq; case=> xy /IH xsy x'.
+- move=> _; exact: bottom_sqsubseteq.
+- rewrite join_sqsubseteq; case=> xy /IH xsy x'.
   by rewrite elem_of_cons; case=> [->|]; eauto.
-- rewrite union_subseteq IH => xsy; split.
+- rewrite join_sqsubseteq IH => xsy; split.
   + by apply xsy; rewrite elem_of_cons; eauto.
   + by move=> x' x'_xs; apply xsy; rewrite elem_of_cons; eauto.
 Qed.
@@ -343,8 +372,8 @@ End SemiLatticeTheory.
 
 Class SemiLatticeMorphism (T S : semi_lattice) (f : T → S) := {
   semi_lattice_morphism_proper :: Proper ((≡) ==> (≡)) f;
-  semi_lattice_morphism_empty : f ∅ ≡ ∅;
-  semi_lattice_morphism_union : ∀ x y, f (x ∪ y) ≡ f x ∪ f y;
+  semi_lattice_morphism_bottom : f ⊥ ≡ ⊥;
+  semi_lattice_morphism_join : ∀ x y, f (x ⊔ y) ≡ f x ⊔ f y;
 }.
 
 Section SemiLatticeMorphismTheory.
@@ -353,10 +382,10 @@ Variables (T S : semi_lattice) (f : T → S).
 
 Context `{SemiLatticeMorphism T S f}.
 
-Global Instance semi_lattice_morphism_subseteq_proper : Proper ((⊆) ==> (⊆)) f.
+Global Instance semi_lattice_morphism_subseteq_proper : Proper ((⊑) ==> (⊑)) f.
 Proof.
-move=> x y; rewrite /subseteq /semi_lattice_subseteq => {2}<-.
-by rewrite semi_lattice_morphism_union.
+move=> x y; rewrite !sqsubseteq_iff => {2}<-.
+by rewrite semi_lattice_morphism_join.
 Qed.
 
 End SemiLatticeMorphismTheory.
@@ -368,12 +397,12 @@ Global Hint Mode Star ! : typeclass_instances.
 Global Instance: Params (@star) 1 := {}.
 
 Record PreKAMixin T
-    `{!Equiv T, Union T, Empty T, Mul T, One T, Star T} := {
-  mixin_pre_ka_right_dist : ∀ x y z : T, x ⋅ (y ∪ z) ≡ x ⋅ y ∪ x ⋅ z;
-  mixin_pre_ka_left_dist : ∀ x y z : T, (y ∪ z) ⋅ x ≡ y ⋅ x ∪ z ⋅ x;
-  mixin_pre_ka_left_empty : ∀ x : T, ∅ ⋅ x ≡ ∅;
-  mixin_pre_ka_right_empty : ∀ x : T, x ⋅ ∅ ≡ ∅;
-  mixin_pre_ka_star_unfold : ∀ x : T, star x ≡ 1 ∪ x ⋅ star x;
+    `{!Equiv T, Join T, Bottom T, Mul T, One T, Star T} := {
+  mixin_pre_ka_right_dist : ∀ x y z : T, x ⋅ (y ⊔ z) ≡ x ⋅ y ⊔ x ⋅ z;
+  mixin_pre_ka_left_dist : ∀ x y z : T, (y ⊔ z) ⋅ x ≡ y ⋅ x ⊔ z ⋅ x;
+  mixin_pre_ka_left_absorb : LeftAbsorb (≡@{T}) ⊥ (⋅);
+  mixin_pre_ka_right_empty : RightAbsorb (≡@{T}) ⊥ (⋅);
+  mixin_pre_ka_star_unfold : ∀ x : T, star x ≡ 1 ⊔ x ⋅ star x;
   mixin_pre_ka_star_proper : Proper ((≡) ==> (≡)) (@star T _);
 }.
 Arguments PreKAMixin T {_ _ _ _ _ _}.
@@ -381,8 +410,9 @@ Arguments PreKAMixin T {_ _ _ _ _ _}.
 Structure pre_ka : Type := PreKA' {
   pre_ka_car :> Type;
   pre_ka_equiv : Equiv pre_ka_car;
-  pre_ka_union : Union pre_ka_car;
-  pre_ka_empty : Empty pre_ka_car;
+  pre_ka_join : Join pre_ka_car;
+  pre_ka_bottom : Bottom pre_ka_car;
+  pre_ka_sqsubseteq : SqSubsetEq pre_ka_car;
   pre_ka_mul : Mul pre_ka_car;
   pre_ka_one : One pre_ka_car;
   pre_ka_star : Star pre_ka_car;
@@ -393,8 +423,9 @@ Structure pre_ka : Type := PreKA' {
 }.
 Global Arguments pre_ka_car : simpl never.
 Global Arguments pre_ka_equiv : simpl never.
-Global Arguments pre_ka_union : simpl never.
-Global Arguments pre_ka_empty : simpl never.
+Global Arguments pre_ka_join : simpl never.
+Global Arguments pre_ka_bottom : simpl never.
+Global Arguments pre_ka_sqsubseteq : simpl never.
 Global Arguments pre_ka_mul : simpl never.
 Global Arguments pre_ka_one : simpl never.
 Global Arguments pre_ka_star : simpl never.
@@ -410,7 +441,7 @@ Coercion pre_ka_setoid (T : pre_ka) :=
 Coercion pre_ka_monoid (T : pre_ka) :=
   @Monoid' T _ _ _ (pre_ka_setoid_mixin T) (pre_ka_monoid_mixin T).
 Coercion pre_ka_semi_lattice (T : pre_ka) :=
-  @SemiLattice' T _ _ _ (pre_ka_setoid_mixin T) (pre_ka_semi_lattice_mixin T).
+  @SemiLattice' T _ _ _ _ (pre_ka_setoid_mixin T) (pre_ka_semi_lattice_mixin T).
 Canonical Structure pre_ka_setoid.
 Canonical Structure pre_ka_monoid.
 Canonical Structure pre_ka_semi_lattice.
@@ -421,54 +452,62 @@ Variable T : pre_ka.
 
 Implicit Types x y z : T.
 
-Lemma pre_ka_right_dist : ∀ x y z : T, x ⋅ (y ∪ z) ≡ x ⋅ y ∪ x ⋅ z.
+Lemma pre_ka_right_dist : ∀ x y z : T, x ⋅ (y ⊔ z) ≡ x ⋅ y ⊔ x ⋅ z.
 Proof. exact: (mixin_pre_ka_right_dist (pre_ka_mixin _)). Qed.
 
-Lemma pre_ka_left_dist : ∀ x y z : T, (y ∪ z) ⋅ x ≡ y ⋅ x ∪ z ⋅ x.
+Lemma pre_ka_left_dist : ∀ x y z : T, (y ⊔ z) ⋅ x ≡ y ⋅ x ⊔ z ⋅ x.
 Proof. exact: (mixin_pre_ka_left_dist (pre_ka_mixin _)). Qed.
 
-Lemma pre_ka_left_empty : ∀ x : T, ∅ ⋅ x ≡ ∅.
-Proof.  exact: (mixin_pre_ka_left_empty (pre_ka_mixin _)). Qed.
+Global Instance pre_ka_left_absorb : LeftAbsorb (≡@{T}) ⊥ (⋅).
+Proof. exact: (mixin_pre_ka_left_absorb (pre_ka_mixin _)). Qed.
 
-Lemma pre_ka_right_empty : ∀ x : T, x ⋅ ∅ ≡ ∅.
+Global Instance pre_ka_right_absorb : RightAbsorb (≡@{T}) ⊥ (⋅).
 Proof. exact: (mixin_pre_ka_right_empty (pre_ka_mixin _)). Qed.
 
-Lemma pre_ka_star_unfold : ∀ x : T, star x ≡ 1 ∪ x ⋅ star x.
+Lemma pre_ka_star_unfold : ∀ x : T, star x ≡ 1 ⊔ x ⋅ star x.
 Proof. exact: (mixin_pre_ka_star_unfold (pre_ka_mixin _)). Qed.
 
 Global Instance pre_ka_star_proper : Proper ((≡) ==> (≡)) (@star T _).
 Proof. exact: (mixin_pre_ka_star_proper (pre_ka_mixin _)). Qed.
 
-Lemma pre_ka_mul_mono x1 x2 y1 y2 : x1 ⊆ x2 → y1 ⊆ y2 → x1 ⋅ y1 ⊆ x2 ⋅ y2.
+Global Instance pre_ka_mul_mono : Proper ((⊑@{T}) ==> (⊑) ==> (⊑)) (⋅).
 Proof.
-rewrite /subseteq /semi_lattice_subseteq.
-move=> <- <-.
-by rewrite pre_ka_left_dist !pre_ka_right_dist !assoc semi_lattice_idemp.
+move=> x1 x2 ex y1 y2 ey.
+rewrite !sqsubseteq_iff in ex ey; rewrite -ex -ey.
+rewrite pre_ka_left_dist !pre_ka_right_dist -!assoc.
+exact: sqsubseteq_join_left.
 Qed.
 
-Lemma pre_ka_one_star x : 1 ⊆ star x.
+Lemma pre_ka_one_star x : 1 ⊑ star x.
 Proof.
 rewrite pre_ka_star_unfold.
-exact: subseteq_union_left.
+exact: sqsubseteq_join_left.
 Qed.
 
-Lemma pre_ka_mul_star x : x ⋅ star x ⊆ star x.
+Lemma pre_ka_mul_star x : x ⋅ star x ⊑ star x.
 Proof.
 rewrite {2}pre_ka_star_unfold.
-exact: subseteq_union_right.
+exact: sqsubseteq_join_right.
+Qed.
+
+Lemma pre_ka_star_infl x : x ⊑ star x.
+Proof.
+rewrite -pre_ka_mul_star.
+trans (x ⋅ 1); first by rewrite right_id.
+by rewrite pre_ka_one_star.
 Qed.
 
 End PreKATheory.
 
 Inductive ka_term (T : Type) : Type :=
   | Unit of T
-  | ka_term_empty : Empty (ka_term T)
-  | ka_term_union : Union (ka_term T)
+  | ka_term_bottom : Bottom (ka_term T)
+  | ka_term_join : Join (ka_term T)
   | ka_term_mul : Mul (ka_term T)
   | ka_term_star : Star (ka_term T).
 
-Global Existing Instance ka_term_empty.
-Global Existing Instance ka_term_union.
+Global Existing Instance ka_term_bottom.
+Global Existing Instance ka_term_join.
 Global Existing Instance ka_term_mul.
 Global Existing Instance ka_term_star.
 
@@ -491,30 +530,30 @@ Inductive ka_eq : Equiv (ka_term T) :=
 
   | ka_unit_proper : Proper ((≡) ==> (≡)) (@Unit T)
   | ka_mul_proper : Proper ((≡) ==> (≡) ==> (≡)) (⋅)
-  | ka_union_proper :  Proper ((≡) ==> (≡) ==> (≡)) (∪)
+  | ka_join_proper :  Proper ((≡) ==> (≡) ==> (≡)) (⊔)
   | ka_star_proper : Proper ((≡) ==> (≡)) star
 
   | ka_mul_assoc : Assoc (≡) (⋅)
   | ka_mul_left_id : LeftId (≡) 1 (⋅)
   | ka_mul_right_id : RightId (≡) 1 (⋅)
 
-  | ka_union_assoc : Assoc (≡) (∪)
-  | ka_union_comm : Comm (≡) (∪)
-  | ka_union_left_id : LeftId (≡) ∅ (∪)
-  | ka_union_idemp e : e ∪ e ≡ e
+  | ka_join_assoc : Assoc (≡) (⊔)
+  | ka_join_comm : Comm (≡) (⊔)
+  | ka_join_left_id : LeftId (≡) ⊥ (⊔)
+  | ka_join_idemp : IdemP (≡) (⊔)
 
-  | ka_mul_left_zero : ∀ e, ∅ ⋅ e ≡ ∅
-  | ka_mul_right_zero : ∀ e, e ⋅ ∅ ≡ ∅
+  | ka_mul_left_absorb : LeftAbsorb (≡) ⊥ (⋅)
+  | ka_mul_right_absorb : RightAbsorb (≡) ⊥ (⋅)
 
-  | ka_mul_union_left e1 e2 e3 : e1 ⋅ (e2 ∪ e3) ≡ e1 ⋅ e2 ∪ e1 ⋅ e3
-  | ka_mul_union_right e1 e2 e3 : (e1 ∪ e2) ⋅ e3 ≡ e1 ⋅ e3 ∪ e2 ⋅ e3
+  | ka_mul_join_right e1 e2 e3 : e1 ⋅ (e2 ⊔ e3) ≡ e1 ⋅ e2 ⊔ e1 ⋅ e3
+  | ka_mul_join_left e1 e2 e3 : (e1 ⊔ e2) ⋅ e3 ≡ e1 ⋅ e3 ⊔ e2 ⋅ e3
 
-  | ka_star_unfold t : star t ≡ 1 ∪ (t ⋅ (star t)).
+  | ka_star_unfold t : star t ≡ 1 ⊔ (t ⋅ (star t)).
 
 Global Existing Instance ka_eq.
 Global Existing Instance ka_unit_proper.
 
-Instance ka_eq_equivalence : Equivalence ((≡) : relation (ka_term T)).
+Instance ka_eq_equivalence : Equivalence (≡@{ka_term T}).
 Proof.
 constructor.
 - apply ka_eq_refl.
@@ -537,23 +576,26 @@ constructor.
 - apply ka_mul_proper.
 Qed.
 
+Global Instance ka_term_sqsubseteq : SqSubsetEq (ka_term T) :=
+  default_sqsubseteq.
+
 Lemma ka_term_semi_lattice_mixin : SemiLatticeMixin (ka_term T).
 Proof.
-constructor.
-- apply ka_union_assoc.
-- apply ka_union_comm.
-- apply ka_union_left_id.
-- apply ka_union_idemp.
-- apply ka_union_proper.
+apply default_semi_lattice_mixin.
+- apply ka_join_assoc.
+- apply ka_join_comm.
+- apply ka_join_left_id.
+- apply ka_join_idemp.
+- apply ka_join_proper.
 Qed.
 
 Lemma ka_term_pre_ka_mixin : PreKAMixin (ka_term T).
 Proof.
 constructor.
-- by move=> *; rewrite ka_mul_union_left.
-- by move=> *; rewrite ka_mul_union_right.
-- apply ka_mul_left_zero.
-- apply ka_mul_right_zero.
+- by move=> *; rewrite ka_mul_join_right.
+- by move=> *; rewrite ka_mul_join_left.
+- apply ka_mul_left_absorb.
+- apply ka_mul_right_absorb.
 - apply ka_star_unfold.
 - apply ka_star_proper.
 Qed.
@@ -564,12 +606,12 @@ Canonical Structure ka_term_monoid :=
     ka_term_monoid_mixin.
 
 Canonical Structure ka_term_semi_lattice :=
-  @SemiLattice' (ka_term T) _ _ _
+  @SemiLattice' (ka_term T) _ _ _ _
     ka_term_setoid_mixin
     ka_term_semi_lattice_mixin.
 
 Canonical Structure ka_term_pre_ka :=
-  @PreKA' (ka_term T) _ _ _ _ _ _
+  @PreKA' (ka_term T) _ _ _ _ _ _ _
     ka_term_setoid_mixin
     ka_term_monoid_mixin
     ka_term_semi_lattice_mixin
@@ -588,8 +630,8 @@ Class PreKAMorphism (T S : pre_ka) (f : T → S) := {
   pre_ka_morphism_proper :: Proper ((≡) ==> (≡)) f;
   pre_ka_morphism_one : f 1 ≡ 1;
   pre_ka_morphism_mul : ∀ x y, f (x ⋅ y) ≡ f x ⋅ f y;
-  pre_ka_morphism_empty : f ∅ ≡ ∅;
-  pre_ka_morphism_union : ∀ x y, f (x ∪ y) ≡ f x ∪ f y;
+  pre_ka_morphism_bottom : f ⊥ ≡ ⊥;
+  pre_ka_morphism_join : ∀ x y, f (x ⊔ y) ≡ f x ⊔ f y;
   pre_ka_morphism_star : ∀ x, f (star x) ≡ star (f x);
 }.
 
@@ -612,8 +654,8 @@ End PreKAMorphismTheory.
 Fixpoint ka_term_elim (T : Type) (S : pre_ka) (f : T → S) (e : ka_term T) : S :=
   match e with
   | Unit x => f x
-  | ka_term_empty _ => ∅
-  | ka_term_union e1 e2 => ka_term_elim f e1 ∪ ka_term_elim f e2
+  | ka_term_bottom _ => ⊥
+  | ka_term_join e1 e2 => ka_term_elim f e1 ⊔ ka_term_elim f e2
   | ka_term_mul e1 e2 => ka_term_elim f e1 ⋅ ka_term_elim f e2
   | ka_term_star e => star (ka_term_elim f e)
   end.
@@ -641,8 +683,8 @@ constructor=> //=.
   + by move=> ??; rewrite comm.
   + by move=> ?; rewrite left_id.
   + by move=> ?; rewrite semi_lattice_idemp.
-  + by move=> ?; rewrite pre_ka_left_empty.
-  + by move=> ?; rewrite pre_ka_right_empty.
+  + by move=> ?; rewrite left_absorb.
+  + by move=> ?; rewrite right_absorb.
   + by move=> ???; rewrite pre_ka_right_dist.
   + by move=> ???; rewrite pre_ka_left_dist.
   + by move=> ?; rewrite monoid_morphism_one {1}pre_ka_star_unfold.
@@ -727,25 +769,31 @@ Canonical Structure lang_monoid :=
            lang_setoid_mixin
            lang_monoid_mixin.
 
-Global Program Instance lang_empty : Empty lang :=
+Global Program Instance lang_bottom : Bottom lang :=
   {| lang_car := λ x, False |}.
 
-Global Program Instance lang_union : Union lang := λ A B,
+Global Program Instance lang_join : Join lang := λ A B,
   {| lang_car := λ x, A x ∨ B x |}.
 Next Obligation. by move=> A B x y ->. Qed.
 
+Global Instance lang_sqsubseteq : SqSubsetEq lang := λ A B,
+  ∀ x, A x → B x.
+
 Lemma lang_semi_lattice_mixin : SemiLatticeMixin lang.
 Proof.
-rewrite /lang_union /lang_empty; constructor.
+rewrite /lang_bottom /lang_join /lang_sqsubseteq; constructor.
 - by move=> A B C x; rewrite /union /= assoc.
 - by move=> A B x; rewrite /union /= [_ ∨ _]comm.
 - by move=> A x; rewrite /union /empty /= left_id.
 - move=> A x; rewrite /union /=; tauto.
 - by move=> A1 A2 eA B1 B2 eB x; rewrite /union /= eA eB.
+- move=> A B; split.
+  + by move=> AB x /=; firstorder.
+  + by move=> AB x Ax; rewrite -(AB x); left.
 Qed.
 
 Canonical Structure lang_semi_lattice :=
-  @SemiLattice' lang _ _ _
+  @SemiLattice' lang _ _ _ _
                 lang_setoid_mixin
                 lang_semi_lattice_mixin.
 
@@ -755,7 +803,7 @@ Next Obligation. solve_proper. Qed.
 
 Lemma lang_pre_ka_mixin : PreKAMixin lang.
 Proof.
-rewrite /lang_empty /lang_one /lang_union /lang_mul /lang_star.
+rewrite /lang_bottom /lang_one /lang_join /lang_mul /lang_star.
 constructor; rewrite /union /empty /mul /one /star /=.
 - by move=> A B C x /=; firstorder.
 - by move=> A B C x /=; firstorder.
@@ -771,18 +819,11 @@ constructor; rewrite /union /empty /mul /one /star /=.
 Qed.
 
 Canonical Structure lang_pre_ka :=
-  @PreKA' lang _ _ _ _ _ _
+  @PreKA' lang _ _ _ _ _ _ _
           lang_setoid_mixin
           lang_monoid_mixin
           lang_semi_lattice_mixin
           lang_pre_ka_mixin.
-
-Lemma lang_subseteq_alt A B : A ⊆ B ↔ ∀ x, A x → B x.
-Proof.
-split.
-- by move=> AB x Ax; rewrite -(AB x); left.
-- by move=> AB x /=; firstorder.
-Qed.
 
 Program Definition lang_sing (x : T) : lang :=
   {| lang_car := λ y, y ≡ x |}.
@@ -808,17 +849,17 @@ Proof. rewrite /l. apply _. Qed.
 Global Instance l_semi_lattice_morphism : SemiLatticeMorphism l.
 Proof. apply _. Qed.
 
-Lemma l_alt e x : l e x ↔ Unit x ⊆ e.
+Lemma l_alt e x : l e x ↔ Unit x ⊑ e.
 Proof.
 split; last first.
-  move=> x_e; have: l (Unit x) ⊆ l e.
+  move=> x_e; have: l (Unit x) ⊑ l e.
     by apply: semi_lattice_morphism_subseteq_proper.
-  by move=> /lang_subseteq_alt/(_ x); apply => /=.
+  by move=> /(_ x); apply => /=.
 elim: e => //= [y|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e IH] in x *.
 - by move=> ->.
 - case=> [/IH1 IH|/IH2 IH]; apply (transitivity IH).
-  + exact: subseteq_union_left.
-  + exact: subseteq_union_right.
+  + exact: sqsubseteq_join_left.
+  + exact: sqsubseteq_join_right.
 - case=> x1 [] x2 [] ex [] /IH1 e1x1 /IH2 e2x2.
   rewrite ex monoid_morphism_mul; exact: pre_ka_mul_mono.
 - case=> n; elim: n => /= [|n IHn] in x *.
@@ -827,7 +868,6 @@ elim: e => //= [y|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e IH] in x *.
   apply: (transitivity _ (pre_ka_mul_star e)).
   by apply: pre_ka_mul_mono.
 Qed.
-
 
 End Languages.
 
