@@ -15,6 +15,9 @@ Unset Printing Implicit Defensive.
 
 Declare Scope ka_scope.
 Delimit Scope ka_scope with ka.
+Open Scope ka_scope.
+
+(** Setoids *)
 
 Record SetoidMixin T `{!Equiv T} := {
   setoid_equivalence : Equivalence (@equiv T _);
@@ -32,134 +35,6 @@ Global Arguments setoid_mixin : simpl never.
 (* FIXME(Coq #6294) : we need the new unification algorithm here. *)
 Global Hint Extern 0 (Equiv _) =>
   refine (@setoid_equiv _); shelve : typeclass_instances.
-
-Class Mul T := mul : T -> T -> T.
-Global Hint Mode Mul ! : typeclass_instances.
-Global Instance: Params (@mul) 2 := {}.
-Infix "⋅" := mul (at level 40, left associativity) : ka_scope.
-Notation "(⋅)" := mul (only parsing) : ka_scope.
-
-Class One T := one : T.
-Global Hint Mode One ! : typeclass_instances.
-Notation "1" := one : ka_scope.
-
-Open Scope ka_scope.
-
-Record MulMonoidMixin T `{!Equiv T, Mul T, One T} := {
-  mixin_mul_monoid_assoc : Assoc (≡) ((⋅) : T → T → T);
-  mixin_mul_monoid_left_id : LeftId (≡) (1 : T) (⋅);
-  mixin_mul_monoid_right_id : RightId (≡) (1 : T) (⋅);
-  mixin_mul_monoid_proper : Proper ((≡) ==> (≡) ==> (≡)) (@mul T _);
-}.
-Arguments MulMonoidMixin T {_ _ _}.
-
-Structure mul_monoid : Type := MulMonoid' {
-  mul_monoid_car :> Type;
-  mul_monoid_equiv : Equiv mul_monoid_car;
-  mul_monoid_mul : Mul mul_monoid_car;
-  mul_monoid_one : One mul_monoid_car;
-  mul_monoid_setoid_mixin : SetoidMixin mul_monoid_car;
-  mul_monoid_mixin : MulMonoidMixin mul_monoid_car;
-}.
-
-Global Arguments mul_monoid_car : simpl never.
-Global Arguments mul_monoid_equiv : simpl never.
-Global Arguments mul_monoid_mul : simpl never.
-Global Arguments mul_monoid_one : simpl never.
-Global Arguments mul_monoid_setoid_mixin : simpl never.
-Global Arguments mul_monoid_mixin : simpl never.
-(* FIXME(Coq #6294) : we need the new unification algorithm here. *)
-Global Hint Extern 0 (Mul _) =>
-  refine (@mul_monoid_mul _); shelve : typeclass_instances.
-Global Hint Extern 0 (One _) =>
-  refine (@mul_monoid_one _); shelve : typeclass_instances.
-Coercion mul_monoid_setoid (T : mul_monoid) :=
-  @Setoid T (≡) (mul_monoid_setoid_mixin T).
-Canonical Structure mul_monoid_setoid.
-
-Record AddMonoidMixin T `{!Equiv T, Union T, Empty T} := {
-  mixin_add_monoid_assoc : Assoc (≡) ((∪) : T → T → T);
-  mixin_add_monoid_comm : Comm (≡) ((∪) : T → _);
-  mixin_add_monoid_left_id : LeftId (≡) (∅ : T) (∪);
-  mixin_add_monoid_idemp : ∀ x : T, x ∪ x ≡ x;
-  mixin_add_monoid_proper : Proper ((≡) ==> (≡) ==> (≡)) (@union T _);
-}.
-Arguments AddMonoidMixin T {_ _ _}.
-
-Structure add_monoid : Type := AddMonoid' {
-  add_monoid_car :> Type;
-  add_monoid_equiv : Equiv add_monoid_car;
-  add_monoid_union : Union add_monoid_car;
-  add_monoid_empty : Empty add_monoid_car;
-  add_monoid_setoid_mixin : SetoidMixin add_monoid_car;
-  add_monoid_mixin : AddMonoidMixin add_monoid_car;
-}.
-Global Arguments add_monoid_car : simpl never.
-Global Arguments add_monoid_equiv : simpl never.
-Global Arguments add_monoid_union : simpl never.
-Global Arguments add_monoid_empty : simpl never.
-Global Arguments add_monoid_setoid_mixin : simpl never.
-Global Arguments add_monoid_mixin : simpl never.
-(* FIXME(Coq #6294) : we need the new unification algorithm here. *)
-Global Hint Extern 0 (Union _) =>
-  refine (@add_monoid_union _); shelve : typeclass_instances.
-Global Hint Extern 0 (Empty _) =>
-  refine (@add_monoid_empty _); shelve : typeclass_instances.
-Coercion add_monoid_setoid (T : add_monoid) :=
-  @Setoid T (≡) (add_monoid_setoid_mixin T).
-Canonical Structure add_monoid_setoid.
-
-Class Star T := star : T → T.
-Global Hint Mode Star ! : typeclass_instances.
-Global Instance: Params (@star) 1 := {}.
-
-Record PreKAMixin T
-    `{!Equiv T, Union T, Empty T, Mul T, One T, Star T} := {
-  pre_ka_left_dist : ∀ x y z : T, x ⋅ (y ∪ z) ≡ x ⋅ y ∪ x ⋅ z;
-  pre_ka_right_dist : ∀ x y z : T, (y ∪ z) ⋅ x ≡ y ⋅ x ∪ z ⋅ x;
-  pre_ka_left_empty : ∀ x : T, ∅ ⋅ x ≡ ∅;
-  pre_ka_right_empty : ∀ x : T, x ⋅ ∅ ≡ ∅;
-  pre_ka_star_unfold : ∀ x : T, star x ≡ 1 ∪ x ⋅ star x;
-  pre_ka_star_proper : Proper ((≡) ==> (≡)) (@star T _);
-}.
-Arguments PreKAMixin T {_ _ _ _ _ _}.
-
-Structure pre_ka : Type := PreKA' {
-  pre_ka_car :> Type;
-  pre_ka_equiv : Equiv pre_ka_car;
-  pre_ka_union : Union pre_ka_car;
-  pre_ka_empty : Empty pre_ka_car;
-  pre_ka_mul : Mul pre_ka_car;
-  pre_ka_one : One pre_ka_car;
-  pre_ka_star : Star pre_ka_car;
-  pre_ka_setoid_mixin : SetoidMixin pre_ka_car;
-  pre_ka_mul_monoid_mixin : MulMonoidMixin pre_ka_car;
-  pre_ka_add_monoid_mixin : AddMonoidMixin pre_ka_car;
-  pre_ka_mixin : PreKAMixin pre_ka_car;
-}.
-Global Arguments pre_ka_car : simpl never.
-Global Arguments pre_ka_equiv : simpl never.
-Global Arguments pre_ka_union : simpl never.
-Global Arguments pre_ka_empty : simpl never.
-Global Arguments pre_ka_mul : simpl never.
-Global Arguments pre_ka_one : simpl never.
-Global Arguments pre_ka_star : simpl never.
-Global Arguments pre_ka_setoid_mixin : simpl never.
-Global Arguments pre_ka_mul_monoid_mixin : simpl never.
-Global Arguments pre_ka_add_monoid_mixin : simpl never.
-Global Arguments pre_ka_mixin : simpl never.
-(* FIXME(Coq #6294) : we need the new unification algorithm here. *)
-Global Hint Extern 0 (Star _) =>
-  refine (@pre_ka_star _); shelve : typeclass_instances.
-Coercion pre_ka_setoid (T : pre_ka) :=
-  @Setoid T (≡) (pre_ka_setoid_mixin T).
-Coercion pre_ka_mul_monoid (T : pre_ka) :=
-  @MulMonoid' T _ _ _ (pre_ka_setoid_mixin T) (pre_ka_mul_monoid_mixin T).
-Coercion pre_ka_add_monoid (T : pre_ka) :=
-  @AddMonoid' T _ _ _ (pre_ka_setoid_mixin T) (pre_ka_add_monoid_mixin T).
-Canonical Structure pre_ka_setoid.
-Canonical Structure pre_ka_mul_monoid.
-Canonical Structure pre_ka_add_monoid.
 
 Section SetoidTheory.
 
@@ -203,32 +78,105 @@ Canonical Structure prod_setoid :=
 
 End ProductSetoid.
 
-Section MulMonoidTheory.
+(** Monoids *)
 
-Variable T : mul_monoid.
+Class Mul T := mul : T -> T -> T.
+Global Hint Mode Mul ! : typeclass_instances.
+Global Instance: Params (@mul) 2 := {}.
+Infix "⋅" := mul (at level 40, left associativity) : ka_scope.
+Notation "(⋅)" := mul (only parsing) : ka_scope.
 
-Global Instance mul_monoid_assoc : Assoc (≡) ((⋅) : T → T → T).
-Proof. exact: (mixin_mul_monoid_assoc (mul_monoid_mixin T)). Defined.
+Class One T := one : T.
+Global Hint Mode One ! : typeclass_instances.
+Notation "1" := one : ka_scope.
 
-Global Instance mul_monoid_left_id : LeftId (≡) (1 : T) (⋅).
-Proof. exact: (mixin_mul_monoid_left_id (mul_monoid_mixin T)). Defined.
+Record MonoidMixin T `{!Equiv T, Mul T, One T} := {
+  mixin_monoid_assoc : Assoc (≡) ((⋅) : T → T → T);
+  mixin_monoid_left_id : LeftId (≡) (1 : T) (⋅);
+  mixin_monoid_right_id : RightId (≡) (1 : T) (⋅);
+  mixin_monoid_proper : Proper ((≡) ==> (≡) ==> (≡)) (@mul T _);
+}.
+Arguments MonoidMixin T {_ _ _}.
 
-Global Instance mul_monoid_right_id : RightId (≡) (1 : T) (⋅).
-Proof. exact: (mixin_mul_monoid_right_id (mul_monoid_mixin T)). Defined.
+Structure monoid : Type := Monoid' {
+  monoid_car :> Type;
+  monoid_equiv : Equiv monoid_car;
+  monoid_mul : Mul monoid_car;
+  monoid_one : One monoid_car;
+  monoid_setoid_mixin : SetoidMixin monoid_car;
+  monoid_mixin : MonoidMixin monoid_car;
+}.
 
-Global Instance mul_monoid_proper : Proper ((≡) ==> (≡) ==> (≡)) (@mul T _).
-Proof. exact: (mixin_mul_monoid_proper (mul_monoid_mixin T)). Defined.
+Global Arguments monoid_car : simpl never.
+Global Arguments monoid_equiv : simpl never.
+Global Arguments monoid_mul : simpl never.
+Global Arguments monoid_one : simpl never.
+Global Arguments monoid_setoid_mixin : simpl never.
+Global Arguments monoid_mixin : simpl never.
+(* FIXME(Coq #6294) : we need the new unification algorithm here. *)
+Global Hint Extern 0 (Mul _) =>
+  refine (@monoid_mul _); shelve : typeclass_instances.
+Global Hint Extern 0 (One _) =>
+  refine (@monoid_one _); shelve : typeclass_instances.
+Coercion monoid_setoid (T : monoid) :=
+  @Setoid T (≡) (monoid_setoid_mixin T).
+Canonical Structure monoid_setoid.
 
-End MulMonoidTheory.
+Section MonoidTheory.
 
-Section ListMulMonoid.
+Variable T : monoid.
+
+Implicit Types x y z : T.
+
+Global Instance monoid_assoc : Assoc (≡) ((⋅) : T → T → T).
+Proof. exact: (mixin_monoid_assoc (monoid_mixin T)). Defined.
+
+Global Instance monoid_left_id : LeftId (≡) (1 : T) (⋅).
+Proof. exact: (mixin_monoid_left_id (monoid_mixin T)). Defined.
+
+Global Instance monoid_right_id : RightId (≡) (1 : T) (⋅).
+Proof. exact: (mixin_monoid_right_id (monoid_mixin T)). Defined.
+
+Global Instance monoid_proper : Proper ((≡) ==> (≡) ==> (≡)) (@mul T _).
+Proof. exact: (mixin_monoid_proper (monoid_mixin T)). Defined.
+
+Definition power x n : T :=
+  Nat.iter n (mul x) 1.
+
+Local Notation "x ^ n" := (power x n) : ka_scope.
+
+Global Instance power_proper : Proper ((≡) ==> (=) ==> (≡)) power.
+Proof.
+move=> x y e n _ <-.
+by elim: n => // n IH /=; rewrite IH e.
+Qed.
+
+Lemma power_add x n m : x ^ (n + m) ≡ (x ^ n) ⋅ (x ^ m).
+Proof.
+by elim: n => [|n IH] /=; rewrite ?left_id // IH assoc.
+Qed.
+
+Lemma power_one x : x ^ 1 ≡ x.
+Proof. by rewrite /= right_id. Qed.
+
+End MonoidTheory.
+
+Notation "x ^ n" := (power x n) : ka_scope.
+
+Class MonoidMorphism (T S : monoid) (f : T → S) := {
+  monoid_morphism_proper :: Proper ((≡) ==> (≡)) f;
+  monoid_morphism_one : f 1 ≡ 1;
+  monoid_morphism_mul : ∀ x y, f (x ⋅ y) ≡ f x ⋅ f y;
+}.
+
+Section ListMonoid.
 
 Variable T : setoid.
 
 Global Instance list_one : One (list T) := [].
 Global Instance list_mul : Mul (list T) := @app T.
 
-Lemma list_mul_monoid_mixin : MulMonoidMixin (list T).
+Lemma list_monoid_mixin : MonoidMixin (list T).
 Proof.
 constructor.
 - move=> l1 l2 l3 /=; by rewrite assoc.
@@ -237,21 +185,21 @@ constructor.
 - apply _.
 Qed.
 
-Canonical Structure list_mul_monoid :=
-  @MulMonoid' (list T) _ _ _
-              (list_setoid_mixin T)
-              list_mul_monoid_mixin.
+Canonical Structure list_monoid :=
+  @Monoid' (list T) _ _ _
+           (list_setoid_mixin T)
+           list_monoid_mixin.
 
-End ListMulMonoid.
+End ListMonoid.
 
-Section ProdMulMonoid.
+Section ProdMonoid.
 
-Variables T S : mul_monoid.
+Variables T S : monoid.
 
 Global Instance prod_one : One (T * S) := (1, 1).
 Global Instance prod_mul : Mul (T * S) := λ x y, (x.1 ⋅ y.1, x.2 ⋅ y.2).
 
-Lemma prod_mul_monoid_mixin : MulMonoidMixin (T * S).
+Lemma prod_monoid_mixin : MonoidMixin (T * S).
 Proof.
 constructor.
 - by case=> [x1 x2] [y1 y2] [z1 z2]; split; rewrite /= assoc.
@@ -262,16 +210,255 @@ constructor.
   by split; rewrite /= ?ex1 ?ey1 // ex2 ey2.
 Qed.
 
-Canonical Structure prod_mul_monoid :=
-  @MulMonoid' (T * S) _ _ _
-              (prod_setoid_mixin T S)
-              prod_mul_monoid_mixin.
+Canonical Structure prod_monoid :=
+  @Monoid' (T * S) _ _ _
+           (prod_setoid_mixin T S)
+           prod_monoid_mixin.
 
-End ProdMulMonoid.
+End ProdMonoid.
 
-(* ------- ------- *)
-(* ------- Pre-Kleene Algebra Specs ------- *)
-(* ------- ------- *)
+(** Semi Lattices *)
+
+Record SemiLatticeMixin T `{!Equiv T, Union T, Empty T} := {
+  mixin_semi_lattice_assoc : Assoc (≡) ((∪) : T → T → T);
+  mixin_semi_lattice_comm : Comm (≡) ((∪) : T → _);
+  mixin_semi_lattice_left_id : LeftId (≡) (∅ : T) (∪);
+  mixin_semi_lattice_idemp : ∀ x : T, x ∪ x ≡ x;
+  mixin_semi_lattice_proper : Proper ((≡) ==> (≡) ==> (≡)) (@union T _);
+}.
+Arguments SemiLatticeMixin T {_ _ _}.
+
+Structure semi_lattice : Type := SemiLattice' {
+  semi_lattice_car :> Type;
+  semi_lattice_equiv : Equiv semi_lattice_car;
+  semi_lattice_union : Union semi_lattice_car;
+  semi_lattice_empty : Empty semi_lattice_car;
+  semi_lattice_setoid_mixin : SetoidMixin semi_lattice_car;
+  semi_lattice_mixin : SemiLatticeMixin semi_lattice_car;
+}.
+Global Arguments semi_lattice_car : simpl never.
+Global Arguments semi_lattice_equiv : simpl never.
+Global Arguments semi_lattice_union : simpl never.
+Global Arguments semi_lattice_empty : simpl never.
+Global Arguments semi_lattice_setoid_mixin : simpl never.
+Global Arguments semi_lattice_mixin : simpl never.
+(* FIXME(Coq #6294) : we need the new unification algorithm here. *)
+Global Hint Extern 0 (Union _) =>
+  refine (@semi_lattice_union _); shelve : typeclass_instances.
+Global Hint Extern 0 (Empty _) =>
+  refine (@semi_lattice_empty _); shelve : typeclass_instances.
+Coercion semi_lattice_setoid (T : semi_lattice) :=
+  @Setoid T (≡) (semi_lattice_setoid_mixin T).
+Canonical Structure semi_lattice_setoid.
+
+Section SemiLatticeTheory.
+
+Variables T : semi_lattice.
+
+Implicit Types x y z : T.
+
+Global Instance semi_lattice_assoc : Assoc (≡) (@union T _).
+Proof. exact: (mixin_semi_lattice_assoc (semi_lattice_mixin T)). Defined.
+
+Global Instance semi_lattice_comm : Comm (≡) (@union T _).
+Proof. exact: (mixin_semi_lattice_comm (semi_lattice_mixin T)). Defined.
+
+Global Instance semi_lattice_left_id : LeftId (≡) (@empty T _) (∪).
+Proof. exact: (mixin_semi_lattice_left_id (semi_lattice_mixin T)). Defined.
+
+Lemma semi_lattice_idemp (x : T) : x ∪ x ≡ x.
+Proof. exact: (mixin_semi_lattice_idemp (semi_lattice_mixin T)). Defined.
+
+Global Instance semi_lattice_proper :
+  Proper ((≡) ==> (≡) ==> (≡)) (@union T _).
+Proof. exact: (mixin_semi_lattice_proper (semi_lattice_mixin T)). Defined.
+
+Global Instance semi_lattice_right_id : RightId (≡) (@empty T _) (∪).
+Proof. by move=> x; rewrite comm left_id. Qed.
+
+Global Instance semi_lattice_subseteq : SubsetEq T :=
+  λ x y, x ∪ y ≡ y.
+
+Global Instance semi_lattice_subseteq_proper :
+  Proper ((≡) ==> (≡) ==> iff) (@subseteq T _).
+Proof.
+move=> x1 x2 ex y1 y2 ey; rewrite /subseteq /semi_lattice_subseteq.
+by rewrite ex ey.
+Qed.
+
+Global Instance semi_lattice_subseteq_refl : Reflexive (@subseteq T _).
+Proof. move=> x; exact: semi_lattice_idemp. Qed.
+
+Global Instance semi_lattice_subseteq_trans : Transitive (@subseteq T _).
+Proof.
+rewrite /subseteq /semi_lattice_subseteq => x y z e1 e2.
+by rewrite -{1}e2 assoc e1.
+Qed.
+
+Global Instance semi_lattice_subseteq_antisym :
+  Antisymmetric T (≡) (@subseteq T _).
+Proof.
+rewrite /subseteq /semi_lattice_subseteq => x y e1 e2.
+by rewrite -e1 -{1}e2 comm.
+Qed.
+
+Lemma union_subseteq x y z : x ∪ y ⊆ z ↔ x ⊆ z ∧ y ⊆ z.
+Proof.
+rewrite /subseteq /semi_lattice_subseteq; split; last first.
+  by case=> ez1 ez2; rewrite -assoc ez2.
+move=> ez; split; rewrite -{1}ez.
+- by rewrite !assoc semi_lattice_idemp.
+- by rewrite !assoc [y ∪ x]comm -[x ∪ y ∪ y]assoc semi_lattice_idemp.
+Qed.
+
+Lemma subseteq_union_left x y : x ⊆ x ∪ y.
+Proof.
+have: x ∪ y ⊆ x ∪ y by [].
+by rewrite union_subseteq; case.
+Qed.
+
+Lemma subseteq_union_right x y : y ⊆ x ∪ y.
+Proof.
+have: x ∪ y ⊆ x ∪ y by [].
+by rewrite union_subseteq; case.
+Qed.
+
+Lemma empty_subseteq x : ∅ ⊆ x.
+Proof. exact: semi_lattice_left_id. Qed.
+
+Lemma union_list_subseteq (xs : list T) y :
+  ⋃ xs ⊆ y ↔ ∀ x, x ∈ xs → x ⊆ y.
+Proof.
+elim: xs => [|x xs IH] /=; split.
+- by move=> _ ?; rewrite elem_of_nil.
+- move=> _; exact: empty_subseteq.
+- rewrite union_subseteq; case=> xy /IH xsy x'.
+  by rewrite elem_of_cons; case=> [->|]; eauto.
+- rewrite union_subseteq IH => xsy; split.
+  + by apply xsy; rewrite elem_of_cons; eauto.
+  + by move=> x' x'_xs; apply xsy; rewrite elem_of_cons; eauto.
+Qed.
+
+End SemiLatticeTheory.
+
+Class SemiLatticeMorphism (T S : semi_lattice) (f : T → S) := {
+  semi_lattice_morphism_proper :: Proper ((≡) ==> (≡)) f;
+  semi_lattice_morphism_empty : f ∅ ≡ ∅;
+  semi_lattice_morphism_union : ∀ x y, f (x ∪ y) ≡ f x ∪ f y;
+}.
+
+Section SemiLatticeMorphismTheory.
+
+Variables (T S : semi_lattice) (f : T → S).
+
+Context `{SemiLatticeMorphism T S f}.
+
+Global Instance semi_lattice_morphism_subseteq_proper : Proper ((⊆) ==> (⊆)) f.
+Proof.
+move=> x y; rewrite /subseteq /semi_lattice_subseteq => {2}<-.
+by rewrite semi_lattice_morphism_union.
+Qed.
+
+End SemiLatticeMorphismTheory.
+
+(** Pre Kleene Algebras *)
+
+Class Star T := star : T → T.
+Global Hint Mode Star ! : typeclass_instances.
+Global Instance: Params (@star) 1 := {}.
+
+Record PreKAMixin T
+    `{!Equiv T, Union T, Empty T, Mul T, One T, Star T} := {
+  mixin_pre_ka_right_dist : ∀ x y z : T, x ⋅ (y ∪ z) ≡ x ⋅ y ∪ x ⋅ z;
+  mixin_pre_ka_left_dist : ∀ x y z : T, (y ∪ z) ⋅ x ≡ y ⋅ x ∪ z ⋅ x;
+  mixin_pre_ka_left_empty : ∀ x : T, ∅ ⋅ x ≡ ∅;
+  mixin_pre_ka_right_empty : ∀ x : T, x ⋅ ∅ ≡ ∅;
+  mixin_pre_ka_star_unfold : ∀ x : T, star x ≡ 1 ∪ x ⋅ star x;
+  mixin_pre_ka_star_proper : Proper ((≡) ==> (≡)) (@star T _);
+}.
+Arguments PreKAMixin T {_ _ _ _ _ _}.
+
+Structure pre_ka : Type := PreKA' {
+  pre_ka_car :> Type;
+  pre_ka_equiv : Equiv pre_ka_car;
+  pre_ka_union : Union pre_ka_car;
+  pre_ka_empty : Empty pre_ka_car;
+  pre_ka_mul : Mul pre_ka_car;
+  pre_ka_one : One pre_ka_car;
+  pre_ka_star : Star pre_ka_car;
+  pre_ka_setoid_mixin : SetoidMixin pre_ka_car;
+  pre_ka_monoid_mixin : MonoidMixin pre_ka_car;
+  pre_ka_semi_lattice_mixin : SemiLatticeMixin pre_ka_car;
+  pre_ka_mixin : PreKAMixin pre_ka_car;
+}.
+Global Arguments pre_ka_car : simpl never.
+Global Arguments pre_ka_equiv : simpl never.
+Global Arguments pre_ka_union : simpl never.
+Global Arguments pre_ka_empty : simpl never.
+Global Arguments pre_ka_mul : simpl never.
+Global Arguments pre_ka_one : simpl never.
+Global Arguments pre_ka_star : simpl never.
+Global Arguments pre_ka_setoid_mixin : simpl never.
+Global Arguments pre_ka_monoid_mixin : simpl never.
+Global Arguments pre_ka_semi_lattice_mixin : simpl never.
+Global Arguments pre_ka_mixin : simpl never.
+(* FIXME(Coq #6294) : we need the new unification algorithm here. *)
+Global Hint Extern 0 (Star _) =>
+  refine (@pre_ka_star _); shelve : typeclass_instances.
+Coercion pre_ka_setoid (T : pre_ka) :=
+  @Setoid T (≡) (pre_ka_setoid_mixin T).
+Coercion pre_ka_monoid (T : pre_ka) :=
+  @Monoid' T _ _ _ (pre_ka_setoid_mixin T) (pre_ka_monoid_mixin T).
+Coercion pre_ka_semi_lattice (T : pre_ka) :=
+  @SemiLattice' T _ _ _ (pre_ka_setoid_mixin T) (pre_ka_semi_lattice_mixin T).
+Canonical Structure pre_ka_setoid.
+Canonical Structure pre_ka_monoid.
+Canonical Structure pre_ka_semi_lattice.
+
+Section PreKATheory.
+
+Variable T : pre_ka.
+
+Implicit Types x y z : T.
+
+Lemma pre_ka_right_dist : ∀ x y z : T, x ⋅ (y ∪ z) ≡ x ⋅ y ∪ x ⋅ z.
+Proof. exact: (mixin_pre_ka_right_dist (pre_ka_mixin _)). Qed.
+
+Lemma pre_ka_left_dist : ∀ x y z : T, (y ∪ z) ⋅ x ≡ y ⋅ x ∪ z ⋅ x.
+Proof. exact: (mixin_pre_ka_left_dist (pre_ka_mixin _)). Qed.
+
+Lemma pre_ka_left_empty : ∀ x : T, ∅ ⋅ x ≡ ∅.
+Proof.  exact: (mixin_pre_ka_left_empty (pre_ka_mixin _)). Qed.
+
+Lemma pre_ka_right_empty : ∀ x : T, x ⋅ ∅ ≡ ∅.
+Proof. exact: (mixin_pre_ka_right_empty (pre_ka_mixin _)). Qed.
+
+Lemma pre_ka_star_unfold : ∀ x : T, star x ≡ 1 ∪ x ⋅ star x.
+Proof. exact: (mixin_pre_ka_star_unfold (pre_ka_mixin _)). Qed.
+
+Global Instance pre_ka_star_proper : Proper ((≡) ==> (≡)) (@star T _).
+Proof. exact: (mixin_pre_ka_star_proper (pre_ka_mixin _)). Qed.
+
+Lemma pre_ka_mul_mono x1 x2 y1 y2 : x1 ⊆ x2 → y1 ⊆ y2 → x1 ⋅ y1 ⊆ x2 ⋅ y2.
+Proof.
+rewrite /subseteq /semi_lattice_subseteq.
+move=> <- <-.
+by rewrite pre_ka_left_dist !pre_ka_right_dist !assoc semi_lattice_idemp.
+Qed.
+
+Lemma pre_ka_one_star x : 1 ⊆ star x.
+Proof.
+rewrite pre_ka_star_unfold.
+exact: subseteq_union_left.
+Qed.
+
+Lemma pre_ka_mul_star x : x ⋅ star x ⊆ star x.
+Proof.
+rewrite {2}pre_ka_star_unfold.
+exact: subseteq_union_right.
+Qed.
+
+End PreKATheory.
 
 Inductive ka_term (T : Type) : Type :=
   | Unit of T
@@ -290,7 +477,7 @@ Global Instance ka_term_one `{!One T} : One (ka_term T) :=
 
 Section KATermInstances.
 
-Variable T : mul_monoid.
+Variable T : monoid.
 
 Implicit Types x y z : T.
 Implicit Types e : ka_term T.
@@ -302,6 +489,7 @@ Inductive ka_eq : Equiv (ka_term T) :=
 
   | ka_mul_distr : ∀ x y : T, Unit (x ⋅ y) ≡ Unit x ⋅ Unit y
 
+  | ka_unit_proper : Proper ((≡) ==> (≡)) (@Unit T)
   | ka_mul_proper : Proper ((≡) ==> (≡) ==> (≡)) (⋅)
   | ka_union_proper :  Proper ((≡) ==> (≡) ==> (≡)) (∪)
   | ka_star_proper : Proper ((≡) ==> (≡)) star
@@ -324,6 +512,7 @@ Inductive ka_eq : Equiv (ka_term T) :=
   | ka_star_unfold t : star t ≡ 1 ∪ (t ⋅ (star t)).
 
 Global Existing Instance ka_eq.
+Global Existing Instance ka_unit_proper.
 
 Instance ka_eq_equivalence : Equivalence ((≡) : relation (ka_term T)).
 Proof.
@@ -339,7 +528,7 @@ Proof. constructor; apply _. Defined.
 Canonical Structure ka_term_setoid :=
   @Setoid (ka_term T) _ ka_term_setoid_mixin.
 
-Lemma ka_term_mul_monoid_mixin : MulMonoidMixin (ka_term T).
+Lemma ka_term_monoid_mixin : MonoidMixin (ka_term T).
 Proof.
 constructor.
 - apply ka_mul_assoc.
@@ -348,7 +537,7 @@ constructor.
 - apply ka_mul_proper.
 Qed.
 
-Lemma ka_term_add_monoid_mixin : AddMonoidMixin (ka_term T).
+Lemma ka_term_semi_lattice_mixin : SemiLatticeMixin (ka_term T).
 Proof.
 constructor.
 - apply ka_union_assoc.
@@ -369,113 +558,278 @@ constructor.
 - apply ka_star_proper.
 Qed.
 
-Canonical Structure ka_term_mul_monoid :=
-  @MulMonoid' (ka_term T) _ _ _
+Canonical Structure ka_term_monoid :=
+  @Monoid' (ka_term T) _ _ _
     ka_term_setoid_mixin
-    ka_term_mul_monoid_mixin.
+    ka_term_monoid_mixin.
 
-Canonical Structure ka_term_add_monoid :=
-  @AddMonoid' (ka_term T) _ _ _
+Canonical Structure ka_term_semi_lattice :=
+  @SemiLattice' (ka_term T) _ _ _
     ka_term_setoid_mixin
-    ka_term_add_monoid_mixin.
+    ka_term_semi_lattice_mixin.
 
 Canonical Structure ka_term_pre_ka :=
   @PreKA' (ka_term T) _ _ _ _ _ _
     ka_term_setoid_mixin
-    ka_term_mul_monoid_mixin
-    ka_term_add_monoid_mixin
+    ka_term_monoid_mixin
+    ka_term_semi_lattice_mixin
     ka_term_pre_ka_mixin.
+
+Global Instance pre_ka_unit_monoid_morphism : MonoidMorphism (@Unit T).
+Proof.
+constructor => //=.
+- apply _.
+- by move=> ??; rewrite ka_mul_distr.
+Qed.
 
 End KATermInstances.
 
-Bind Scope ka_scope with ka_term.
+Class PreKAMorphism (T S : pre_ka) (f : T → S) := {
+  pre_ka_morphism_proper :: Proper ((≡) ==> (≡)) f;
+  pre_ka_morphism_one : f 1 ≡ 1;
+  pre_ka_morphism_mul : ∀ x y, f (x ⋅ y) ≡ f x ⋅ f y;
+  pre_ka_morphism_empty : f ∅ ≡ ∅;
+  pre_ka_morphism_union : ∀ x y, f (x ∪ y) ≡ f x ∪ f y;
+  pre_ka_morphism_star : ∀ x, f (star x) ≡ star (f x);
+}.
 
-Fixpoint ka_power {T} (x : ka_term T) (n : nat) :=
-  match n with
-  | 0 => K_One
-  | S n => K_Dot x (ka_power x n)
+Section PreKAMorphismTheory.
+
+Variables (T S : pre_ka) (f : T → S).
+
+Context `{H : PreKAMorphism T S f}.
+
+Global Instance pre_ka_morphism_monoid_morphism :
+  MonoidMorphism f.
+Proof. by constructor; case: (H). Qed.
+
+Global Instance pre_ka_morphism_semi_lattice_morphism :
+  SemiLatticeMorphism f.
+Proof. by constructor; case: (H). Qed.
+
+End PreKAMorphismTheory.
+
+Fixpoint ka_term_elim (T : Type) (S : pre_ka) (f : T → S) (e : ka_term T) : S :=
+  match e with
+  | Unit x => f x
+  | ka_term_empty _ => ∅
+  | ka_term_union e1 e2 => ka_term_elim f e1 ∪ ka_term_elim f e2
+  | ka_term_mul e1 e2 => ka_term_elim f e1 ⋅ ka_term_elim f e2
+  | ka_term_star e => star (ka_term_elim f e)
   end.
-Notation "x ^ n" := (ka_power x n) : ka_scope.
 
-Notation "x + y" := (K_Plus x y) (at level 50, left associativity) : ka_scope.
-Notation "x ⋅ y" := (K_Dot x y) (at level 40, left associativity) : ka_scope.
-Notation "x ✶"   := (K_Star x) (at level 35) : ka_scope.
-Notation "1"     := (K_One) : ka_scope.
-Notation "0"     := (K_Zero) : ka_scope.
+Section KATermElim.
 
-Definition lr_term {T} (x : T) := K_Dot (L x) (R x).
+Variables (T : monoid) (S : pre_ka) (f : T → S).
+Context `{MonoidMorphism T S f}.
 
-(* TODO: come back to scoping here *)
-Notation "'lr' x" := (lr_term x) (at level 30, no associativity): ka_scope.
-
-(*Reserved Notation "e1 ≡ e2" (at level 80, no associativity).*)
-
-Open Scope ka_scope.
-
-Inductive ka_eq {T : Type} : Equiv (ka_term T) :=
-  | Ka_refl : Reflexive (@ka_eq T)
-  | Ka_sym : Symmetric (@ka_eq T)
-  | Ka_trans : Transitive (@ka_eq T)
-
-  | Ka_Plus : Proper ((≡) ==> (≡) ==> (≡)) K_Plus
-  | Ka_Dot : Proper ((≡) ==> (≡) ==> (≡)) K_Dot
-  | Ka_Star : Proper ((≡) ==> (≡)) K_Star
-
-  (* including the following to allow for commuting terms *)
-  | LR_Com x y : (L x)⋅(R y) ≡ (R y)⋅(L x)
-
-  | Dot_Id1 t : t ⋅ 1 ≡ t
-  | Dot_Id2 t : 1 ⋅ t ≡ t
-  | Dot_Z1  t : t ⋅ 0 ≡ 0
-  | Dot_Z2  t : 0 ⋅ t ≡ 0
-  | Dot_Assoc x y z : x ⋅ (y ⋅ z) ≡ (x ⋅ y) ⋅ z
-
-  | Plus_Id t : 0 + t ≡ t
-  | Plus_Com (x y : ka_term T) : x + y ≡ y + x
-  | Plus_Assoc x y z : x + (y + z) ≡ (x + y) + z
-  | Plus_Idemp x : x + x ≡ x
-
-  | Dist_L x y z : x ⋅ (y + z) ≡ x⋅y + x⋅z
-  | Dist_R x y z : (x + y) ⋅ z ≡ x⋅z + y⋅z
-
-  | Star t : t✶ ≡ 1 + (t ⋅ (t✶)).
-
-Notation "x ≢ y" := (not (x ≡ y)) (at level 80, no associativity).
-
-Global Existing Instance ka_eq.
-Global Existing Instance Ka_refl.
-Global Existing Instance Ka_sym.
-Global Existing Instance Ka_trans.
-Global Existing Instance Ka_Plus.
-Global Existing Instance Ka_Dot.
-Global Existing Instance Ka_Star.
-
-Lemma Ka_refl' {T} (t : ka_term T) : t ≡ t.
-Proof. reflexivity. Qed.
-
-Global Hint Resolve Ka_refl' : core.
-
-Lemma Plus_Id' : ∀ T (t : ka_term T), t + 0 ≡ t.
+Global Instance ka_term_elim_morphism :
+  PreKAMorphism (ka_term_elim f).
 Proof.
-  intros T t.
-  rewrite Plus_Com; rewrite Plus_Id.
-  reflexivity.
+constructor=> //=.
+- move=> e1 e2; elim: e1 e2 / => //=.
+  + by move=> e1 e2 e3 _ ->.
+  + by move=> ??; rewrite monoid_morphism_mul.
+  + by move=> ?? ->.
+  + by move=> e11 e12 _ IH1 e21 e22 _ IH2; rewrite IH1 IH2.
+  + by move=> e11 e12 _ IH1 e21 e22 _ IH2; rewrite IH1 IH2.
+  + by move=> e1 e2 _ ->.
+  + by move=> ???; rewrite assoc.
+  + by move=> ?; rewrite monoid_morphism_one left_id.
+  + by move=> ?; rewrite monoid_morphism_one right_id.
+  + by move=> ???; rewrite assoc.
+  + by move=> ??; rewrite comm.
+  + by move=> ?; rewrite left_id.
+  + by move=> ?; rewrite semi_lattice_idemp.
+  + by move=> ?; rewrite pre_ka_left_empty.
+  + by move=> ?; rewrite pre_ka_right_empty.
+  + by move=> ???; rewrite pre_ka_right_dist.
+  + by move=> ???; rewrite pre_ka_left_dist.
+  + by move=> ?; rewrite monoid_morphism_one {1}pre_ka_star_unfold.
+- by rewrite /= monoid_morphism_one.
 Qed.
 
-(*
-Lemma ka_neq_sym : ∀ T (x y : ka_term T), x ≢ y <-> y ≢ x.
+End KATermElim.
+
+Section Languages.
+
+Variable T : monoid.
+
+Implicit Types x y z : T.
+
+Record lang := Lang {
+  lang_car :> T → Prop;
+  lang_car_proper : Proper ((≡) ==> iff) lang_car;
+}.
+
+Implicit Types A B C : lang.
+
+Global Instance lang_equiv : Equiv lang := λ A B,
+  ∀ x : T, A x ↔ B x.
+
+Global Instance lang_equivalence : Equivalence (@equiv lang _).
 Proof.
-  intros T x y; split; intros H G; symmetry in G; apply H in G; assumption.
+split.
+- by move=> A x.
+- by move=> A B e x; rewrite (e x).
+- by move=> A B C e1 e2 x; rewrite (e1 x) (e2 x).
 Qed.
 
-(* QUEST: How to declare this to work with symmetry tactic? *)
-Hint Resolve ka_neq_sym : core.
-(* Global Existing Instance ka_neq_sym. *)
-*)
+Definition lang_setoid_mixin : SetoidMixin lang :=
+  {| setoid_equivalence := lang_equivalence |}.
 
-Definition ka_leq {T} (x y : ka_term T) : Prop := ((y + x) ≡ y)%ka.
-Notation "x ≤ y" := (ka_leq x y) : ka_scope.
+Canonical Structure lang_setoid :=
+  @Setoid lang _ lang_setoid_mixin.
 
+Global Instance lang_proper : Proper ((≡) ==> (≡) ==> iff) lang_car.
+Proof.
+move=> A B e1 x y e2.
+by rewrite (lang_car_proper _ e2) (e1 y).
+Qed.
+
+Global Program Instance lang_one : One lang :=
+  {| lang_car := λ x, x ≡ 1 |}.
+Next Obligation. by move=> x y ->. Qed.
+
+Global Program Instance lang_mul : Mul lang := λ A B,
+  {| lang_car := λ x, ∃ x1 x2, x ≡ x1 ⋅ x2 ∧ A x1 ∧ B x2 |}.
+Next Obligation.
+move=> A B x y e; split.
+- by case=> x1 [] x2 e'; exists x1, x2; rewrite -e.
+- by case=> x1 [] x2 e'; exists x1, x2; rewrite e.
+Qed.
+
+Lemma lang_monoid_mixin : MonoidMixin lang.
+Proof.
+constructor.
+- move=> A B C x; split; case=> x1 [] x2 [] ex [] H1 H2.
+  + case: H2=> x21 [] x22 [] ex2 [] H21 H22.
+    exists (x1 ⋅ x21), x22; rewrite -assoc -ex2; split => //.
+    split => //. exists x1, x21; eauto.
+  + case: H1=> x11 [] x12 [] ex1 [] H11 H12.
+    exists x11, (x12 ⋅ x2); rewrite [_ ⋅ _]assoc -ex1; split => //.
+    split => //. exists x12, x2; eauto.
+- move=> A x; split.
+  + by case=> x1 [] x2 [] -> [] ->; rewrite left_id.
+  + move=> ?; exists 1, x; rewrite left_id; do !split => //.
+    rewrite {1}/one /lang_one /=; reflexivity.
+- move=> A x; split.
+  + by case=> x1 [] x2 [] -> [] ? ->; rewrite right_id.
+  + move=> ?; exists x, 1; rewrite right_id; do !split => //.
+    rewrite {1}/one /lang_one /=; reflexivity.
+- move=> A1 A2 eA B1 B2 eB x; split; case=> x1 [] x2.
+  + by rewrite eA eB => H; exists x1, x2.
+  + by rewrite -eA -eB => H; exists x1, x2.
+Qed.
+
+Canonical Structure lang_monoid :=
+  @Monoid' lang _ _ _
+           lang_setoid_mixin
+           lang_monoid_mixin.
+
+Global Program Instance lang_empty : Empty lang :=
+  {| lang_car := λ x, False |}.
+
+Global Program Instance lang_union : Union lang := λ A B,
+  {| lang_car := λ x, A x ∨ B x |}.
+Next Obligation. by move=> A B x y ->. Qed.
+
+Lemma lang_semi_lattice_mixin : SemiLatticeMixin lang.
+Proof.
+rewrite /lang_union /lang_empty; constructor.
+- by move=> A B C x; rewrite /union /= assoc.
+- by move=> A B x; rewrite /union /= [_ ∨ _]comm.
+- by move=> A x; rewrite /union /empty /= left_id.
+- move=> A x; rewrite /union /=; tauto.
+- by move=> A1 A2 eA B1 B2 eB x; rewrite /union /= eA eB.
+Qed.
+
+Canonical Structure lang_semi_lattice :=
+  @SemiLattice' lang _ _ _
+                lang_setoid_mixin
+                lang_semi_lattice_mixin.
+
+Global Program Instance lang_star : Star lang := λ A,
+  {| lang_car := λ x, ∃ n, (A ^ n) x |}.
+Next Obligation. solve_proper. Qed.
+
+Lemma lang_pre_ka_mixin : PreKAMixin lang.
+Proof.
+rewrite /lang_empty /lang_one /lang_union /lang_mul /lang_star.
+constructor; rewrite /union /empty /mul /one /star /=.
+- by move=> A B C x /=; firstorder.
+- by move=> A B C x /=; firstorder.
+- by move=> A x /=; firstorder.
+- by move=> A x /=; firstorder.
+- move=> A x /=; split.
+  + case=> [] [|n] /= Ax; eauto.
+    case: Ax => x1 [] x2 [] ex [] Ax1 Ax2.
+    right; exists x1, x2. rewrite ex; eauto.
+  + case=> [ex|[] x1 [] x2 [] ex [] Ax1 [] n Ax2]; first by exists 0.
+    exists (S n); rewrite /=; firstorder.
+- solve_proper.
+Qed.
+
+Canonical Structure lang_pre_ka :=
+  @PreKA' lang _ _ _ _ _ _
+          lang_setoid_mixin
+          lang_monoid_mixin
+          lang_semi_lattice_mixin
+          lang_pre_ka_mixin.
+
+Lemma lang_subseteq_alt A B : A ⊆ B ↔ ∀ x, A x → B x.
+Proof.
+split.
+- by move=> AB x Ax; rewrite -(AB x); left.
+- by move=> AB x /=; firstorder.
+Qed.
+
+Program Definition lang_sing (x : T) : lang :=
+  {| lang_car := λ y, y ≡ x |}.
+Next Obligation. by move=> x y1 y2 ->. Qed.
+
+Global Instance lang_sing_proper : Proper ((≡) ==> (≡)) lang_sing.
+Proof. solve_proper. Qed.
+
+Global Instance lang_sing_monoid_morphism : MonoidMorphism lang_sing.
+Proof.
+constructor=> //.
+- apply _.
+- move=> x y z /=; split.
+  + by move=> ez; exists x, y; eauto.
+  + by case=> x1 [] x2 [] -> [] -> ->.
+Qed.
+
+Definition l : ka_term T → lang := ka_term_elim lang_sing.
+
+Global Instance l_pre_ka_morphism : PreKAMorphism l.
+Proof. rewrite /l. apply _. Qed.
+
+Global Instance l_semi_lattice_morphism : SemiLatticeMorphism l.
+Proof. apply _. Qed.
+
+Lemma l_alt e x : l e x ↔ Unit x ⊆ e.
+Proof.
+split; last first.
+  move=> x_e; have: l (Unit x) ⊆ l e.
+    by apply: semi_lattice_morphism_subseteq_proper.
+  by move=> /lang_subseteq_alt/(_ x); apply => /=.
+elim: e => //= [y|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e IH] in x *.
+- by move=> ->.
+- case=> [/IH1 IH|/IH2 IH]; apply (transitivity IH).
+  + exact: subseteq_union_left.
+  + exact: subseteq_union_right.
+- case=> x1 [] x2 [] ex [] /IH1 e1x1 /IH2 e2x2.
+  rewrite ex monoid_morphism_mul; exact: pre_ka_mul_mono.
+- case=> n; elim: n => /= [|n IHn] in x *.
+    move=> ->; exact: pre_ka_one_star.
+  case=> x1 [] x2 [] ex [] /IH ex1 /IHn ex2; rewrite ex monoid_morphism_mul.
+  apply: (transitivity _ (pre_ka_mul_star e)).
+  by apply: pre_ka_mul_mono.
+Qed.
+
+
+End Languages.
 
 (* ------- ------- *)
 (* ------- Interpreting MM instructions as terms ------- *)
@@ -491,50 +845,11 @@ Inductive Σ_M : Type :=
   | c_0
   | c_1.
 
-Lemma leq_reflex : forall T (t : ka_term T), t ≤ t.
-Proof.
-  intros. unfold ka_leq. apply Plus_Idemp.
-Qed.
-
-Hint Resolve leq_reflex : core.
-Variable T : Type.
-
-Lemma leq_trans : ∀ (t1 t2 t3 : ka_term T), t1 ≤ t2 -> t2 ≤ t3 -> t1 ≤ t3.
-Proof.
-  intros.
-  unfold ka_leq in *.
-  rewrite - H0.
-  rewrite - H.
-  rewrite Plus_Assoc.
-  rewrite - Plus_Assoc.
-  rewrite Plus_Idemp.
-  reflexivity.
-Qed.
-
-Global Instance leq_proper :
-  Proper ((≡) ==> (≡) ==> iff) (@ka_leq T).
-Proof.
-  rewrite /ka_leq => e1 e2 e12 e3 e4 e34.
-  split.
-  - intros. rewrite - e34. rewrite - e12. assumption.
-  - intros. rewrite e12. rewrite e34. assumption.
-Qed.
-
-Lemma star_expand : forall (t : ka_term T), t✶ ≡ 1 + t⋅t✶.
-Proof. intros. apply Star. Qed.
-
 Lemma star_leq : forall (t : ka_term T), 1 + t⋅t✶ ≤ t✶.
 Proof.
   intros.
   rewrite - star_expand.
   apply leq_reflex.
-Qed.
-
-Lemma leq_antisym : forall (x y : ka_term T), x ≤ y -> y ≤ x -> x ≡ y.
-Proof.
-  intros.
-  unfold ka_leq in H, H0.
-  rewrite - H. rewrite Plus_Com. symmetry. assumption.
 Qed.
 
 Definition build_term (side : T -> ka_term T) := fold_right (λ (n : T) t, side n ⋅ t).
@@ -568,49 +883,6 @@ Definition interp_single (n : nat) (instr : mm2_instr) :=
                     + (lr a)✶ ⋅ L b ⋅ (lr b)✶ ⋅ (R (Q_M (S n)))
   end.
 
-Definition pair_append (s1 s2 : list T * list T) :=
-  match s1, s2 with
-  | (s1l, s1r), (s2l, s2r) => (s1l ++ s2l, s1r ++ s2r)
-  end.
-
-Lemma pair_append_eq_nil : ∀ s s',
-  pair_append s s' = ([], []) -> s = ([], []) ∧ s' = ([], []).
-Proof.
-  intros.
-  destruct s, s'.
-  simpl in H; injection H;
-  intros G K; clear H.
-  apply app_eq_nil in G as [G1 G2], K as [K1 K2];
-  subst;
-  auto.
-Qed.
-
-(* used *)
-Lemma pair_append_id_r : ∀ s, pair_append s ([], []) = s.
-Proof.
-  intros. unfold pair_append.
-  destruct s.
-  repeat (rewrite List.app_nil_r).
-  reflexivity.
-Qed.
-
-(* used *)
-Lemma pair_append_id_l : ∀ s, pair_append ([], []) s = s.
-Proof.
-  intros. unfold pair_append.
-  destruct s.
-  repeat (rewrite List.app_nil_l).
-  reflexivity.
-Qed.
-
-(* used *)
-Lemma pair_append_assoc : ∀ s1 s2 s3,
-  pair_append s1 (pair_append s2 s3) = pair_append (pair_append s1 s2) s3.
-Proof.
-  intros.
-  destruct s1, s2, s3.
-  simpl. repeat (rewrite List.app_assoc); reflexivity.
-Qed.
 
 Definition ka_simpl_plus (t1 t2 : ka_term T) : ka_term T :=
   match t1, t2 with
@@ -703,284 +975,9 @@ Proof. by rewrite !ka_simplE. Qed.
 Global Instance ka_simpl_proper : Proper ((≡) ==> (≡)) ka_simpl.
 Proof. by move=> t1 t2 e; rewrite !ka_simplE. Qed.
 
-Definition ka_pred_zero (s : list T * list T) := False.
-
-Definition ka_pred_unit (s : list T * list T) := s = ([], []).
-
-Definition ka_pred_left (e : T) (s : list T * list T) := s = ([e], []).
-
-Definition ka_pred_right (e : T) (s : list T * list T) := s = ([], [e]).
-
-Definition ka_pred_add P Q (s : list T * list T) : Prop :=
-  P s ∨ Q s.
-
-Definition ka_pred_mul P Q s :=
-  ∃ s1 s2, s = pair_append s1 s2 ∧ P s1 ∧ Q s2.
-
-Definition ka_pred_power P n :=
-  Nat.iter n (ka_pred_mul P) ka_pred_unit.
-
-Definition ka_pred_star P s := ∃ n, ka_pred_power P n s.
-
-Fixpoint lang_interp term :=
-  match term with
-  | 0 => ka_pred_zero
-  | 1 => ka_pred_unit
-  | L e => ka_pred_left e
-  | R e => ka_pred_right e
-  | e1 + e2 => ka_pred_add (lang_interp e1) (lang_interp e2)
-  | e1 ⋅ e2 => ka_pred_mul (lang_interp e1) (lang_interp e2)
-  | e✶ => ka_pred_star (lang_interp e)
-  end.
-
 (* QUEST: is this notation reasonable? *)
 Global Instance ka_term_elem_of : ElemOf (list T * list T) (ka_term T) :=
   λ s t, lang_interp t s.
-
-(* used *)
-Lemma l_i_dot_1_r : ∀ (x : ka_term T) s, s ∈ x ⋅ 1 <-> s ∈ x.
-Proof.
-  rewrite /elem_of /=.
-  split; intros; simpl in *.
-  - destruct H as [s1 [s2 [H1 [H2 H3]]]];
-    unfold ka_pred_unit in H3; subst;
-    rewrite pair_append_id_r; assumption.
-  - simpl; exists s, ([], []); repeat split;
-    [symmetry; apply pair_append_id_r | assumption].
-Qed.
-
-(* used *)
-Lemma l_i_dot_1_l : ∀ (x : ka_term T) s, s ∈ 1 ⋅ x <-> s ∈ x.
-Proof.
-  rewrite /elem_of /=.
-  split; intros; simpl in *.
-  - destruct H as [s1 [s2 [H1 [H2 H3]]]];
-    unfold ka_pred_unit in H2; subst;
-    rewrite pair_append_id_l; assumption.
-  - exists ([], []), s; repeat split;
-    [symmetry; apply pair_append_id_l | assumption].
-Qed.
-
-(* QUEST: do we need bidirectionality here? I don't think this holds...but wanted to check *)
-Theorem l_i_equality : ∀ t1 t2 : ka_term T, t1 ≡ t2 -> ∀ s, s ∈ t1 <-> s ∈ t2.
-Proof.
-  intros t1 t2 H. elim: t1 t2 / H.
-  - reflexivity.
-  - eauto. intros. symmetry. apply IHka_eq.
-  - intros. rewrite IHka_eq1. apply IHka_eq2.
-  - simpl; split; intros; destruct H1 as [H1 | H1].
-    + rewrite IHka_eq1 in H1; left; assumption.
-    + rewrite IHka_eq2 in H1; right; assumption.
-    + rewrite - IHka_eq1 in H1; left; assumption.
-    + rewrite - IHka_eq2 in H1; right; assumption.
-  - simpl; split; intros;
-    destruct H1 as [s1 [s2 [G1 [G2 G3]]]]; exists s1, s2;
-    repeat split; try assumption.
-    + rewrite IHka_eq1 in G2; assumption.
-    + rewrite IHka_eq2 in G3; assumption.
-    + rewrite - IHka_eq1 in G2; assumption.
-    + rewrite - IHka_eq2 in G3; assumption.
-  - simpl; split; intros G;
-    unfold ka_pred_star, ka_pred_power, ka_pred_unit, ka_pred_mul in *;
-    destruct G as [n G];
-    exists n; generalize dependent s; induction n;
-    simpl in *; intros; try assumption;
-    destruct G as [s1 [s2 [Hs1s2 [HLI1 Hiter]]]];
-    exists s1, s2; repeat split; try assumption;
-    try (apply IHn; assumption);
-    [rewrite - IHka_eq; assumption | rewrite IHka_eq; assumption].
-  - intros; unfold lang_interp, ka_pred_mul, ka_pred_left, ka_pred_right in *;
-    split; intros; destruct H as [s1 [s2 [H1 [H2 H3]]]];
-    exists s2, s1; repeat split; try assumption; subst; reflexivity.
-  - intros; rewrite l_i_dot_1_r; reflexivity.
-  - intros; rewrite l_i_dot_1_l; reflexivity.
-  - split; intros; simpl in *;
-    unfold ka_pred_mul, ka_pred_zero in *;
-    [destruct H as [_ [_ [_ [_ H]]]]; assumption | contradiction].
-  - split; intros; simpl in *;
-    unfold ka_pred_mul, ka_pred_zero in *;
-    [destruct H as [_ [_ [_ [H _]]]]; assumption | contradiction].
-  - split; intros; simpl in *;
-    unfold ka_pred_mul in *.
-    + destruct H as [s1 [s2 [Hs1s2 [HLI1 [s3 [s4 [Hs3s4 [HLI3 HLI4]]]]]]]].
-      exists (pair_append s1 s3), s4; repeat split; try assumption.
-      * rewrite - pair_append_assoc. rewrite - Hs3s4; assumption.
-      * exists s1, s3; repeat split; assumption.
-    + destruct H as [s1 [s2 [Hs1s2 [[s3 [s4 [Hs3s4 [HLI3 HLI4]]]] HLI2]]]].
-      exists s3, (pair_append s4 s2); repeat split; try assumption.
-      * rewrite pair_append_assoc; rewrite - Hs3s4; assumption.
-      * exists s4, s2; repeat split; assumption.
-  - simpl; split; intros; [destruct H; [contradiction | assumption] | right; assumption].
-  - simpl; intros; unfold ka_pred_add in *; rewrite or_comm; reflexivity.
-  - simpl; intros; unfold ka_pred_add in *; rewrite or_assoc; reflexivity.
-  - simpl; split; intros; unfold ka_pred_add in *;
-    [destruct H; assumption | left; assumption].
-  - simpl; split; intros; unfold ka_pred_add, ka_pred_mul in *.
-    + destruct H as [s1 [s2 [HS1s2 [HLI1 [HLI2 | HLI3]]]]];
-      [left | right]; exists s1, s2; repeat split; assumption.
-    + destruct H as [[s1 [s2 [Hs1s2 [HLI1 HLI2]]]] | [s1 [s2 [Hs1s2 [HLI1 HLI2]]]]];
-      exists s1, s2; repeat split; try assumption; [left | right]; assumption.
-  - simpl; split; intros; unfold ka_pred_add, ka_pred_mul in *.
-    + destruct H as [s1 [s2 [Hs1s2 [[HS1|HS1] HS2]]]];
-      [left | right]; exists s1, s2; repeat split; assumption.
-    + destruct H as [[s1 [s2 [Hs1s2 [HLI1 HLI2]]]] | [s1 [s2 [Hs1s2 [HLI1 HLI2]]]]];
-      exists s1, s2; repeat split; try assumption; [left | right]; assumption.
-  - simpl; split; intros; unfold ka_pred_star in *.
-    + destruct H as [n H].
-      unfold ka_pred_add, ka_pred_power in *.
-      destruct n; simpl in H.
-      * left; assumption.
-      * unfold ka_pred_mul in H;
-        destruct H as [s1 [s2 [Hs1s2 [HS1 Hpow]]]];
-        unfold ka_pred_add, ka_pred_mul, ka_pred_star; right;
-        exists s1, s2; repeat split; try assumption;
-        exists n; assumption.
-    + unfold ka_pred_add in H; destruct H as [H | H].
-      * exists 0%nat; simpl; assumption.
-      * unfold ka_pred_power, ka_pred_mul in *;
-        destruct H as [s1 [s2 [Hs1s2 [HLI1 [n HPow]]]]];
-        subst; exists (S n); simpl;
-        exists s1, s2; repeat split; assumption.
-Qed.
-
-Global Instance lang_interp_proper : Proper ((≡) ==> eq ==> iff) lang_interp.
-Proof.
-  intros t1 t2 et1t2 s1 s2 es1s2.
-  rewrite es1s2.
-  apply l_i_equality.
-  assumption.
-Qed.
-
-(* used *)
-Lemma leq_leq_dot : ∀ (x1 x2 y1 y2 : ka_term T), x1 ≤ y1 -> x2 ≤ y2 -> x1⋅x2 ≤ y1⋅y2.
-Proof.
-  intros x1 x2 y1 y2 H G.
-  unfold ka_leq in H, G.
-  unfold ka_leq.
-  rewrite - H; rewrite - G.
-  rewrite Dist_L; repeat (rewrite Dist_R).
-  rewrite Plus_Assoc; rewrite - Plus_Assoc.
-  rewrite Plus_Idemp.
-  reflexivity.
-Qed.
-
-Lemma leq_leq_plus (t1 t2 t3 : ka_term T) : t1 ≤ t2 -> t1 ≤ t2 + t3.
-Proof.
-  move=> H.
-  unfold ka_leq in *.
-  rewrite -{2} H.
-  rewrite Plus_Com.
-  rewrite [X in _ ≡ X + _] Plus_Com.
-  apply Plus_Assoc.
-Qed.
-
-Lemma t_leq_t_plus (t t' : ka_term T) : t ≤ t + t'.
-Proof.
-  apply leq_leq_plus; apply leq_reflex.
-Qed.
-
-(* used *)
-Lemma one_leq_star : ∀ (t : ka_term T), 1 ≤ t ✶.
-Proof.
-  intros.
-  rewrite Star.
-  apply t_leq_t_plus.
-Qed.
-
-(* used *)
-Lemma li_term_to_string_true : ∀ s, s ∈ ↑s.
-Proof.
-  intros.
-  destruct s as (sl, sr).
-  simpl.
-  exists (sl, []), ([], sr).
-  repeat split.
-  - simpl. rewrite app_nil_r; reflexivity.
-  - induction sl as [| e1 sl' IHsl'].
-    + reflexivity.
-    + simpl. unfold ka_pred_mul.
-      exists ([e1], []), (sl', []).
-      repeat split. assumption.
-  - induction sr as [| e1 sr' IHsr'].
-    + reflexivity.
-    + simpl. unfold ka_pred_mul.
-      exists ([], [e1]), ([], sr').
-      repeat split. assumption.
-Qed.
-
-(* unused *)
-Lemma build_term__pull_out_base : ∀ s (side : T -> ka_term T) (t : ka_term T),
-  side = R ∨ side = L -> build_term side t s
-    ≡ (build_term side 1 s) ⋅ t.
-Proof.
-  intros. destruct H as [H | H];
-  generalize dependent t;
-  try (induction s; intros; simpl; [
-    rewrite Dot_Id2; reflexivity
-  | rewrite IHs; rewrite Dot_Assoc; reflexivity
-  ]).
-Qed.
-
-(* used *)
-Lemma build_term__commutes : ∀ s t side1 side2,
-  (side1 = L ∧ side2 = R) ∨ (side1 = R ∧ side2 = L) ->
-  (build_term side1 1 s) ⋅ side2 t
-    ≡ side2 t ⋅ (build_term side1 1 s).
-Proof.
-  intros.
-  destruct H as [H | H]; destruct H as [H1 H2]; subst;
-  try (induction s as [|c s IHs]; simpl; [
-      rewrite Dot_Id2; rewrite Dot_Id1; reflexivity
-    | rewrite - Dot_Assoc; rewrite IHs;
-      repeat (rewrite Dot_Assoc); rewrite LR_Com; reflexivity
-  ]).
-Qed.
-
-(* used *)
-Lemma string_to_term__pair_append__commute : ∀ s s',
-  ↑(pair_append s s') ≡ (↑s) ⋅ (↑s').
-Proof.
-  intros.
-  destruct s as (s1, s1'), s' as (s2, s2').
-  induction s1 as [|c1 s1 IHs1].
-  - induction s1' as [|c1' s1' IHs1'].
-    + simpl. repeat (rewrite Dot_Id2); reflexivity.
-    + simpl in *.
-      rewrite Dot_Assoc.
-      rewrite build_term__commutes; try (left; auto).
-      rewrite - Dot_Assoc.
-      rewrite IHs1'.
-      repeat (rewrite Dot_Id2).
-      repeat (rewrite Dot_Assoc).
-      reflexivity.
-  - simpl in *.
-    rewrite - Dot_Assoc.
-    rewrite IHs1.
-    repeat (rewrite Dot_Assoc).
-    reflexivity.
-Qed.
-
-(* unused *)
-Lemma destruct_power : ∀ t n s,
-  ka_pred_power (lang_interp t) n s ->
-    ∃ (ls : list (list T * list T)),
-      s = fold_right pair_append ([], []) ls
-        ∧ fold_right and True (List.map (lang_interp t) ls).
-Proof.
-  intros.
-  generalize dependent s.
-  induction n as [|n IHn].
-  - intros. simpl in H. unfold ka_pred_unit in H.
-    subst.
-    exists [].
-    simpl. repeat split.
-  - intros. simpl in H; unfold ka_pred_mul in H.
-    destruct H as [s1 [s2 [Hs1s2 [HLI1 Hpow]]]].
-    apply IHn in Hpow as [ls [Hs2 Hls]].
-    exists (s1::ls).
-    repeat split; try assumption.
-    simpl. rewrite - Hs2. assumption.
-Qed.
 
 (* used, but unused *)
 Lemma term_leq_term_star : ∀ (t : ka_term T), t ≤ t✶.
