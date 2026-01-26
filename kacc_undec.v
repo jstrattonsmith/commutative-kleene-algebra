@@ -1180,10 +1180,10 @@ Qed.
 (* Theorem 9 *)
 
 Lemma pseudo_top_finite e :
-  finite_bool e = true →
+  count_term e ⊑ 1 →
   e ⋅ pseudo_top ⊑ pseudo_top.
 Proof.
-case/finite_boolP=> {e} xs ->.
+case/count_finiteP=> {e} xs ->.
 rewrite join_list_left_dist map_map.
 apply/join_list_sqsubseteq=> _ /elem_of_list_fmap [x [] -> x_xs].
 exact: pseudo_top_absorb.
@@ -1191,10 +1191,7 @@ Qed.
 
 End PseudoTop.
 
-End KATermTheory.
-
 Arguments pseudo_top {T _}.
-
 
 Section Languages.
 
