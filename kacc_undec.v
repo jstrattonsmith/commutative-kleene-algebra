@@ -12,6 +12,55 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+Lemma elem_of_concat {T} (x : T) xss :
+  x ∈ concat xss ↔ ∃ xs, xs ∈ xss ∧ x ∈ xs.
+Proof.
+rewrite elem_of_list_In in_concat.
+split=> [[xs []]|[xs []]].
+- by rewrite -!elem_of_list_In; eauto.
+- by rewrite !elem_of_list_In; eauto.
+Qed.
+
+Section AllPairs.
+
+Variables T S : Type.
+
+Implicit Types (x : T) (xs : list T).
+Implicit Types (y : S) (ys : list S).
+
+Definition all_pairs xs ys :=
+  concat (map (λ x, map (pair x) ys) xs).
+
+Lemma elem_of_all_pairs p xs ys :
+  p ∈ all_pairs xs ys ↔ p.1 ∈ xs ∧ p.2 ∈ ys.
+Proof.
+rewrite /all_pairs elem_of_concat; split.
+- case=> ps [] /elem_of_list_fmap [] x [] -> x_xs.
+  by case/elem_of_list_fmap=> y [] ->; eauto.
+- case: p=> [x y] [x_xs y_ys]; exists (map (pair x) ys); split.
+  + by apply/elem_of_list_fmap; exists x; eauto.
+  + by apply/elem_of_list_fmap; exists y; eauto.
+Qed.
+
+End AllPairs.
+
+Section AllPairsMap.
+
+Variables T1 T2 S1 S2 : Type.
+Implicit Types (x : T1) (xs : list T1).
+Implicit Types (y : S1) (ys : list S1).
+Implicit Types (f : T1 → T2) (g : S1 → S2).
+
+Lemma all_pairs_map f g xs ys :
+  all_pairs (map f xs) (map g ys) =
+  map (λ p, (f p.1, g p.2)) (all_pairs xs ys).
+Proof.
+rewrite /all_pairs; elim: xs => //= x xs ->.
+by rewrite map_app !map_map.
+Qed.
+
+End AllPairsMap.
+
 Declare Scope ka_scope.
 Delimit Scope ka_scope with ka.
 Open Scope ka_scope.
@@ -519,8 +568,12 @@ Proof. by rewrite sqsubseteq_iff semi_lattice_left_id. Qed.
 
 Definition join_list : list T → T := foldr join ⊥.
 
-Notation "⨆" := join_list.
+Global Instance join_list_proper : Proper ((≡) ==> (≡)) join_list.
+Proof.
+by move=> xs ys; elim: xs ys / => //= x y xs ys -> _ ->.
+Qed.
 
+Notation "⨆" := join_list.
 Lemma join_list_app xs ys : ⨆ (xs ++ ys) ≡ ⨆ xs ⊔ ⨆ ys.
 Proof.
 elim: xs => [|x xs IH] //=.
@@ -549,6 +602,18 @@ Lemma list_subseteq_join_list (xs ys : list T) :
 Proof.
 move=> xs_ys; apply/join_list_sqsubseteq => x /xs_ys x_ys.
 exact: sqsubseteq_join_list.
+Qed.
+
+Lemma join_list_assoc (xss : list (list T)) :
+  ⨆ (map (λ xs, ⨆ xs) xss) ≡ ⨆ (concat xss).
+Proof.
+apply (anti_symm _).
+- rewrite join_list_sqsubseteq=> _ /elem_of_list_fmap [xs [] -> xs_xss].
+  rewrite join_list_sqsubseteq=> x x_xs; apply: sqsubseteq_join_list.
+  by rewrite elem_of_concat; eauto.
+- rewrite join_list_sqsubseteq=> x /elem_of_concat [xs [] xs_xss x_xs].
+  transitivity (⨆ xs); first exact: sqsubseteq_join_list.
+  by apply: sqsubseteq_join_list; apply/elem_of_list_fmap; eauto.
 Qed.
 
 End SemiLatticeTheory.
@@ -680,6 +745,23 @@ Lemma join_list_left_dist xs y : ⨆ xs ⋅ y ≡ ⨆ (map (λ x, x ⋅ y) xs).
 Proof.
 elim: xs => [|x xs IH]; rewrite /= ?left_absorb //.
 by rewrite pre_ka_left_dist IH.
+Qed.
+
+Lemma join_list_dist2 xs ys :
+  ⨆ xs ⋅ ⨆ ys ≡ ⨆ (map (λ p : T * T, p.1 ⋅ p.2) (all_pairs xs ys)).
+Proof.
+rewrite join_list_left_dist; apply (anti_symm _).
+- rewrite join_list_sqsubseteq=> _ /elem_of_list_fmap [x [] -> x_xs].
+  rewrite join_list_right_dist join_list_sqsubseteq.
+  move=> _ /elem_of_list_fmap [y [] -> y_ys].
+  apply: sqsubseteq_join_list; apply/elem_of_list_fmap.
+  by exists (x, y); split => //; apply/elem_of_all_pairs; eauto.
+- rewrite join_list_sqsubseteq => _ /elem_of_list_fmap [[x y] [] -> p_ps].
+  case/elem_of_all_pairs: p_ps=> x_xs y_ys.
+  transitivity (x ⋅ ⨆ ys).
+  + rewrite join_list_right_dist.
+    by apply sqsubseteq_join_list; apply/elem_of_list_fmap; eauto.
+  + by apply sqsubseteq_join_list; apply/elem_of_list_fmap; eauto.
 Qed.
 
 Lemma pre_ka_one_star x : 1 ⊑ star x.
@@ -940,6 +1022,12 @@ rewrite !sqsubseteq_iff.
 by case: c1 c2 => [] [] //=; eauto.
 Qed.
 
+Lemma count_star_one (c : count) : star c ⊑ 1 ↔ c ≡ ⊥.
+Proof.
+split=> [|-> //].
+by rewrite sqsubseteq_iff; case: c=> //=.
+Qed.
+
 Class PreKAMorphism (T S : pre_ka) (f : T → S) := {
   pre_ka_morphism_proper :: Proper ((≡) ==> (≡)) f;
   pre_ka_morphism_one : f 1 ≡ 1;
@@ -1058,15 +1146,17 @@ elim: e => //=.
   case/count_mul_one=> [H|[/IH1 [xs1 exs1] /IH2 [xs2 exs2]]].
     exists [].
     by case: H=> /count_emptyP ->; rewrite ?left_absorb ?right_absorb.
-  exists (concat (map (λ x1, map (λ x2, x1 ⋅ x2) xs2) xs1)).
-  rewrite exs1 exs2 concat_map map_map.
+  exists (map (λ p, p.1 ⋅ p.2) (all_pairs xs1 xs2)).
+  rewrite exs1 exs2 join_list_dist2 all_pairs_map !map_map /=.
+  have -> // : map (λ p, Unit p.1 ⋅ Unit p.2) (all_pairs xs1 xs2)
+               ≡ map (λ p, Unit (p.1 ⋅ p.2)) (all_pairs xs1 xs2).
+  apply: list_fmap_proper => // x y [-> ->].
+  by rewrite ka_mul_distr.
+- move=> e IH; rewrite pre_ka_morphism_star=> /count_star_one /count_emptyP eE.
+  by exists [1]; rewrite eE [X in X ≡ _]star_bottom /= right_id.
+Qed.
 
-  exists (xs1 ++ xs2); rewrite map_app join_list_app exs1 exs2.
-
-  have: count_term e1 = ⊥ ∨ count_term e2 = ⊥
-  have [H1 H2]: count_term e1 ⊑ 1 ∧ count_term e2 ⊑ 1.
-    case: (count_term e1) (count_term e2) => [] [] //= in H *; eauto.
-
+End CountTerm.
 
 Section PseudoTop.
 
