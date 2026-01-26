@@ -1,13 +1,12 @@
-Require Import Coq.Classes.Morphisms.
-Require Import Coq.Unicode.Utf8.
+Require Import Stdlib.Classes.Morphisms.
+Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.
-Require Import Coq.Setoids.Setoid.
+Require Import Stdlib.Setoids.Setoid.
 Require Import Undecidability.MinskyMachines.MM2.
 From stdpp Require Import base list finite.
 (* From Coq Require Import Lia. *)
 
-From Coq Require Import List. Import ListNotations.
-From Coq Require Import Bool.
+From Stdlib Require Import Bool.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -192,6 +191,28 @@ elim: xs => //= [|x xs IH].
 - by rewrite monoid_morphism_mul IH.
 Qed.
 
+Global Instance one_monoid_morphism (T S : monoid) :
+  MonoidMorphism (λ x : T, @one S _).
+Proof.
+split => //.
+- solve_proper.
+- by move=> _ _; rewrite left_id.
+Qed.
+
+Global Instance id_monoid_morphism (T : monoid) : MonoidMorphism (@id T).
+Proof. split => //; solve_proper. Qed.
+
+Global Instance compose_monoid_morphism (T S R : monoid)
+  (f : T → S) (g : S → R) :
+  MonoidMorphism f → MonoidMorphism g →
+  MonoidMorphism (g ∘ f).
+Proof.
+move=> ??; split.
+- solve_proper.
+- by rewrite /= !monoid_morphism_one.
+- by move=> ??; rewrite /= !monoid_morphism_mul.
+Qed.
+
 Class FinGenMonoid (T : monoid) := {
   generators : list T;
   generate x : {l : list T | x ≡ ∏ l ∧ l ⊆ generators};
@@ -270,15 +291,69 @@ Canonical Structure prod_monoid :=
            (prod_setoid_mixin T S)
            prod_monoid_mixin.
 
+Global Instance fst_monoid_morphism : MonoidMorphism (@fst T S).
+Proof. split => //=. solve_proper. Qed.
+
+Global Instance snd_monoid_morphism : MonoidMorphism (@snd T S).
+Proof. split => //=. solve_proper. Qed.
+
+Definition prod_inj1 : T → T * S := λ x, (x, 1).
+Definition prod_inj2 : S → T * S := λ x, (1, x).
+
+Global Instance prod_inj1_monoid_morphism :
+  MonoidMorphism prod_inj1.
+Proof.
+by split => //= x y; split => //=; rewrite left_id.
+Qed.
+
+Global Instance prod_inj2_monoid_morphism :
+  MonoidMorphism prod_inj2.
+Proof.
+by split => //= x y; split => //=; rewrite left_id.
+Qed.
+
+Section CaseProd.
+
+Context {R : monoid} (f : T → R) (g : S → R).
+
+Definition case_prod (p : T * S) := f p.1 ⋅ g p.2.
+
+Lemma case_prod_morphism `{!MonoidMorphism f, !MonoidMorphism g} :
+  (∀ x y, f x ⋅ g y ≡ g y ⋅ f x) →
+  MonoidMorphism case_prod.
+Proof.
+move=> fgC; split.
+- solve_proper.
+- by rewrite /case_prod !monoid_morphism_one left_id.
+- case=> x1 x2; case=> y1 y2; rewrite /case_prod /= !monoid_morphism_mul.
+  by rewrite assoc -[_ ⋅ g x2]assoc fgC !assoc.
+Qed.
+
+End CaseProd.
+
+Section PairMor.
+
+Context {R : monoid} (f : R → T) (g : R → S).
+
+Definition pair_mor : R → T * S :=
+  λ x, (f x, g x).
+
+Global Instance pair_mor_morphism
+    `{!MonoidMorphism f, !MonoidMorphism g} :
+  MonoidMorphism pair_mor.
+Proof.
+split => //=.
+- solve_proper.
+- by split => /=; rewrite monoid_morphism_one.
+- by move=> ??; split; rewrite /= monoid_morphism_mul.
+Qed.
+
+End PairMor.
+
 End ProdMonoid.
 
-Global Instance fst_monoid_morphism (T S : monoid) :
-  MonoidMorphism (@fst T S).
-Proof. split => //=. solve_proper. Qed.
-
-Global Instance snd_monoid_morphism (T S : monoid) :
-  MonoidMorphism (@snd T S).
-Proof. split => //=. solve_proper. Qed.
+Arguments prod_inj1 {T S}.
+Arguments prod_inj2 {T S}.
 
 Section ProdFinGen.
 
@@ -758,164 +833,112 @@ constructor => //=.
 - by move=> ??; rewrite ka_mul_distr.
 Qed.
 
-Fixpoint empty_bool (e : ka_term T) :=
-  match e with
-  | Unit _ => false
-  | ka_term_bottom => true
-  | ka_term_join e1 e2 => empty_bool e1 && empty_bool e2
-  | ka_term_mul e1 e2 => empty_bool e1 || empty_bool e2
-  | ka_term_star _ => false
-  end.
-
-Global Instance empty_bool_proper : Proper ((≡) ==> (=)) empty_bool.
-Proof.
-move=> e1 e2; elim: e1 e2 / => //=.
-- congruence.
-- congruence.
-- congruence.
-- by move=> ???; rewrite Bool.orb_assoc.
-- by move=> ?; rewrite Bool.orb_false_r.
-- by move=> ???; rewrite Bool.andb_assoc.
-- by move=> ??; rewrite Bool.andb_comm.
-- by move=> ?; rewrite Bool.andb_diag.
-- by move=> ?; rewrite Bool.orb_true_r.
-- by move=> ???; rewrite Bool.orb_andb_distrib_r.
-- by move=> ???; rewrite Bool.orb_andb_distrib_l.
-Qed.
-
-Lemma empty_boolP e : empty_bool e = true ↔ e ≡ ⊥.
-Proof.
-split => [|-> //=].
-elim: e => //=.
-- move=> e1 IH1 e2 IH2 /andb_true_iff [/IH1 {}IH1 /IH2 {}IH2].
-  by rewrite -[ka_term_join e1 e2]/(e1 ⊔ e2) IH1 IH2 idemp.
-- by move=> e1 IH1 e2 IH2 /orb_true_iff [/IH1 IH|/IH2 IH];
-  rewrite -[ka_term_mul e1 e2]/(e1 ⋅ e2) IH ?left_absorb ?right_absorb.
-Qed.
-
-Fixpoint finite_bool e :=
-  match e with
-  | Unit _ =>
-      true
-  | ka_term_bottom =>
-      true
-  | ka_term_join e1 e2 =>
-      finite_bool e1 && finite_bool e2
-  | ka_term_mul e1 e2 =>
-      empty_bool e1 || empty_bool e2 || finite_bool e1 && finite_bool e2
-  | ka_term_star e =>
-      empty_bool e
-  end.
-
-Lemma empty_bool_finite_bool e : empty_bool e = true → finite_bool e = true.
-Proof.
-elim: e => //=.
-- by move=> e1 IH1 e2 IH2 /andb_true_iff [/IH1 -> /IH2 ->].
-- move=> e1 IH1 e2 IH2 /orb_true_iff [/[dup] /IH1 -> ->|/[dup] /IH2 -> ->] //=.
-  by rewrite orb_true_r.
-Qed.
-
-Global Instance finite_bool_proper : Proper ((≡) ==> (=)) finite_bool.
-Proof.
-move=> e1 e2; elim: e1 e2 / => //=; try congruence.
-- by move=> e11 e12 E1 -> e21 e22 E2 ->; rewrite E1 E2.
-- by move=> ?? {2}->.
-- move=> e1 e2 e3.
-  case E1: (empty_bool e1) => //=.
-  case E2: (empty_bool e2) => //=.
-  case E3: (empty_bool e3) => //=.
-  by rewrite andb_assoc.
-- move=> e; case E: empty_bool => //=.
-  by rewrite empty_bool_finite_bool.
-- move=> e; rewrite orb_false_r andb_true_r.
-  case E: empty_bool => //=.
-  by rewrite empty_bool_finite_bool.
-- by move=> ???; rewrite andb_assoc.
-- by move=> ??; rewrite andb_comm.
-- by move=> ?; rewrite andb_diag.
-- by move=> t; rewrite orb_true_r.
-- move=> e1 e2 e3.
-  case E1: (empty_bool e1) => //=.
-  case E2: (empty_bool e2) => //=.
-    by rewrite (empty_bool_finite_bool E2).
-  case E3: (empty_bool e3) => //=.
-    by rewrite (empty_bool_finite_bool E3) !andb_true_r.
-  by case: (finite_bool e1).
-- move=> e1 e2 e3.
-  case E1: (empty_bool e1) => //=.
-    by rewrite (empty_bool_finite_bool E1).
-  case E2: (empty_bool e2) => //=.
-    by rewrite (empty_bool_finite_bool E2) //= !andb_true_r.
-  case E3: (empty_bool e3) => //=.
-  by case: (finite_bool e3); rewrite ?andb_true_r ?andb_false_r.
-- by move=> e; rewrite orb_false_r andb_comm absorption_orb.
-Qed.
-
-Theorem finite_boolP e :
-  finite_bool e = true ↔ ∃ xs, e ≡ ⨆ (map Unit xs).
-Proof.
-split => [|[xs ->]]; last by elim: xs => //=.
-elim: e => //=.
-- by move=> x _; exists [x]; rewrite /= right_id.
-- by move=> _; exists [].
-- move=> e1 IH1 e2 IH2 /andb_true_iff [fin1 fin2].
-  have [[xs1 E1] [xs2 E2]] := (IH1 fin1, IH2 fin2).
-  exists (xs1 ++ xs2); rewrite -[ka_term_join e1 e2]/(e1 ⊔ e2) E1 E2.
-  by rewrite map_app join_list_app.
-- move=> e1 IH1 e2 IH2; rewrite -[ka_term_mul e1 e2]/(e1 ⋅ e2).
-  case/orb_true_iff=> H.
-  + exists []; case/orb_true_iff: H=> /empty_boolP ->;
-    by rewrite ?left_absorb ?right_absorb.
-  + case/andb_true_iff: H => fin1 fin2.
-    have [[xs1 E1] [xs2 E2]] := (IH1 fin1, IH2 fin2).
-    exists (concat (map (λ x1, map (λ x2, x1 ⋅ x2) xs2) xs1)).
-    rewrite {}E1 {}E2.
-    elim: xs1 {IH1 IH2 e1 e2 fin1 fin2} => //= [|x1 xs1 IH1] in xs2 *.
-      by rewrite left_absorb.
-    rewrite pre_ka_left_dist map_app map_map join_list_app IH1.
-    rewrite join_list_right_dist map_map.
-    enough (⨆ (map (λ x2, Unit x1 ⋅ Unit x2) xs2) ≡
-              ⨆ (map (λ x2, Unit (x1 ⋅ x2)) xs2)) as ->.
-      by [].
-    by elim: xs2=> //= x2 xs2 ->; rewrite monoid_morphism_mul.
-- move=> e _ /empty_boolP E; exists [1].
-  by rewrite -[ka_term_star e]/(star e) E /= star_bottom right_id.
-Qed.
-
-Section PseudoTop.
-
-Context `{FinGenMonoid T}.
-
-Definition pseudo_top : ka_term T :=
-  star (⨆ (map Unit generators)).
-
-Lemma pseudo_top_absorb x : Unit x ⋅ pseudo_top ⊑ pseudo_top.
-Proof.
-case: (generate x) => xs [] -> {x}; elim: xs=> [|x xs IH] sub /=.
-  by rewrite left_id.
-rewrite monoid_morphism_mul -assoc IH.
-  move=> ? x_in; apply: sub; apply/elem_of_cons; eauto.
-have x_gen: x ∈ generators by apply: sub; rewrite elem_of_cons; eauto.
-have /sqsubseteq_join_list {}x_gen: Unit x ∈ map Unit generators.
-  by apply/elem_of_list_fmap; eauto.
-rewrite x_gen; exact: pre_ka_mul_star.
-Qed.
-
-(* Theorem 9 *)
-
-Lemma pseudo_top_finite e :
-  finite_bool e = true →
-  e ⋅ pseudo_top ⊑ pseudo_top.
-Proof.
-case/finite_boolP=> {e} xs ->.
-rewrite join_list_left_dist map_map.
-apply/join_list_sqsubseteq=> _ /elem_of_list_fmap [x [] -> x_xs].
-exact: pseudo_top_absorb.
-Qed.
-
-End PseudoTop.
-
 End KATermTheory.
+
+Variant count :=
+| CountEmpty  : Bottom count
+| CountFinite : One count
+| CountStarred.
+
+Global Existing Instance CountEmpty.
+Global Existing Instance CountFinite.
+
+Global Instance count_mul : Mul count := λ c1 c2,
+  match c1, c2 with
+  | CountEmpty, _ => CountEmpty
+  | _, CountEmpty => CountEmpty
+  | CountFinite, CountFinite => CountFinite
+  | CountStarred, _ => CountStarred
+  | _, CountStarred => CountStarred
+  end.
+
+Canonical Structure count_setoid :=
+  @eq_setoid count.
+
+Lemma count_monoid_mixin : MonoidMixin count.
+Proof.
+constructor => //=.
+- by case=> [] [] [].
+- by case.
+- by case.
+- solve_proper.
+Qed.
+
+Canonical Structure count_monoid :=
+  @Monoid' count _ _ _
+           (setoid_mixin count)
+           count_monoid_mixin.
+
+Global Instance count_join : Join count := λ c1 c2,
+  match c1, c2 with
+  | CountEmpty, c => c
+  | c, CountEmpty => c
+  | CountFinite, c => c
+  | c, CountFinite => c
+  | CountStarred, CountStarred => CountStarred
+  end.
+
+Global Instance count_sqsubseteq : SqSubsetEq count :=
+  default_sqsubseteq.
+
+Lemma count_semi_lattice_mixin : SemiLatticeMixin count.
+Proof.
+apply default_semi_lattice_mixin; last solve_proper.
+- by case=> [] [] [].
+- by case=> [] [].
+- by case=> [].
+- by case=> [].
+Qed.
+
+Canonical Structure count_semi_lattice :=
+  @SemiLattice' count _ _ _ _
+                (setoid_mixin count)
+                count_semi_lattice_mixin.
+
+Lemma count_join_empty (c1 c2 : count) : c1 ⊔ c2 = ⊥ ↔ c1 = ⊥ ∧ c2 = ⊥.
+Proof.
+split=> [|[-> ->]] //=.
+case: c1 c2 => [] [] //; eauto.
+Qed.
+
+Global Instance count_star : Star count := λ c,
+  match c with
+  | CountEmpty => CountFinite
+  | _ => CountStarred
+  end.
+
+Lemma count_pre_ka_mixin : PreKAMixin count.
+Proof.
+constructor; try solve_proper.
+- by case=> [] [] [].
+- by case=> [] [] [].
+- by case.
+- by case.
+- by case.
+Qed.
+
+Canonical Structure count_pre_ka :=
+  @PreKA' count _ _ _ _ _ _ _
+          (setoid_mixin count)
+          count_monoid_mixin
+          count_semi_lattice_mixin
+          count_pre_ka_mixin.
+
+Lemma count_mul_empty (c1 c2 : count) : c1 ⋅ c2 = ⊥ ↔ c1 = ⊥ ∨ c2 = ⊥.
+Proof.
+split=> [|[->|->]] //=; rewrite ?right_absorb //.
+case: c1 c2 => [] [] //=; eauto.
+Qed.
+
+Lemma count_mul_one (c1 c2 : count) :
+  c1 ⋅ c2 ⊑ 1 ↔ (c1 = ⊥ ∨ c2 = ⊥) ∨ c1 ⊑ 1 ∧ c2 ⊑ 1.
+Proof.
+split; last first.
+  case=> [H|[-> -> //]]; rewrite sqsubseteq_iff.
+  by case: H=> ->; rewrite ?left_absorb ?right_absorb.
+rewrite !sqsubseteq_iff.
+by case: c1 c2 => [] [] //=; eauto.
+Qed.
 
 Class PreKAMorphism (T S : pre_ka) (f : T → S) := {
   pre_ka_morphism_proper :: Proper ((≡) ==> (≡)) f;
@@ -983,6 +1006,105 @@ constructor=> //=.
 Qed.
 
 End KATermElim.
+
+Definition ka_term_map {T} {S : monoid} (f : T → S) : ka_term T → ka_term S :=
+  ka_term_elim (Unit ∘ f).
+
+Section KATermMap.
+
+Context {T} {S} `{MonoidMorphism T S f}.
+
+Global Instance ka_term_map_morphism :
+  PreKAMorphism (ka_term_map f).
+Proof. apply _. Qed.
+
+End KATermMap.
+
+Section CountTerm.
+
+Context {T : monoid}.
+
+Definition count_term : ka_term T → count :=
+  ka_term_elim (λ x, 1).
+
+Global Instance count_term_morphism : PreKAMorphism count_term.
+Proof. apply _. Qed.
+
+Lemma count_emptyP e : count_term e = ⊥ ↔ e ≡ ⊥.
+Proof.
+split => [|->] //=; elim: e=> //=.
+- move=> e1 IH1 e2 IH2.
+  rewrite semi_lattice_morphism_join count_join_empty.
+  rewrite -[ka_term_join e1 e2]/(e1 ⊔ e2).
+  by case=> /IH1 -> /IH2 ->; rewrite idemp.
+- move=> e1 IH1 e2 IH2; rewrite -[ka_term_mul e1 e2]/(e1 ⋅ e2).
+  rewrite monoid_morphism_mul count_mul_empty.
+  by case=> [/IH1|/IH2] ->; rewrite ?left_absorb // right_absorb.
+- by move=> e _; rewrite pre_ka_morphism_star; case: (count_term e).
+Qed.
+
+Lemma count_finiteP e : count_term e ⊑ 1 ↔ ∃ xs, e ≡ ⨆ (map Unit xs).
+Proof.
+split=> [|[xs ->]]; last first.
+  rewrite semi_lattice_morphism_join_list map_map join_list_sqsubseteq.
+  by move=> c /elem_of_list_fmap [x [] ->].
+elim: e => //=.
+- by move=> x _; exists [x]; rewrite /= right_id.
+- by move=> _; exists [].
+- move=> e1 IH1 e2 IH2; rewrite semi_lattice_morphism_join.
+  rewrite join_sqsubseteq; case => /IH1 [xs1 ex1] /IH2 [xs2 ex2].
+  by exists (xs1 ++ xs2); rewrite map_app join_list_app -ex1 -ex2.
+- move=> e1 IH1 e2 IH2; rewrite monoid_morphism_mul -/(e1 ⋅ e2).
+  case/count_mul_one=> [H|[/IH1 [xs1 exs1] /IH2 [xs2 exs2]]].
+    exists [].
+    by case: H=> /count_emptyP ->; rewrite ?left_absorb ?right_absorb.
+  exists (concat (map (λ x1, map (λ x2, x1 ⋅ x2) xs2) xs1)).
+  rewrite exs1 exs2 concat_map map_map.
+
+  exists (xs1 ++ xs2); rewrite map_app join_list_app exs1 exs2.
+
+  have: count_term e1 = ⊥ ∨ count_term e2 = ⊥
+  have [H1 H2]: count_term e1 ⊑ 1 ∧ count_term e2 ⊑ 1.
+    case: (count_term e1) (count_term e2) => [] [] //= in H *; eauto.
+
+
+Section PseudoTop.
+
+Context `{FinGenMonoid T}.
+
+Definition pseudo_top : ka_term T :=
+  star (⨆ (map Unit generators)).
+
+Lemma pseudo_top_absorb x : Unit x ⋅ pseudo_top ⊑ pseudo_top.
+Proof.
+case: (generate x) => xs [] -> {x}; elim: xs=> [|x xs IH] sub /=.
+  by rewrite left_id.
+rewrite monoid_morphism_mul -assoc IH.
+  move=> ? x_in; apply: sub; apply/elem_of_cons; eauto.
+have x_gen: x ∈ generators by apply: sub; rewrite elem_of_cons; eauto.
+have /sqsubseteq_join_list {}x_gen: Unit x ∈ map Unit generators.
+  by apply/elem_of_list_fmap; eauto.
+rewrite x_gen; exact: pre_ka_mul_star.
+Qed.
+
+(* Theorem 9 *)
+
+Lemma pseudo_top_finite e :
+  finite_bool e = true →
+  e ⋅ pseudo_top ⊑ pseudo_top.
+Proof.
+case/finite_boolP=> {e} xs ->.
+rewrite join_list_left_dist map_map.
+apply/join_list_sqsubseteq=> _ /elem_of_list_fmap [x [] -> x_xs].
+exact: pseudo_top_absorb.
+Qed.
+
+End PseudoTop.
+
+End KATermTheory.
+
+Arguments pseudo_top {T _}.
+
 
 Section Languages.
 
@@ -1215,8 +1337,71 @@ Qed.
 
 End Languages.
 
-Lemma star_absorb `{FinGenMonoid T} (x : T) :
-  x ⋅ star (⨆ (map Unit generators)) ⊑ star (\git
+Section KATermProj.
+
+Variables (T S : monoid).
+
+Definition ka_term_proj1 : ka_term (T * S) → ka_term T :=
+  ka_term_map fst.
+
+Definition ka_term_proj2 : ka_term (T * S) → ka_term S :=
+  ka_term_map snd.
+
+Definition ka_term_inj1 : ka_term T → ka_term (T * S) :=
+  ka_term_map prod_inj1.
+
+Definition ka_term_inj2 : ka_term S → ka_term (T * S) :=
+  ka_term_map prod_inj2.
+
+Definition ka_term_diag : ka_term T → ka_term (T * T) :=
+  ka_term_map (pair_mor id id).
+
+Global Instance ka_term_proj1_morphism :
+  PreKAMorphism ka_term_proj1.
+Proof. apply _. Qed.
+
+Global Instance ka_term_proj2_morphism :
+  PreKAMorphism ka_term_proj2.
+Proof. apply _. Qed.
+
+Global Instance ka_term_inj1_morphism :
+  PreKAMorphism ka_term_inj1.
+Proof. apply _. Qed.
+
+Global Instance ka_term_inj2_morphism :
+  PreKAMorphism ka_term_inj2.
+Proof. apply _. Qed.
+
+Global Instance ka_term_diag_morphism :
+  PreKAMorphism ka_term_diag.
+Proof. apply _. Qed.
+
+End KATermProj.
+
+Section RepresentableRelations.
+
+Context (T : setoid) `{!LeibnizEquiv T, !EqDecision T, !Finite T}.
+
+Implicit Types (e : ka_term (list T * list T)) (L : ka_term (list T)).
+
+Definition diff : ka_term (list T * list T) :=
+  let diffs := filter (λ '(x, y), bool_decide (x ≠ y)) (enum (T * T)) in
+  ⨆ (map (λ '(x, y), Unit ([x], [y])) diffs).
+
+Record repr_rel e L : Type := {
+  repr_rel_dom : ka_term_proj1 e ⊑ L;
+  repr_rel_cod : ka_term_proj2 e ⊑ L;
+  next : list T → list (list T);
+  residue : ka_term (list T * list T);
+  expand_rel :
+    ∀ xs : list T,
+      Unit (1, xs) ⋅ e ⊑
+        Unit (xs, xs) ⋅ ⨆ (map (λ ys, Unit (1, ys)) (next xs))
+        ⊔ ka_term_diag pseudo_top ⋅ diff ⋅ residue;
+}.
+
+
+
 
 (* ------- ------- *)
 (* ------- Interpreting MM instructions as terms ------- *)
