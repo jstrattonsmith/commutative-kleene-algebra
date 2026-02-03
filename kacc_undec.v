@@ -67,19 +67,14 @@ Open Scope ka_scope.
 
 (** Setoids *)
 
-Record SetoidMixin T `{!Equiv T} := {
-  setoid_equivalence : Equivalence (@equiv T _);
-}.
-Arguments SetoidMixin T {_}.
-
 Structure setoid := Setoid {
   setoid_car :> Type;
   setoid_equiv : Equiv setoid_car;
-  setoid_mixin : SetoidMixin setoid_car;
+  setoid_equiv_equivalence : Equivalence (@equiv setoid_car _);
 }.
 Global Arguments setoid_car : simpl never.
 Global Arguments setoid_equiv : simpl never.
-Global Arguments setoid_mixin : simpl never.
+Global Arguments setoid_equiv_equivalence : simpl never.
 (* FIXME(Coq #6294) : we need the new unification algorithm here. *)
 Global Hint Extern 0 (Equiv _) =>
   refine (@setoid_equiv _); shelve : typeclass_instances.
@@ -88,8 +83,7 @@ Section SetoidTheory.
 
 Variable T : setoid.
 
-Global Instance setoid_equiv_equivalence : Equivalence ((≡) : relation T).
-Proof. exact: (setoid_equivalence (setoid_mixin T)). Defined.
+Global Existing Instance setoid_equiv_equivalence.
 
 End SetoidTheory.
 
@@ -98,7 +92,7 @@ Section EqSetoid.
 Variable T : Type.
 
 Definition eq_setoid :=
-  @Setoid T eq {| setoid_equivalence := eq_equivalence |}.
+  @Setoid T eq eq_equivalence.
 
 End EqSetoid.
 
@@ -106,11 +100,8 @@ Section ListSetoid.
 
 Variable T : setoid.
 
-Definition list_setoid_mixin : SetoidMixin (list T) :=
-  {| setoid_equivalence := list_equivalence _ |}.
-
 Canonical Structure list_setoid :=
-  @Setoid (list T) (≡) list_setoid_mixin.
+  @Setoid (list T) (≡) (list_equivalence _).
 
 End ListSetoid.
 
@@ -118,11 +109,8 @@ Section ProductSetoid.
 
 Variables T S : setoid.
 
-Definition prod_setoid_mixin : SetoidMixin (T * S) :=
-  {| setoid_equivalence := prod_equivalence _ _ |}.
-
 Canonical Structure prod_setoid :=
-  @Setoid (T * S) (≡) prod_setoid_mixin.
+  @Setoid (T * S) (≡) (prod_equivalence _ _).
 
 End ProductSetoid.
 
@@ -151,7 +139,7 @@ Structure monoid : Type := Monoid' {
   monoid_equiv : Equiv monoid_car;
   monoid_mul : Mul monoid_car;
   monoid_one : One monoid_car;
-  monoid_setoid_mixin : SetoidMixin monoid_car;
+  monoid_setoid_mixin : Equivalence (@equiv monoid_car _);
   monoid_mixin : MonoidMixin monoid_car;
 }.
 
@@ -285,7 +273,7 @@ Qed.
 
 Canonical Structure list_monoid :=
   @Monoid' (list T) _ _ _
-           (list_setoid_mixin T)
+           (list_equivalence _)
            list_monoid_mixin.
 
 End ListMonoid.
@@ -337,7 +325,7 @@ Qed.
 
 Canonical Structure prod_monoid :=
   @Monoid' (T * S) _ _ _
-           (prod_setoid_mixin T S)
+           (prod_equivalence _ _)
            prod_monoid_mixin.
 
 Global Instance fst_monoid_morphism : MonoidMorphism (@fst T S).
@@ -449,7 +437,7 @@ Structure semi_lattice : Type := SemiLattice' {
   semi_lattice_join : Join semi_lattice_car;
   semi_lattice_bottom : Bottom semi_lattice_car;
   semi_lattice_sqsubseteq : SqSubsetEq semi_lattice_car;
-  semi_lattice_setoid_mixin : SetoidMixin semi_lattice_car;
+  semi_lattice_setoid_mixin : Equivalence (≡@{semi_lattice_car});
   semi_lattice_mixin : SemiLatticeMixin semi_lattice_car;
 }.
 Global Arguments semi_lattice_car : simpl never.
@@ -673,7 +661,7 @@ Structure pre_ka : Type := PreKA' {
   pre_ka_mul : Mul pre_ka_car;
   pre_ka_one : One pre_ka_car;
   pre_ka_star : Star pre_ka_car;
-  pre_ka_setoid_mixin : SetoidMixin pre_ka_car;
+  pre_ka_setoid_mixin : Equivalence (≡@{pre_ka_car});
   pre_ka_monoid_mixin : MonoidMixin pre_ka_car;
   pre_ka_semi_lattice_mixin : SemiLatticeMixin pre_ka_car;
   pre_ka_mixin : PreKAMixin pre_ka_car;
@@ -844,7 +832,7 @@ Inductive ka_eq : Equiv (ka_term T) :=
 Global Existing Instance ka_eq.
 Global Existing Instance ka_unit_proper.
 
-Instance ka_eq_equivalence : Equivalence (≡@{ka_term T}).
+Global Instance ka_eq_equivalence : Equivalence (≡@{ka_term T}).
 Proof.
 constructor.
 - apply ka_eq_refl.
@@ -852,11 +840,8 @@ constructor.
 - apply ka_eq_trans.
 Defined.
 
-Lemma ka_term_setoid_mixin : SetoidMixin (ka_term T).
-Proof. constructor; apply _. Defined.
-
 Canonical Structure ka_term_setoid :=
-  @Setoid (ka_term T) _ ka_term_setoid_mixin.
+  @Setoid (ka_term T) _ ka_eq_equivalence.
 
 Lemma ka_term_monoid_mixin : MonoidMixin (ka_term T).
 Proof.
@@ -892,18 +877,15 @@ constructor.
 Qed.
 
 Canonical Structure ka_term_monoid :=
-  @Monoid' (ka_term T) _ _ _
-    ka_term_setoid_mixin
+  @Monoid' (ka_term T) _ _ _ _
     ka_term_monoid_mixin.
 
 Canonical Structure ka_term_semi_lattice :=
-  @SemiLattice' (ka_term T) _ _ _ _
-    ka_term_setoid_mixin
+  @SemiLattice' (ka_term T) _ _ _ _ _
     ka_term_semi_lattice_mixin.
 
 Canonical Structure ka_term_pre_ka :=
-  @PreKA' (ka_term T) _ _ _ _ _ _ _
-    ka_term_setoid_mixin
+  @PreKA' (ka_term T) _ _ _ _ _ _ _ _
     ka_term_monoid_mixin
     ka_term_semi_lattice_mixin
     ka_term_pre_ka_mixin.
@@ -916,6 +898,64 @@ constructor => //=.
 Qed.
 
 End KATermTheory.
+
+Canonical Structure bool_setoid :=
+  eq_setoid bool.
+
+Global Instance bool_one : One bool := true.
+Global Instance bool_mul : Mul bool := andb.
+Lemma bool_monoid_mixin : MonoidMixin bool.
+Proof.
+split.
+- by case=> [] [] [].
+- by case.
+- by case.
+- solve_proper.
+Qed.
+
+Canonical bool_monoid :=
+  @Monoid' bool _ _ _
+    _
+    bool_monoid_mixin.
+
+Global Instance bool_bottom : Bottom bool := false.
+Global Instance bool_join : Join bool := orb.
+Global Instance bool_sqsubseteq : SqSubsetEq bool :=
+  default_sqsubseteq.
+Lemma bool_semi_lattice_mixin : SemiLatticeMixin bool.
+Proof.
+split.
+- by case=> [] [] [].
+- by case=> [] [].
+- by case=> [].
+- by case.
+- solve_proper.
+- exact: default_sqsubseteq_eq.
+Qed.
+
+Canonical bool_semi_lattice :=
+  @SemiLattice' bool _ _ _ _
+    _
+    bool_semi_lattice_mixin.
+
+Global Instance bool_star : Star bool := λ _, 1.
+Lemma bool_pre_ka_mixin : PreKAMixin bool.
+Proof.
+split.
+- by case=> [] [] [].
+- by case=> [] [] [].
+- by case.
+- by case.
+- by case.
+- solve_proper.
+Qed.
+
+Canonical bool_pre_ka :=
+  @PreKA' bool _ _ _ _ _ _ _
+    _
+    bool_monoid_mixin
+    bool_semi_lattice_mixin
+    bool_pre_ka_mixin.
 
 Variant count :=
 | CountEmpty  : Bottom count
@@ -947,8 +987,7 @@ constructor => //=.
 Qed.
 
 Canonical Structure count_monoid :=
-  @Monoid' count _ _ _
-           (setoid_mixin count)
+  @Monoid' count _ _ _ _
            count_monoid_mixin.
 
 Global Instance count_join : Join count := λ c1 c2,
@@ -973,8 +1012,7 @@ apply default_semi_lattice_mixin; last solve_proper.
 Qed.
 
 Canonical Structure count_semi_lattice :=
-  @SemiLattice' count _ _ _ _
-                (setoid_mixin count)
+  @SemiLattice' count _ _ _ _ _
                 count_semi_lattice_mixin.
 
 Lemma count_join_empty (c1 c2 : count) : c1 ⊔ c2 = ⊥ ↔ c1 = ⊥ ∧ c2 = ⊥.
@@ -1000,8 +1038,7 @@ constructor; try solve_proper.
 Qed.
 
 Canonical Structure count_pre_ka :=
-  @PreKA' count _ _ _ _ _ _ _
-          (setoid_mixin count)
+  @PreKA' count _ _ _ _ _ _ _ _
           count_monoid_mixin
           count_semi_lattice_mixin
           count_pre_ka_mixin.
@@ -1209,7 +1246,7 @@ Implicit Types A B C : lang.
 Global Instance lang_equiv : Equiv lang := λ A B,
   ∀ x : T, A x ↔ B x.
 
-Global Instance lang_equivalence : Equivalence (@equiv lang _).
+Global Instance lang_equivalence : Equivalence (≡@{lang}).
 Proof.
 split.
 - by move=> A x.
@@ -1217,11 +1254,8 @@ split.
 - by move=> A B C e1 e2 x; rewrite (e1 x) (e2 x).
 Qed.
 
-Definition lang_setoid_mixin : SetoidMixin lang :=
-  {| setoid_equivalence := lang_equivalence |}.
-
 Canonical Structure lang_setoid :=
-  @Setoid lang _ lang_setoid_mixin.
+  @Setoid lang _ _.
 
 Global Instance lang_proper : Proper ((≡) ==> (≡) ==> iff) lang_car.
 Proof.
@@ -1265,8 +1299,7 @@ constructor.
 Qed.
 
 Canonical Structure lang_monoid :=
-  @Monoid' lang _ _ _
-           lang_setoid_mixin
+  @Monoid' lang _ _ _ _
            lang_monoid_mixin.
 
 Global Program Instance lang_bottom : Bottom lang :=
@@ -1293,8 +1326,7 @@ rewrite /lang_bottom /lang_join /lang_sqsubseteq; constructor.
 Qed.
 
 Canonical Structure lang_semi_lattice :=
-  @SemiLattice' lang _ _ _ _
-                lang_setoid_mixin
+  @SemiLattice' lang _ _ _ _ _
                 lang_semi_lattice_mixin.
 
 Global Program Instance lang_star : Star lang := λ A,
@@ -1319,8 +1351,7 @@ constructor; rewrite /union /empty /mul /one /star /=.
 Qed.
 
 Canonical Structure lang_pre_ka :=
-  @PreKA' lang _ _ _ _ _ _ _
-          lang_setoid_mixin
+  @PreKA' lang _ _ _ _ _ _ _ _
           lang_monoid_mixin
           lang_semi_lattice_mixin
           lang_pre_ka_mixin.
@@ -1464,6 +1495,43 @@ Global Instance ka_term_diag_morphism :
 Proof. apply _. Qed.
 
 End KATermProj.
+
+Section Derivatives.
+
+Context (T : setoid) `{!LeibnizEquiv T, !EqDecision T, !Finite T}.
+
+Implicit Types (x y : T) (xs ys : list T) (e : ka_term (list T)).
+
+Definition contains_one e : bool :=
+  ka_term_elim (λ xs, ∏ (map (λ _, ⊥) xs)) e.
+
+Fixpoint derivative x e : ka_term (list T) :=
+  match e with
+  | Unit [] =>
+    ⊥
+  | Unit (y :: ys) =>
+    if bool_decide (x = y) then 1 else ⊥
+  | ka_term_bottom =>
+    ⊥
+  | ka_term_join e1 e2 =>
+    derivative x e1 ⊔ derivative x e2
+  | ka_term_mul e1 e2 =>
+    derivative x e1 ⋅ e2 ⊔
+    (if contains_one e1 then 1 else ⊥) ⋅ derivative x e2
+  | ka_term_star e =>
+    derivative x e ⋅ star e
+  end.
+
+
+
+
+Record fsa : Type := {
+  fsa_state : setoid;
+  fsa_state_leibniz : LeibnizEquiv fsa_state;
+  fsa_state_eq_dec : EqDecision fsa_state;
+  fsa_state_finite : Finite fsa_state;
+}.
+
 
 Section RepresentableRelations.
 
