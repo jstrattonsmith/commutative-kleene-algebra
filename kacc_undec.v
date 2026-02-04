@@ -3,9 +3,8 @@ Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.
 Require Import Stdlib.Setoids.Setoid.
 Require Import Undecidability.MinskyMachines.MM2.
-From stdpp Require Import base list finite.
+From stdpp Require Import base list finite gmap mapset.
 (* From Coq Require Import Lia. *)
-
 From Stdlib Require Import Bool.
 
 Set Implicit Arguments.
@@ -20,6 +19,127 @@ split=> [[xs []]|[xs []]].
 - by rewrite -!elem_of_list_In; eauto.
 - by rewrite !elem_of_list_In; eauto.
 Qed.
+
+Section FiniteGMap.
+
+Context `{!EqDecision K, !Countable K, !Finite K}.
+Context `{!EqDecision V, !Countable V, !Finite V}.
+
+Implicit Types (k : K) (ks : list K) (v : V).
+Implicit Types (m : gmap K V) (ms : list (gmap K V)).
+
+Definition add_bindings1 k m :=
+  m :: map (λ v, <[k := v]> m) (enum V).
+
+Definition add_bindings k ms :=
+  flat_map (add_bindings1 k) ms.
+
+Definition gmap_enum_on ks :=
+  foldr add_bindings [∅] ks.
+
+Definition gmap_enum : list (gmap K V) :=
+  gmap_enum_on (enum K).
+
+Lemma elem_of_add_bindings1_dom k m :
+  k ∉ dom m →
+  (∀ m', m' ∈ add_bindings1 k m ↔ m = delete k m').
+Proof.
+move=> k_m m'; rewrite /add_bindings1 elem_of_cons elem_of_list_fmap.
+split=> [[-> {m'}|[v [] -> _]]|m_m'].
+- apply: map_subseteq_size_eq.
+  + apply/map_subseteq_spec => k' v m_k'.
+    rewrite lookup_delete_ne // => ne; move/not_elem_of_dom: k_m.
+    by rewrite ne m_k'.
+  + rewrite map_size_delete_None //; exact/not_elem_of_dom.
+- by rewrite delete_insert //; apply/not_elem_of_dom.
+- destruct (m' !! k) as [v|] eqn:m'_k.
+  + right; exists v; split; last exact: elem_of_enum.
+    by rewrite m_m' insert_delete.
+  + by left; rewrite {}m_m' delete_notin.
+Qed.
+
+Lemma subseteq_union_difference (X Y Z : gset K) :
+  X ⊆ Y ∪ Z ↔ X ∖ Y ⊆ Z.
+Proof.
+split=> H x.
+- case/elem_of_difference; set_solver.
+- move=> x_X; apply/elem_of_union; case: (decide (x ∈ Y))=> x_Y.
+  + set_solver.
+  + by right; apply: H; apply/elem_of_difference; split.
+Qed.
+
+Lemma elem_of_add_bindings k ms ks :
+  k ∉ ks →
+  (∀ m, m ∈ ms ↔ dom m ⊆ list_to_set ks) →
+  (∀ m, m ∈ add_bindings k ms ↔ dom m ⊆ {[k]} ∪ list_to_set ks).
+Proof.
+move=> k_ks ms_ks m; rewrite /add_bindings flat_map_concat_map.
+rewrite subseteq_union_difference -dom_delete_L -ms_ks elem_of_concat.
+split.
+- case=> _ [] /elem_of_list_fmap [] m' [] -> /ms_ks dom_m'.
+  have k_m': k ∉ dom m' by set_solver.
+  move=> /(elem_of_add_bindings1_dom k_m') <-; exact/ms_ks.
+- move=> /ms_ks dom_m; exists (add_bindings1 k (delete k m)).
+  have k_m: k ∉ dom (delete k m).
+    rewrite dom_delete elem_of_difference elem_of_singleton.
+    by tauto.
+  split; last exact/(elem_of_add_bindings1_dom k_m).
+  apply/elem_of_list_fmap; eexists _; split; eauto.
+  exact/ms_ks.
+Qed.
+
+Lemma elem_of_gmap_enum_on m ks :
+  NoDup ks →
+  m ∈ gmap_enum_on ks ↔ dom m ⊆ list_to_set ks.
+Proof.
+move=> nd; elim: ks / nd => [|k ks k_ks _ IH] /= in m *.
+- rewrite elem_of_list_singleton.
+  split=> [->|m_0]; first by rewrite dom_empty.
+  apply: dom_empty_inv_L; exact/equiv_empty_L.
+- move: m; exact: elem_of_add_bindings.
+Qed.
+
+Lemma elem_of_gmap_enum m : m ∈ gmap_enum.
+Proof.
+have : dom m ⊆ list_to_set (enum K).
+  move=> k _; rewrite elem_of_list_to_set; exact: elem_of_enum.
+by rewrite -(elem_of_gmap_enum_on _ (NoDup_enum K)).
+Qed.
+
+Global Program Instance gmap_finite : Finite (gmap K V) := {|
+  (* FIXME: This removal step should not be needed because gmap_enum is
+     duplicate free. *)
+  enum := remove_dups gmap_enum;
+|}.
+
+Next Obligation. exact: NoDup_remove_dups. Qed.
+Next Obligation.
+move=> m; rewrite elem_of_remove_dups; exact: elem_of_gmap_enum.
+Qed.
+
+End FiniteGMap.
+
+Section FiniteGSet.
+
+Context `{!EqDecision T, !Countable T, !Finite T}.
+
+Implicit Types (x : T) (X : gset T).
+
+Global Program Instance gset_finite : Finite (gset T) := {|
+  enum := map Mapset (enum (gmap T unit));
+|}.
+
+Next Obligation.
+apply: NoDup_fmap_2; last exact: NoDup_enum.
+by move=> ?? [?].
+Qed.
+
+Next Obligation.
+case=> X; apply/elem_of_list_fmap; exists X; split => //.
+exact: elem_of_enum.
+Qed.
+
+End FiniteGSet.
 
 Section AllPairs.
 
