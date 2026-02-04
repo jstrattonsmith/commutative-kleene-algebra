@@ -105,6 +105,13 @@ Canonical Structure list_setoid :=
 
 End ListSetoid.
 
+Global Instance Proper_map' {A B : setoid} :
+  Proper (((≡) ==> (≡)) ==> (≡) ==> (≡)) (@map A B).
+Proof.
+move=> f g efg xs ys; elim: xs ys / => //= x y xs ys exy _ ->.
+by rewrite (efg _ _ exy).
+Qed.
+
 Section ProductSetoid.
 
 Variables T S : setoid.
@@ -604,9 +611,28 @@ apply (anti_symm _).
   by apply: sqsubseteq_join_list; apply/elem_of_list_fmap; eauto.
 Qed.
 
+Lemma join_list_bottom xs :
+  (∀ x, x ∈ xs → x ≡ ⊥) →
+  ⨆ xs ≡ ⊥.
+Proof.
+move=> const_x; apply: (anti_symm _).
+- by rewrite join_list_sqsubseteq => x x_xs; rewrite (const_x _ x_xs).
+- exact: bottom_sqsubseteq.
+Qed.
+
 End SemiLatticeTheory.
 
 Notation "⨆" := join_list : ka_scope.
+
+Lemma join_list_join {T : Type} {S : semi_lattice}
+    (f1 : T → S) (f2 : T → S) (xs : list T) :
+  ⨆ (map (λ x, f1 x ⊔ f2 x) xs) ≡
+  ⨆ (map f1 xs) ⊔ ⨆ (map f2 xs).
+Proof.
+elim: xs => //= [|x xs IH]; first by rewrite right_id.
+rewrite IH [in X in _ ≡ X]assoc -[(f1 x ⊔ _) ⊔ f2 x]assoc.
+by rewrite [⨆ _ ⊔ f2 x]comm !assoc.
+Qed.
 
 Class SemiLatticeMorphism (T S : semi_lattice) (f : T → S) := {
   semi_lattice_morphism_proper :: Proper ((≡) ==> (≡)) f;
@@ -1496,9 +1522,77 @@ Proof. apply _. Qed.
 
 End KATermProj.
 
+Section Automata.
+
+Context (Σ : Type) `{!EqDecision Σ, !Finite Σ}.
+Context (T : pre_ka) (f : Σ → T).
+
+Record fsa := FSA {
+  fsa_state : Type;
+  fsa_state_eq_dec : EqDecision fsa_state;
+  fsa_state_finite : Finite fsa_state;
+  fsa_initial : fsa_state;
+  fsa_final : fsa_state → bool;
+  fsa_interp : fsa_state → T;
+  fsa_trans : Σ → fsa_state → fsa_state;
+  fsa_derivable : ∀ σ : fsa_state,
+    fsa_interp σ ≡
+    (if fsa_final σ then 1 else ⊥) ⊔
+    ⨆ (map (λ x, f x ⋅ fsa_interp (fsa_trans x σ)) (enum Σ));
+}.
+
+Global Existing Instance fsa_state_eq_dec.
+Global Existing Instance fsa_state_finite.
+
+Implicit Types (A B : fsa).
+
+Program Definition fsa_bottom : fsa := {|
+  fsa_state := unit;
+  fsa_initial := tt;
+  fsa_final _ := false;
+  fsa_interp σ := ⊥;
+  fsa_trans x σ := tt;
+|}.
+
+Next Obligation.
+move=> []; rewrite left_id join_list_bottom // => x.
+by case/elem_of_list_fmap => y [] ->; rewrite right_absorb.
+Qed.
+
+Program Definition fsa_join A B : fsa := {|
+  fsa_state := fsa_state A * fsa_state B;
+  fsa_initial := (fsa_initial A, fsa_initial B);
+  fsa_final := λ σ, fsa_final σ.1 || fsa_final σ.2;
+  fsa_interp := λ σ, fsa_interp σ.1 ⊔ fsa_interp σ.2;
+  fsa_trans := λ x σ, (fsa_trans x σ.1, fsa_trans x σ.2);
+|}.
+
+Next Obligation.
+move=> A B [σA σB] /=.
+rewrite (fsa_derivable σA) (fsa_derivable σB).
+set A1 := if fsa_final σA then _ else _.
+set B1 := if fsa_final σB then _ else _.
+rewrite assoc -[_ ⊔ _ ⊔ B1]assoc [_ ⊔ B1]comm assoc.
+rewrite -[((A1 ⊔ B1) ⊔ _) ⊔ _]assoc.
+have ->: A1 ⊔ B1 ≡ if fsa_final σA || fsa_final σB then 1 else ⊥.
+{ rewrite /A1 /B1; case: (fsa_final σA) (fsa_final σB) => [] [] /=.
+  - by rewrite idemp.
+  - by rewrite right_id.
+  - by rewrite left_id.
+  - by rewrite left_id. }
+rewrite -join_list_join.
+set xs1 := map _ _; set xs2 := map _ _.
+have -> // : xs1 ≡ xs2.
+rewrite /xs1 /xs2; apply: (@Proper_map' (eq_setoid Σ)) => //= x y ->.
+by rewrite pre_ka_right_dist.
+Qed.
+
+End Automata.
+
+
+
 Section Derivatives.
 
-Context (T : setoid) `{!LeibnizEquiv T, !EqDecision T, !Finite T}.
 
 Implicit Types (x y : T) (xs ys : list T) (e : ka_term (list T)).
 
