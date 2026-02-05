@@ -1707,6 +1707,31 @@ rewrite /xs1 /xs2; apply: (@Proper_map' (eq_setoid Σ)) => //= x y ->.
 by rewrite pre_ka_right_dist.
 Qed.
 
+Program Definition fsa_mul A B : fsa := {|
+  fsa_state := fsa_state A * gset (fsa_state B);
+  fsa_initial :=
+    (fsa_initial A,
+     if fsa_final (fsa_initial A) then {[fsa_initial B]}
+     else ∅);
+  fsa_final '(σA, ΣB) :=
+    fsa_final σA && fsa_final (fsa_initial B) ||
+    existsb (λ σB, fsa_final σB) (elements ΣB);
+  fsa_interp '(σA, ΣB) := fsa_interp σA ⋅ fsa_interp (fsa_initial B) ⊔
+                          ⨆ (map (λ σB, fsa_interp σB) (elements ΣB));
+  fsa_trans x '(σA, ΣB) := let σA' := fsa_trans x σA in
+                           (σA',
+                            (if fsa_final σA' then {[fsa_initial B]} else ∅) ∪
+                            (list_to_set (fsa_trans x <$> elements ΣB)));
+
+|}.
+
+Next Obligation.
+move=> A B [σA ΣB] /=.
+rewrite fsa_derivable {1}[fsa_interp (fsa_initial B)]fsa_derivable.
+
+
+
+
 End Automata.
 
 
