@@ -241,6 +241,15 @@ Canonical Structure prod_setoid :=
 
 End ProductSetoid.
 
+Section GSetSetoid.
+
+Context `{Countable T}.
+
+Canonical Structure gset_setoid :=
+  @Setoid (gset T) (≡) _.
+
+End GSetSetoid.
+
 (** Monoids *)
 
 Class Mul T := mul : T -> T -> T.
@@ -740,6 +749,16 @@ move=> const_x; apply: (anti_symm _).
 - exact: bottom_sqsubseteq.
 Qed.
 
+Lemma join_mono x1 x2 y1 y2 :
+  x1 ⊑ x2 →
+  y1 ⊑ y2 →
+  x1 ⊔ y1 ⊑ x2 ⊔ y2.
+Proof.
+move=> x12 y12; rewrite join_sqsubseteq; split.
+- by etransitivity; last exact: sqsubseteq_join_left.
+- by etransitivity; last exact: sqsubseteq_join_right.
+Qed.
+
 End SemiLatticeTheory.
 
 Notation "⨆" := join_list : ka_scope.
@@ -753,6 +772,32 @@ elim: xs => //= [|x xs IH]; first by rewrite right_id.
 rewrite IH [in X in _ ≡ X]assoc -[(f1 x ⊔ _) ⊔ f2 x]assoc.
 by rewrite [⨆ _ ⊔ f2 x]comm !assoc.
 Qed.
+
+Section GSetSemiLattice.
+
+Context `{Countable T}.
+
+Global Instance gset_bottom : Bottom (gset T) := ∅ : gset T.
+Global Instance gset_join : Join (gset T) := (∪).
+Global Instance gset_sqsubseteq : SqSubsetEq (gset T) := (⊆).
+
+Lemma gset_semi_lattice_mixin : SemiLatticeMixin (gset T).
+Proof.
+split.
+- apply _.
+- apply _.
+- apply _.
+- apply _.
+- solve_proper.
+- move=> X Y.
+  by rewrite /sqsubseteq /gset_sqsubseteq subseteq_union.
+Qed.
+
+Canonical Structure gset_semi_lattice :=
+  @SemiLattice' (gset T) _ _ _ _ _
+    gset_semi_lattice_mixin.
+
+End GSetSemiLattice.
 
 Class SemiLatticeMorphism (T S : semi_lattice) (f : T → S) := {
   semi_lattice_morphism_proper :: Proper ((≡) ==> (≡)) f;
@@ -1705,6 +1750,94 @@ set xs1 := map _ _; set xs2 := map _ _.
 have -> // : xs1 ≡ xs2.
 rewrite /xs1 /xs2; apply: (@Proper_map' (eq_setoid Σ)) => //= x y ->.
 by rewrite pre_ka_right_dist.
+Qed.
+
+Record nfa := NFA {
+  nfa_state : semi_lattice;
+  nfa_state_leibniz : LeibnizEquiv nfa_state;
+  nfa_state_eq_dec : EqDecision nfa_state;
+  nfa_state_finite : Finite nfa_state;
+  nfa_initial : nfa_state;
+  nfa_final : nfa_state → bool;
+  nfa_interp : nfa_state → T;
+  nfa_interp_bottom : nfa_interp ⊥ ≡ ⊥;
+  nfa_interp_join : ∀ σ₁ σ₂,
+    nfa_interp (σ₁ ⊔ σ₂) ≡ nfa_interp σ₁ ⊔ nfa_interp σ₂;
+  nfa_trans : Σ → nfa_state → nfa_state;
+  nfa_derivable : ∀ σ : nfa_state,
+    nfa_interp σ ≡
+    (if nfa_final σ then 1 else ⊥) ⊔
+    ⨆ (map (λ x, f x ⋅ nfa_interp (nfa_trans x σ)) (enum Σ));
+}.
+
+Program Definition fsa_to_nfa A : nfa := {|
+  nfa_state := gset (fsa_state A);
+  nfa_initial := {[fsa_initial A]};
+  nfa_final Σ := existsb (λ σ, fsa_final σ) (elements Σ);
+  nfa_interp Σ := ⨆ (map (λ σ, fsa_interp σ) (elements Σ));
+  nfa_trans x Σ := list_to_set (map (fsa_trans x) (elements Σ));
+|}.
+
+Next Obligation.
+by move=> A; rewrite /= elements_empty /=.
+Qed.
+
+Next Obligation.
+move=> A Σ₁ Σ₂ /=; apply: (anti_symm _).
+- rewrite join_list_sqsubseteq => _ /elem_of_list_fmap [σ [] ->].
+  rewrite elem_of_elements elem_of_union; case=> [σ_Σ|σ_Σ].
+  + etransitivity; last exact: sqsubseteq_join_left.
+    apply/sqsubseteq_join_list/elem_of_list_fmap.
+    by eexists _; split; rewrite // elem_of_elements.
+  + etransitivity; last exact: sqsubseteq_join_right.
+    apply/sqsubseteq_join_list/elem_of_list_fmap.
+    by eexists _; split; rewrite // elem_of_elements.
+- rewrite join_sqsubseteq; split.
+  + rewrite join_list_sqsubseteq => _ /elem_of_list_fmap [σ [] ->].
+    rewrite elem_of_elements => σ_Σ.
+    apply/sqsubseteq_join_list/elem_of_list_fmap.
+    by exists σ; split; rewrite // elem_of_elements elem_of_union; eauto.
+  + rewrite join_list_sqsubseteq => _ /elem_of_list_fmap [σ [] ->].
+    rewrite elem_of_elements => σ_Σ.
+    apply/sqsubseteq_join_list/elem_of_list_fmap.
+    by exists σ; split; rewrite // elem_of_elements elem_of_union; eauto.
+Qed.
+
+Next Obligation.
+move=> A Σ' /=; apply: (anti_symm _).
+- rewrite join_list_sqsubseteq => _ /elem_of_list_fmap [σ' [] -> σ'_Σ'].
+  rewrite fsa_derivable; apply: join_mono.
+  + case final_σ': (fsa_final σ'); last exact: bottom_sqsubseteq.
+    rewrite (_ : existsb _ _ = true) //.
+    by apply/existsb_exists; exists σ'; split; rewrite // -elem_of_list_In.
+  + rewrite join_list_sqsubseteq=> _ /elem_of_list_fmap [x [] -> _].
+    transitivity (f x ⋅ ⨆ (map (λ σ, fsa_interp σ)
+      (elements (list_to_set (map (fsa_trans x) (elements Σ')) : gset _)))).
+    * apply: pre_ka_mul_mono=> //=.
+      apply: sqsubseteq_join_list; apply/elem_of_list_fmap.
+      eexists _; split; rewrite // elem_of_elements elem_of_list_to_set.
+      by apply/elem_of_list_fmap; eexists _; split.
+    * apply: sqsubseteq_join_list; apply/elem_of_list_fmap.
+      exists x; split => //; exact: elem_of_enum.
+- rewrite join_sqsubseteq; split.
+  + case e: existsb; last exact: bottom_sqsubseteq.
+    case/existsb_exists: e=> σ [] /elem_of_list_In σ_Σ' final_σ.
+    transitivity (fsa_interp σ).
+    * rewrite fsa_derivable final_σ; exact: sqsubseteq_join_left.
+    * apply/sqsubseteq_join_list/elem_of_list_fmap.
+      by exists σ; eauto.
+  + rewrite join_list_sqsubseteq=> _ /elem_of_list_fmap [x [] -> _].
+    rewrite join_list_right_dist map_map join_list_sqsubseteq.
+    move=> _ /elem_of_list_fmap [σ [] ->].
+    rewrite elem_of_elements elem_of_list_to_set.
+    case/elem_of_list_fmap=> σ' [] -> σ'_Σ'.
+    transitivity (fsa_interp σ').
+    * rewrite (fsa_derivable σ').
+      etransitivity; last exact: sqsubseteq_join_right.
+      apply/sqsubseteq_join_list/elem_of_list_fmap.
+      exists x; split => //; exact: elem_of_enum.
+    * apply/sqsubseteq_join_list/elem_of_list_fmap.
+      by exists σ'; split.
 Qed.
 
 Program Definition fsa_mul A B : fsa := {|
