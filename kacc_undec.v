@@ -158,6 +158,29 @@ Hint Resolve ka_neq_sym : core.
 Definition ka_leq {T} (x y : ka_term T) : Prop := ((y + x) ≡ y)%ka.
 Notation "x ≤ y" := (ka_leq x y) : ka_scope.
 
+Print ka_term.
+
+Fixpoint π_l {T} (t : ka_term T) : ka_term T :=
+  match t with
+  | 0 => 0
+  | 1 => 1
+  | L _ => t
+  | R _ => 1
+  | t1 ⋅ t2 => (π_l t1) ⋅ (π_l t2)
+  | t1 + t2 => (π_l t1) + (π_l t2)
+  | t'✶ => (π_l t')✶
+  end%ka.
+
+Fixpoint π_r {T} (t : ka_term T) : ka_term T :=
+  match t with
+  | 0 => 0
+  | 1 => 1
+  | L _ => 1
+  | R _ => t
+  | t1 ⋅ t2 => (π_r t1) ⋅ (π_r t2)
+  | t1 + t2 => (π_r t1) + (π_r t2)
+  | t'✶ => (π_r t')✶
+  end%ka.
 
 (* ------- ------- *)
 (* ------- Interpreting MM instructions as terms ------- *)
@@ -221,9 +244,49 @@ Qed.
 
 Definition build_term (side : T -> ka_term T) := fold_right (λ (n : T) t, side n ⋅ t).
 
+Fixpoint strip_ones (t : ka_term T) :=
+  match t with
+  | 1 ⋅ t => strip_ones t
+  | t ⋅ 1 => strip_ones t
+  | t ⋅ t' => (strip_ones t) ⋅ strip_ones t'
+  | t + t' => (strip_ones t) + strip_ones t'
+  | _ => t
+  end.
+
+(* Global Instance strip_ones_proper :
+  Proper (ka_eq ==> ka_eq) (@strip_ones).
+Proof.
+  (* rewrite /strip_ones => t1 t2; elim: t1 t2 / => //=. *)
+  move=> t1 t2; elim: t1 t2 / => //=.
+  - move=> x y H G. by apply Ka_sym.
+  - move=> x y z _ H _ G. apply (Ka_trans H G).
+  - move=> x y H _ x' y' H' _. by rewrite H; rewrite H'.
+  - move=> x y H G x' y' H' G'. rewrite H. *)
+
+(* Lemma strip_ones_dist_dot t t' : strip_ones (t ⋅ t') ≡ (strip_ones t) ⋅ (strip_ones t').
+Proof.
+  induction t.
+  - simpl. rewrite [X in _ ≡ X] Dot_Z2. *)
+
+Lemma strip_ones_equiv t : strip_ones t ≡ t.
+Proof.
+  elim: t; try reflexivity.
+  - move=> t1 H t2 G.
+    rewrite -[X in _ ≡ X+_] H.
+    rewrite -[X in _ ≡ _+X] G.
+    elim t1; eauto.
+  - move=> t1 H t2 G.
+    rewrite -[X in _ ≡ X⋅_] H.
+    rewrite -[X in _ ≡ _⋅X] G.
+    elim t1.
+    + simpl. rewrite [X in _ ≡ X] Dot_Z2.
+Admitted.
+
+
+
 Definition string_to_ka_term ls :=
   match ls with (l1, l2) =>
-    (build_term L 1 l1)⋅(build_term R 1 l2)
+    (* strip_ones *) ((build_term L 1 l1)⋅(build_term R 1 l2))
   end.
 
 (* QUEST: thoughts on notation here? *)
@@ -1323,8 +1386,6 @@ move=> t1 t2; elim: t1 t2 / => //=; try congruence.
 - by move=> t; rewrite orb_false_r andb_comm absorption_orb.
 Qed.
 
-
-
 Lemma cstring_app_commute : ∀ l1 l2,
   ##(l1 ++ l2) ≡ (##l1) + (##l2).
 Proof.
@@ -1447,8 +1508,7 @@ Proof.
   by rewrite H1; rewrite H2; apply leq_antisym.
 Qed.
 
-
-Definition finite_term t := ∃ ls, ∀ s, In s ls <-> lang_interp t s.
+(* Definition finite_term t := ∃ ls, ∀ s, In s ls <-> lang_interp t s.
 
 Lemma finite_terms__finite_sum : ∀ t t', finite_term t ∧ finite_term t' -> finite_term (t + t').
 Proof.
@@ -1466,181 +1526,11 @@ Proof.
   + intros [H | H]; apply in_or_app;
     [apply H1 in H | apply H2 in H];
     intuition.
-Qed.
-
-Lemma finite_term_dist_over_plus : ∀ t t', finite_term (t + t') <-> finite_term t ∧ finite_term t'.
-Proof.
-  intros t t'. split.
-  - intros [ls H].
-    simpl in H;
-    unfold ka_pred_add in H.
-    (* admit. *)
-    split; unfold finite_term.
-    + exists ls.
-      intros s.
-      rewrite H.
-      split.
-      * intros [G | G]; try assumption.
-        admit.
-      * intuition.
-    + exists ls.
-      intros s.
-      rewrite H.
-      split.
-      * intros [G | G]; try assumption.
-        admit.
-      * intuition.
-  - intros [[l1 H1] [l2 H2]].
-    unfold finite_term.
-    simpl.
-    unfold ka_pred_add.
-    exists (l1 ++ l2).
-    intros s.
-    split.
-    + intros H.
-      apply in_app_or in H as [H | H];
-      [apply H1 in H | apply H2 in H];
-      intuition.
-    + intros [H | H]; apply in_or_app;
-      [apply H1 in H | apply H2 in H];
-      intuition.
-Admitted.
-
-Lemma finite_term_dist_over_dot : ∀ t t', finite_term (t ⋅ t') <-> finite_term t ∧ finite_term t'.
-Proof.
-Admitted.
-
-(* Theorem 6' *)
-Theorem finite_def : ∀ t,
-  (∃ ls, t ≡ cstring_sum ls)
-  <->
-  finite_term t.
-Proof.
-  intros t; split.
-  - intros [ls H].
-    exists ls.
-    intros s.
-    rewrite H; clear H.
-    induction ls as [| c ls IHls].
-    + simpl. reflexivity.
-    + simpl. unfold ka_pred_add.
-      rewrite - IHls.
-      rewrite string_interp_self.
-      reflexivity.
-  -
-    (* intros [ls H].
-    exists ls.
-    induction t.
-    + simpl in H. unfold ka_pred_zero in H.
-      induction ls.
-      * reflexivity.
-      * specialize (H a0). simpl in H.
-        exfalso; apply H. intuition.
-    + simpl in H. unfold ka_pred_unit in H.
-      induction ls as [| c ls IHls].
-      * specialize (H ([], []));
-        simpl in H.
-        exfalso; intuition.
-      * simpl in H.
-        specialize (H c); simpl in H. *)
-    (* unfold finite_term. *)
-    (* intros [ls H]. *)
-    induction t(* ; intros [ls H] *).
-    + intros [ls H]. exists []. reflexivity.
-    + intros [ls H]. exists [([], [])]. unfold cstring_sum. simpl.
-      rewrite Dot_Id2; rewrite Plus_Id'.
-      reflexivity.
-    + intros [ls H]. exists [([t], [])]; unfold cstring_sum; simpl.
-      repeat (rewrite Dot_Id1);
-      rewrite Plus_Id'.
-      reflexivity.
-    + intros [ls H]. exists [([], [t])]; unfold cstring_sum; simpl.
-      rewrite Dot_Id1;
-      rewrite Dot_Id2;
-      rewrite Plus_Id'.
-      reflexivity.
-    + rewrite finite_term_dist_over_plus. intros [H1 H2].
-      apply IHt1 in H1 as [l1 H1].
-      apply IHt2 in H2 as [l2 H2].
-      exists (l1 ++ l2).
-      simpl.
-      rewrite cstring_app_commute.
-      rewrite H1; rewrite H2.
-      reflexivity.
-    + admit.
-    + intros [ls H].
-      induction t.
-      * exists [([], [])].
-        unfold cstring_sum.
-        simpl.
-        rewrite zero_star.
-        rewrite Plus_Com; rewrite Plus_Id;
-        rewrite Dot_Id2.
-        reflexivity.
-      * exists [([], [])].
-        unfold cstring_sum;
-        simpl.
-        rewrite one_star.
-        rewrite Plus_Com; rewrite Plus_Id;
-        rewrite Dot_Id2.
-        reflexivity.
-      *
-
-    (* + rewrite finite_term_dist_over_dot. intros [H1 H2].
-      apply IHt1 in H1 as [l1 H1].
-      apply IHt2 in H2 as [l2 H2].
-
-    intros [[l1 H1] [l2 H2]]. simpl in H.
-      unfold ka_pred_add in H.
-      unfold finite_term in IHt1, IHt2.
-      induction ls as [|c ls IHls].
-      * have [t_cond1 | [s1 t_cond1]] := either_empty_or_nonzero t1;
-        have [t_cond2 | [s2 t_cond2]] := either_empty_or_nonzero t2;
-        try (specialize (H s1); simpl in H; exfalso; rewrite H; intuition).
-        -- exists []. rewrite t_cond1; rewrite t_cond2; rewrite Plus_Idemp.
-           reflexivity.
-        -- specialize (H s2).
-           simpl in H.
-           exfalso. rewrite H. intuition.
-      * simpl in H.
-        specialize (H c) as [c' H]. *)
-Admitted.
-
-(* Corollary 7' *)
-Theorem finite_terms_interp__equiv : ∀ (t t' : ka_term T),
-  finite_term t -> finite_term t' ->
-    (∀ s, lang_interp t s <-> lang_interp t' s) ->
-      t ≡ t'.
-Proof.
-  intros t t' Hft Hft' Hli.
-  have Hft1 := Hft.
-  have Hft1' := Hft'.
-  apply finite_def in Hft1 as [ls Htsum], Hft1' as [ls' Htsum'].
-  destruct Hft as [s Ht], Hft' as [s' Ht'].
-  rewrite Hli in Ht.
-  rewrite Htsum.
-  rewrite Htsum'.
-  unfold cstring_sum.
-  unfold cstring_sum.
-  induction ls as [|c ls IHls], ls' as [|c' ls'].
-  - reflexivity.
-  - simpl in *.
-    unfold cstring_sum in Htsum.
-    simpl in Htsum.
-  induction ls as [|c ls IHls].
-  - unfold cstring_sum in Htsum. simpl in Htsum. simpl.
-  assert (G : cstring_sum ls ≡ cstring_sum ls').
-  {
-    unfold cstring_sum.
-    unfold map.
-    compute.
-  }
+Qed. *)
 
 (* QUEST: How to allow term_list_to_term to be generic here? *)
 
 (* Definition C_M (P : list mm2_instr) := *)
-
-
 
 (* Fixpoint R_M' (P' P : list mm2_instr) (n : nat) := match P with
   | [] => 0
@@ -1656,11 +1546,64 @@ Proof.
 
 (* Definition C_M (P : list mm2_instr) := (L a)✶ ⋅ (L b)✶ ⋅ (C_M' P 1). *)
 
+Lemma pull_L_forward (x y : T) (t : ka_term T) : R x ⋅ (L y ⋅ t) ≡ L y ⋅ (R x ⋅ t).
+Proof.
+  repeat (rewrite Dot_Assoc).
+  by rewrite -LR_Com.
+Qed.
+
+(* I think in regular KA this might work, but maybe not in pre-KA *)
+Lemma proj_com (t t' : ka_term T) : (π_l t) ⋅ (π_r t') ≡ (π_r t') ⋅ (π_l t).
+Proof.
+  elim: t.
+  - by rewrite Dot_Z2; rewrite Dot_Z1.
+  - by rewrite Dot_Id2; rewrite Dot_Id1.
+  - move=> t /=. elim: t'.
+    + by rewrite Dot_Z2; rewrite Dot_Z1.
+    + by rewrite Dot_Id2; rewrite Dot_Id1.
+    + move=> t' /=; by rewrite Dot_Id2; rewrite Dot_Id1.
+    + move=> t' /=; by rewrite LR_Com.
+    + move=> t1 H1 t2 H2 /=; rewrite Dist_L; rewrite Dist_R.
+      by rewrite H1; rewrite H2.
+    + move=> t1 H1 t2 H2 /=.
+      rewrite Dot_Assoc.
+      rewrite H1.
+      rewrite -Dot_Assoc.
+      rewrite H2.
+      by rewrite Dot_Assoc.
+    + move=> t' H /=.
+Admitted.
+
+Lemma proj_concat (t : ka_term T) : t ≡ (π_l t) ⋅ (π_r t).
+Proof.
+  elim: t.
+  - by rewrite Dot_Z2.
+  - by rewrite Dot_Id2.
+  - move=> t; by rewrite Dot_Id1.
+  - move=> t; by rewrite Dot_Id2.
+  - move=> t1 H1 t2 H2 /=.
+    rewrite Dist_R; repeat (rewrite Dist_L).
+    rewrite Plus_Assoc.
+    rewrite [X in X + _ ≡ _] H1.
+    rewrite [X in _ + X ≡ _] H2.
+    admit.
+  - move=> t1 H1 t2 H2 /=.
+    rewrite [X in X ⋅ _ ≡ _] H1.
+    rewrite [X in _ ⋅ X ≡ _] H2.
+    repeat (rewrite Dot_Assoc).
+    rewrite - Dot_Assoc.
+    rewrite - Dot_Assoc.
+    rewrite [X in _ ⋅ X ≡ _] Dot_Assoc.
+    rewrite LR_Com.
+
 End Theory.
+
+Ltac sep_lr := repeat (rewrite pull_L_forward).
+
 (* -------------- *)
 
 Definition R_M (P : list mm2_instr) :=
-   term_list_to_term (map_indexed interp_single P).
+   term_sum (map_indexed interp_single P).
 
 (* Local Open Scope ka_scope. *)
 
@@ -1668,22 +1611,23 @@ Example string_to_ka_term__test1 :
   string_to_ka_term ([a; b; a; a], [a; b; a; a]) ≡ (lr a ⋅ lr b ⋅ lr a ⋅ lr a).
 Proof.
   simpl; unfold lr_term.
-  rewrite Dot_Id1.
-  repeat (rewrite Dot_Assoc).
-  reflexivity.
+  repeat (rewrite Dot_Id1).
+  repeat (rewrite -Dot_Assoc).
+  by sep_lr.
 Qed.
 
+
 Example string_to_ka_term__test2 :
-  string_to_ka_term Σ_M [a; b; c_1] ≡ lr a ⋅ lr b ⋅ lr c_1.
+  string_to_ka_term ([a; b; c_1], [a; b; c_1]) ≡ lr a ⋅ lr b ⋅ lr c_1.
 Proof.
   simpl; unfold lr_term.
-  rewrite Dot_Id1.
-  repeat (rewrite Dot_Assoc).
-  reflexivity.
+  repeat (rewrite Dot_Id1).
+  repeat (rewrite -Dot_Assoc).
+  by sep_lr.
 Qed.
 
 Check lang_interp.
-Theorem term_leq_R_M__in_lang_interp : ∀ P s s', (string_to_ka_term Σ_M L s) ⋅ (string_to_ka_term Σ_M R s') ≤ R_M P <-> lang_interp Σ_M (R_M P) (s, s').
+Theorem term_leq_R_M__in_lang_interp : ∀ P s s', ((string_to_ka_term ([s], [])) ⋅ (string_to_ka_term ([], [s'])) ≤ R_M P <-> lang_interp (R_M P) ([s], [s']))%ka.
 Proof.
   simpl; split; intros.
   - unfold R_M.
