@@ -965,7 +965,26 @@ Qed.
 Lemma star_bottom : star (⊥ : T) ≡ 1.
 Proof. by rewrite pre_ka_star_unfold left_absorb right_id. Qed.
 
+Definition pre_ka_of_bool (b : bool) : T :=
+  if b then 1 else ⊥.
+
+Lemma pre_ka_of_bool_and b1 b2 :
+  pre_ka_of_bool (b1 && b2) ≡
+  pre_ka_of_bool b1 ⋅ pre_ka_of_bool b2.
+Proof.
+by case: b1 b2 => [] []; rewrite /= ?right_id // right_absorb.
+Qed.
+
+Lemma pre_ka_of_bool_or b1 b2 :
+  pre_ka_of_bool (b1 || b2) ≡
+  pre_ka_of_bool b1 ⊔ pre_ka_of_bool b2.
+Proof.
+by case: b1 b2 => [] []; rewrite /= ?idemp // ?right_id // left_id.
+Qed.
+
 End PreKATheory.
+
+Arguments pre_ka_of_bool {T}.
 
 Inductive ka_term (T : Type) : Type :=
   | Unit of T
@@ -1694,15 +1713,17 @@ Context (T : pre_ka) (f : Σ → T).
 
 Record fsa := FSA {
   fsa_state : Type;
+  fsa_elem : T;
   fsa_state_eq_dec : EqDecision fsa_state;
   fsa_state_finite : Finite fsa_state;
   fsa_initial : fsa_state;
   fsa_final : fsa_state → bool;
   fsa_interp : fsa_state → T;
   fsa_trans : Σ → fsa_state → fsa_state;
+  fsa_interp_initial : fsa_interp fsa_initial ≡ fsa_elem;
   fsa_derivable : ∀ σ : fsa_state,
     fsa_interp σ ≡
-    (if fsa_final σ then 1 else ⊥) ⊔
+    pre_ka_of_bool (fsa_final σ) ⊔
     ⨆ (map (λ x, f x ⋅ fsa_interp (fsa_trans x σ)) (enum Σ));
 }.
 
@@ -1713,11 +1734,14 @@ Implicit Types (A B : fsa).
 
 Program Definition fsa_bottom : fsa := {|
   fsa_state := unit;
+  fsa_elem := ⊥;
   fsa_initial := tt;
   fsa_final _ := false;
   fsa_interp σ := ⊥;
   fsa_trans x σ := tt;
 |}.
+
+Next Obligation. by []. Qed.
 
 Next Obligation.
 move=> []; rewrite left_id join_list_bottom // => x.
@@ -1726,6 +1750,7 @@ Qed.
 
 Program Definition fsa_join A B : fsa := {|
   fsa_state := fsa_state A * fsa_state B;
+  fsa_elem := fsa_elem A ⊔ fsa_elem B;
   fsa_initial := (fsa_initial A, fsa_initial B);
   fsa_final := λ σ, fsa_final σ.1 || fsa_final σ.2;
   fsa_interp := λ σ, fsa_interp σ.1 ⊔ fsa_interp σ.2;
@@ -1733,19 +1758,16 @@ Program Definition fsa_join A B : fsa := {|
 |}.
 
 Next Obligation.
+by move=> A B /=; rewrite !fsa_interp_initial.
+Qed.
+
+Next Obligation.
 move=> A B [σA σB] /=.
-rewrite (fsa_derivable σA) (fsa_derivable σB).
-set A1 := if fsa_final σA then _ else _.
-set B1 := if fsa_final σB then _ else _.
+rewrite (fsa_derivable σA) (fsa_derivable σB) pre_ka_of_bool_or.
+set A1 := pre_ka_of_bool (fsa_final σA).
+set B1 := pre_ka_of_bool (fsa_final σB).
 rewrite assoc -[_ ⊔ _ ⊔ B1]assoc [_ ⊔ B1]comm assoc.
-rewrite -[((A1 ⊔ B1) ⊔ _) ⊔ _]assoc.
-have ->: A1 ⊔ B1 ≡ if fsa_final σA || fsa_final σB then 1 else ⊥.
-{ rewrite /A1 /B1; case: (fsa_final σA) (fsa_final σB) => [] [] /=.
-  - by rewrite idemp.
-  - by rewrite right_id.
-  - by rewrite left_id.
-  - by rewrite left_id. }
-rewrite -join_list_join.
+rewrite -[((A1 ⊔ B1) ⊔ _) ⊔ _]assoc -join_list_join.
 set xs1 := map _ _; set xs2 := map _ _.
 have -> // : xs1 ≡ xs2.
 rewrite /xs1 /xs2; apply: (@Proper_map' (eq_setoid Σ)) => //= x y ->.
@@ -1757,6 +1779,7 @@ Record nfa := NFA {
   nfa_state_leibniz : LeibnizEquiv nfa_state;
   nfa_state_eq_dec : EqDecision nfa_state;
   nfa_state_finite : Finite nfa_state;
+  nfa_elem : T;
   nfa_initial : nfa_state;
   nfa_final : nfa_state → bool;
   nfa_interp : nfa_state → T;
@@ -1764,14 +1787,20 @@ Record nfa := NFA {
   nfa_interp_join : ∀ σ₁ σ₂,
     nfa_interp (σ₁ ⊔ σ₂) ≡ nfa_interp σ₁ ⊔ nfa_interp σ₂;
   nfa_trans : Σ → nfa_state → nfa_state;
+  nfa_interp_initial : nfa_interp nfa_initial ≡ nfa_elem;
   nfa_derivable : ∀ σ : nfa_state,
     nfa_interp σ ≡
-    (if nfa_final σ then 1 else ⊥) ⊔
+    pre_ka_of_bool (nfa_final σ) ⊔
     ⨆ (map (λ x, f x ⋅ nfa_interp (nfa_trans x σ)) (enum Σ));
 }.
 
+Global Existing Instance nfa_state_leibniz.
+Global Existing Instance nfa_state_eq_dec.
+Global Existing Instance nfa_state_finite.
+
 Program Definition fsa_to_nfa A : nfa := {|
   nfa_state := gset (fsa_state A);
+  nfa_elem := fsa_elem A;
   nfa_initial := {[fsa_initial A]};
   nfa_final Σ := existsb (λ σ, fsa_final σ) (elements Σ);
   nfa_interp Σ := ⨆ (map (λ σ, fsa_interp σ) (elements Σ));
@@ -1779,7 +1808,7 @@ Program Definition fsa_to_nfa A : nfa := {|
 |}.
 
 Next Obligation.
-by move=> A; rewrite /= elements_empty /=.
+by move=> A; rewrite /= elements_empty.
 Qed.
 
 Next Obligation.
@@ -1801,6 +1830,11 @@ move=> A Σ₁ Σ₂ /=; apply: (anti_symm _).
     rewrite elem_of_elements => σ_Σ.
     apply/sqsubseteq_join_list/elem_of_list_fmap.
     by exists σ; split; rewrite // elem_of_elements elem_of_union; eauto.
+Qed.
+
+Next Obligation.
+move=> A; rewrite /= elements_singleton /= right_id.
+by rewrite fsa_interp_initial.
 Qed.
 
 Next Obligation.
@@ -1840,29 +1874,77 @@ move=> A Σ' /=; apply: (anti_symm _).
       by exists σ'; split.
 Qed.
 
-Program Definition fsa_mul A B : fsa := {|
-  fsa_state := fsa_state A * gset (fsa_state B);
-  fsa_initial :=
-    (fsa_initial A,
-     if fsa_final (fsa_initial A) then {[fsa_initial B]}
-     else ∅);
-  fsa_final '(σA, ΣB) :=
-    fsa_final σA && fsa_final (fsa_initial B) ||
-    existsb (λ σB, fsa_final σB) (elements ΣB);
-  fsa_interp '(σA, ΣB) := fsa_interp σA ⋅ fsa_interp (fsa_initial B) ⊔
-                          ⨆ (map (λ σB, fsa_interp σB) (elements ΣB));
-  fsa_trans x '(σA, ΣB) := let σA' := fsa_trans x σA in
-                           (σA',
-                            (if fsa_final σA' then {[fsa_initial B]} else ∅) ∪
-                            (list_to_set (fsa_trans x <$> elements ΣB)));
+Section FSAMul.
 
+Variables (A : fsa) (B : nfa).
+
+Implicit Types (σ : fsa_state A * nfa_state B).
+Implicit Types (σA : fsa_state A) (σB : nfa_state B).
+
+Let combine σ σB := (σ.1, σ.2 ⊔ σB).
+
+Let from σA :=
+  (σA, if fsa_final σA then nfa_initial B else ⊥).
+
+Let final σ :=
+  fsa_final σ.1 && nfa_final (nfa_initial B) || nfa_final σ.2.
+
+Let interp σ := fsa_interp σ.1 ⋅ nfa_elem B ⊔ nfa_interp σ.2.
+
+Let trans x σ :=
+  combine (from (fsa_trans x σ.1)) (nfa_trans x σ.2).
+
+Lemma interp_combine σ σB :
+  interp (combine σ σB) ≡ interp σ ⊔ nfa_interp σB.
+Proof. by rewrite /interp /= nfa_interp_join assoc. Qed.
+
+Lemma interp_from σA :
+  interp (from σA) ≡ fsa_interp σA ⋅ nfa_elem B.
+Proof.
+rewrite /interp /=.
+case final_σA: (fsa_final σA); last by rewrite nfa_interp_bottom right_id.
+have {2} ->: fsa_interp σA ≡ 1 ⊔ fsa_interp σA.
+  by rewrite fsa_derivable final_σA /= assoc idemp.
+by rewrite nfa_interp_initial pre_ka_left_dist left_id comm.
+Qed.
+
+Lemma pre_ka_of_bool_final σ :
+  @pre_ka_of_bool T (final σ) ≡
+  pre_ka_of_bool (fsa_final σ.1)
+  ⋅ pre_ka_of_bool (nfa_final (nfa_initial B))
+  ⊔ pre_ka_of_bool (nfa_final σ.2).
+Proof.
+by rewrite /final pre_ka_of_bool_or pre_ka_of_bool_and.
+Qed.
+
+Program Definition fsa_mul : fsa := {|
+  fsa_state := fsa_state A * nfa_state B;
+  fsa_elem := fsa_elem A ⋅ nfa_elem B;
+  fsa_initial := from (fsa_initial A);
+  fsa_final σ := nfa_final σ.2;
+  fsa_interp := interp;
+  fsa_trans := trans;
 |}.
 
 Next Obligation.
-move=> A B [σA ΣB] /=.
-rewrite fsa_derivable {1}[fsa_interp (fsa_initial B)]fsa_derivable.
+by rewrite interp_from fsa_interp_initial.
+Qed.
 
+Next Obligation.
+move=> σ.
+set F := λ x, f x ⋅ interp (trans x σ).
+pose (F1 := λ x, f x ⋅ fsa_interp (fsa_trans x σ.1)).
+pose (F2 := λ x, f x ⋅ nfa_interp (nfa_trans x σ.2)).
+have ->: ⨆ (map F (enum Σ)) ≡
+         (⨆ (map F1 (enum Σ))) ⋅ nfa_elem B ⊔ ⨆ (map F2 (enum Σ)).
+{ }
+rewrite /interp fsa_derivable nfa_derivable.
+rewrite !assoc; apply: semi_lattice_proper => //.
+rewrite [pre_ka_of_bool (nfa_final σ.2) ⊔ _]comm.
+apply: semi_lattice_proper => //.
+rewrite pre_ka_left_dist. ; apply: semi_lattice_proper => //.
 
+Qed.
 
 
 End Automata.
