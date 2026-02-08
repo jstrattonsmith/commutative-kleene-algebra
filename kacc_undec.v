@@ -387,9 +387,14 @@ move=> ??; split.
 Qed.
 
 Class FinGenMonoid (T : monoid) := {
-  generators : list T;
-  generate x : {l : list T | x ≡ ∏ l ∧ l ⊆ generators};
+  generator : Type;
+  generator_interp : generator → T;
+  #[global] generator_eq_dec :: EqDecision generator;
+  #[global] generator_finite :: Finite generator;
+  generate x : {l : list generator | x ≡ ∏ (map generator_interp l) };
 }.
+
+Arguments generator T {_}.
 
 Section ListMonoid.
 
@@ -419,14 +424,12 @@ Section ListFinGen.
 Context {T : setoid} `{!LeibnizEquiv T, !EqDecision T, !Finite T}.
 
 Global Program Instance list_fin_gen : FinGenMonoid (list_monoid T) := {|
-  generators := map (λ x, [x]) (enum T);
+  generator := T;
+  generator_interp x := [x];
 |}.
+
 Next Obligation.
-move=> l; exists (map (λ x, [x]) l); split.
-- apply leibniz_equiv_iff; by elim: l => //= x l <-.
-- move=> l'; rewrite elem_of_list_fmap; case=> y [] -> y_l.
-  rewrite elem_of_list_fmap; exists y; split => //.
-  exact: elem_of_enum.
+by move=> xs; exists xs; elim: xs => //= x xs <-.
 Qed.
 
 End ListFinGen.
@@ -533,24 +536,23 @@ Section ProdFinGen.
 Context `{!FinGenMonoid T1, !FinGenMonoid T2}.
 
 Global Program Instance prod_fin_gen : FinGenMonoid (T1 * T2)%type := {|
-  generators := map (λ g, (g, 1)) generators ++ map (λ g, (1, g)) generators;
+  generator := generator T1 + generator T2;
+  generator_interp (x : generator T1 + generator T2) :=
+    match x return T1 * T2 with
+    | inl x => (generator_interp x, 1)
+    | inr x => (1, generator_interp x)
+    end;
 |}.
+
 Next Obligation.
 case=> x y.
-have [lx [] ex Hx] := generate x.
-have [ly [] ey Hy] := generate y.
-exists (map (λ g, (g, 1)) lx ⋅ map (λ g, (1, g)) ly); split; first split.
-- rewrite monoid_morphism_mul /= !monoid_morphism_mul_list !map_map /=.
-  rewrite map_id -ex mul_list_one ?right_id //.
-  by move=> x' /elem_of_list_fmap [? [] ->].
-- rewrite monoid_morphism_mul /= !monoid_morphism_mul_list !map_map /=.
-  rewrite map_id -ey mul_list_one ?left_id //.
-  by move=> x' /elem_of_list_fmap [? [] ->].
-- case=> x' y' /elem_of_app [] /elem_of_list_fmap.
-  + case=> _ [] [<- ->] x'_lx; apply/elem_of_app; left.
-    by apply/elem_of_list_fmap; exists x'; eauto.
-  + case=> _ [] [-> <-] y'_ly; apply/elem_of_app; right.
-    by apply/elem_of_list_fmap; exists y'; eauto.
+have [[lx ex] [ly ey]] := (generate x, generate y).
+exists (map inl lx ++ map inr ly).
+rewrite map_app !map_map monoid_morphism_mul; split.
+- rewrite monoid_morphism_mul !monoid_morphism_mul_list !map_map /= -ex.
+  by rewrite mul_list_one ?right_id // => ? /elem_of_list_fmap [? [] -> _].
+- rewrite monoid_morphism_mul !monoid_morphism_mul_list !map_map /= -ey.
+  by rewrite mul_list_one ?left_id // => ? /elem_of_list_fmap [? [] -> _].
 Qed.
 
 End ProdFinGen.
@@ -1410,18 +1412,18 @@ Section PseudoTop.
 Context `{FinGenMonoid T}.
 
 Definition pseudo_top : ka_term T :=
-  star (⨆ (map Unit generators)).
+  star (⨆ (map (λ g, Unit (generator_interp g)) (enum (generator T)))).
 
 Lemma pseudo_top_absorb x : Unit x ⋅ pseudo_top ⊑ pseudo_top.
 Proof.
-case: (generate x) => xs [] -> {x}; elim: xs=> [|x xs IH] sub /=.
+case: (generate x) => xs -> {x}; elim: xs=> [|x xs IH] //=.
   by rewrite left_id.
-rewrite monoid_morphism_mul -assoc IH.
-  move=> ? x_in; apply: sub; apply/elem_of_cons; eauto.
-have x_gen: x ∈ generators by apply: sub; rewrite elem_of_cons; eauto.
-have /sqsubseteq_join_list {}x_gen: Unit x ∈ map Unit generators.
-  by apply/elem_of_list_fmap; eauto.
-rewrite x_gen; exact: pre_ka_mul_star.
+rewrite monoid_morphism_mul -assoc IH /pseudo_top.
+set f := λ x', Unit (generator_interp x').
+have /sqsubseteq_join_list x_gen: f x ∈ map f (enum (generator T)).
+  apply/elem_of_list_fmap; exists x; split => //.
+  exact: elem_of_enum.
+rewrite /f in x_gen; rewrite x_gen; exact: pre_ka_mul_star.
 Qed.
 
 (* Theorem 9 *)
