@@ -1930,17 +1930,7 @@ Let interp σ := fsa_interp σ.1 ⋅ nfa_elem B ⊔ nfa_interp σ.2.
 
 Let trans x σ := (fsa_trans x σ.1, nfa_trans x σ.2).
 
-Lemma interp_saturate σ : interp (saturate σ) ≡ interp σ.
-Proof.
-case: σ => σA σB; rewrite /saturate /= /interp /= nfa_interp_join.
-case final_σA: (fsa_final σA); last by rewrite nfa_interp_bottom right_id.
-rewrite nfa_interp_initial [nfa_interp σB ⊔ _]comm assoc.
-have {2}-> : fsa_interp σA ≡ 1 ⊔ fsa_interp σA.
-  by rewrite fsa_derivable final_σA /= assoc idemp.
-by rewrite [1 ⊔ _]comm pre_ka_left_dist left_id.
-Qed.
-
-Lemma interp_trans_saturate x σ :
+Lemma mul_interp_trans_saturate x σ :
   interp (trans x (saturate σ)) ≡
   fsa_interp (fsa_trans x σ.1) ⋅ nfa_elem B ⊔
   nfa_interp (nfa_trans x σ.2) ⊔
@@ -1952,7 +1942,7 @@ case: fsa_final; rewrite //= ?left_id // left_absorb.
 by rewrite nfa_trans_bottom nfa_interp_bottom.
 Qed.
 
-Lemma derive_trans_saturate σ :
+Lemma mul_derive_trans_saturate σ :
   ⨆ (map (λ x, f x ⋅ interp (trans x (saturate σ))) (enum Σ)) ≡
   ⨆ (map (λ x, f x ⋅ fsa_interp (fsa_trans x σ.1)) (enum Σ)) ⋅ nfa_elem B ⊔
   ⨆ (map (λ x, f x ⋅ nfa_interp (nfa_trans x σ.2)) (enum Σ)) ⊔
@@ -1963,7 +1953,7 @@ rewrite join_list_right_dist map_map join_list_left_dist map_map.
 rewrite -!join_list_join.
 apply: join_list_proper.
 apply: (@list_fmap_proper _ equivL) => //.
-move=> x _ <-; rewrite interp_trans_saturate !pre_ka_right_dist.
+move=> x _ <-; rewrite mul_interp_trans_saturate !pre_ka_right_dist.
 rewrite !assoc.
 by case: fsa_final; rewrite /= ?(left_id, right_id, left_absorb, right_absorb).
 Qed.
@@ -1986,7 +1976,7 @@ Program Definition fsa_mul : fsa := {|
   fsa_initial := (fsa_initial A, ⊥);
   fsa_final := final;
   fsa_interp := interp;
-  fsa_trans x σ := (trans x (saturate σ));
+  fsa_trans x σ := trans x (saturate σ);
 |}.
 
 Next Obligation.
@@ -1995,7 +1985,7 @@ Qed.
 
 Next Obligation.
 move=> σ.
-rewrite derive_trans_saturate /interp.
+rewrite mul_derive_trans_saturate /interp.
 rewrite pre_ka_of_bool_final.
 rewrite [_ ⊔ pre_ka_of_bool (fsa_final σ.1) ⋅ _]comm assoc.
 rewrite -[pre_ka_of_bool _ ⋅ _ ⊔ _ ⊔ _]assoc.
@@ -2006,6 +1996,127 @@ by rewrite -pre_ka_left_dist -fsa_derivable -assoc -nfa_derivable.
 Qed.
 
 End FSAMul.
+
+Section FSAStar.
+
+Variables (A : nfa).
+
+Implicit Types (x : Σ) (σ : option (nfa_state A)).
+
+Let interp σ :=
+  pre_ka_of_bool (negb (nfa_final (nfa_initial A))) ⋅
+  match σ with
+  | Some σA => nfa_interp σA
+  | None => 1
+  end ⋅ star (nfa_elem A).
+
+Let final σ :=
+  negb (nfa_final (nfa_initial A)) &&
+  match σ with
+  | Some σA => nfa_final σA
+  | None => true
+  end.
+
+Let elem :=
+  pre_ka_of_bool (negb (nfa_final (nfa_initial A))) ⋅
+  star (nfa_elem A).
+
+Let trans x σ :=
+  Some (nfa_trans x
+          match σ with
+          | Some σA =>
+            (if nfa_final σA then nfa_initial A else ⊥) ⊔ σA
+          | None =>
+            nfa_initial A
+          end).
+
+Lemma star_interp_trans x σ :
+  interp (trans x σ) ≡
+  if nfa_final (nfa_initial A) then ⊥
+  else
+    pre_ka_of_bool (match σ with Some σA => nfa_final σA | None => true end) ⋅
+    nfa_interp (nfa_trans x (nfa_initial A)) ⋅
+    star (nfa_elem A) ⊔
+    nfa_interp (nfa_trans x (match σ with Some σA => σA | None => ⊥ end)) ⋅
+    star (nfa_elem A).
+Proof.
+rewrite /interp; case: (nfa_final _); rewrite /= ?left_absorb //.
+rewrite left_id; case: σ => [σA|] /=; last first.
+  by rewrite left_id nfa_trans_bottom nfa_interp_bottom left_absorb right_id.
+case: nfa_final => /=.
+- by rewrite nfa_trans_join nfa_interp_join pre_ka_left_dist left_id.
+- rewrite nfa_trans_join nfa_trans_bottom nfa_interp_join nfa_interp_bottom.
+  by rewrite left_id !left_absorb left_id.
+Qed.
+
+Lemma star_derive_trans σ :
+  ⨆ (map (λ x, f x ⋅ interp (trans x σ)) (enum Σ)) ≡
+  if nfa_final (nfa_initial A) then ⊥
+  else match σ with
+  | Some σA =>
+    if nfa_final σA then
+      ⨆ (map (λ x, f x ⋅ nfa_interp (nfa_trans x (nfa_initial A))) (enum Σ)) ⋅
+      star (nfa_elem A) ⊔
+      ⨆ (map (λ x, f x ⋅ nfa_interp (nfa_trans x σA)) (enum Σ)) ⋅
+      star (nfa_elem A)
+    else
+      ⨆ (map (λ x, f x ⋅ nfa_interp (nfa_trans x σA)) (enum Σ)) ⋅
+      star (nfa_elem A)
+  | None =>
+    ⨆ (map (λ x, f x ⋅ nfa_interp (nfa_trans x (nfa_initial A))) (enum Σ)) ⋅
+    star (nfa_elem A)
+  end.
+Proof.
+case final_A: nfa_final.
+  rewrite join_list_bottom // => ?.
+  case/elem_of_list_fmap => ? [] -> _.
+  by rewrite star_interp_trans final_A right_absorb.
+case: σ => [σA|] /=; last first.
+  rewrite join_list_left_dist map_map.
+  apply: join_list_proper.
+  apply: (@list_fmap_proper _ equivL) => // ? ? ->.
+  rewrite star_interp_trans final_A /= nfa_trans_bottom nfa_interp_bottom.
+  by rewrite left_absorb right_id left_id assoc.
+case final_σA: nfa_final; last first.
+  rewrite join_list_left_dist map_map.
+  apply: join_list_proper.
+  apply: (@list_fmap_proper _ equivL) => // ? ? ->.
+  by rewrite star_interp_trans final_A final_σA /= !left_absorb left_id assoc.
+rewrite -pre_ka_left_dist -join_list_join join_list_left_dist map_map.
+apply: join_list_proper.
+apply: (@list_fmap_proper _ equivL) => // ? ? ->.
+rewrite star_interp_trans /= final_A /= final_σA left_id pre_ka_left_dist.
+by rewrite pre_ka_right_dist !assoc.
+Qed.
+
+Program Definition fsa_star : fsa := {|
+  fsa_state := option (nfa_state A);
+  fsa_elem := elem;
+  fsa_initial := None;
+  fsa_final := final;
+  fsa_interp := interp;
+  fsa_trans := trans;
+|}.
+
+Next Obligation.
+by rewrite /elem /interp /= right_id.
+Qed.
+
+Next Obligation.
+move=> σ; rewrite star_derive_trans /final {1}/interp.
+case final_A: nfa_final; rewrite /= ?left_absorb ?left_id //.
+case: σ=> [σA|] /=; last first.
+  rewrite left_id {1}pre_ka_star_unfold -{1}nfa_interp_initial.
+  by rewrite nfa_derivable final_A /= left_id.
+rewrite nfa_derivable pre_ka_left_dist {1}pre_ka_star_unfold.
+rewrite pre_ka_right_dist right_id -!assoc.
+apply: semi_lattice_proper => //.
+case final_σA: nfa_final; rewrite //= ?left_absorb ?left_id //.
+apply: semi_lattice_proper => //.
+by rewrite -{1}nfa_interp_initial nfa_derivable final_A left_id.
+Qed.
+
+End FSAStar.
 
 End Automata.
 
