@@ -2120,7 +2120,91 @@ Qed.
 
 End FSAStar.
 
+Program Definition fsa_singleton x : fsa := {|
+  fsa_state := option bool;
+  fsa_elem := f x;
+  fsa_initial := None;
+  fsa_final σ :=
+    match σ return bool with
+    | Some b => b
+    | _ => false
+    end;
+  fsa_interp σ :=
+    match σ return T with
+    | Some b => pre_ka_of_bool b
+    | None => f x
+    end;
+  fsa_trans y σ :=
+    match σ return option bool with
+    | Some _ => Some false
+    | None => Some (bool_decide (x = y))
+    end;
+|}.
+
+Next Obligation. by rewrite /=. Qed.
+
+Next Obligation.
+move=> x [[]|] /=.
+- rewrite join_list_bottom ?right_id // => _ /elem_of_list_fmap [y [] -> _].
+  by rewrite right_absorb.
+- rewrite join_list_bottom ?right_id // => _ /elem_of_list_fmap [y [] -> _].
+  by rewrite right_absorb.
+- rewrite left_id.
+  have <-: f x ⋅ 1 ≡ f x by exact: right_id.
+  apply (anti_symm _).
+  + apply/sqsubseteq_join_list/elem_of_list_fmap.
+    exists x; split; last exact: elem_of_enum.
+    by rewrite bool_decide_eq_true_2.
+  + apply/join_list_sqsubseteq=> _ /elem_of_list_fmap [y [] -> _].
+    case: bool_decide_reflect => [<- //|ne].
+    rewrite right_absorb /=; exact: bottom_sqsubseteq.
+Qed.
+
+Definition fsa_one :=
+  fsa_star (fsa_to_nfa fsa_bottom).
+
 End Automata.
+
+Arguments fsa Σ {_ _} T.
+
+Section FSAKATerm.
+
+Context (T : monoid) `{!FinGenMonoid T}.
+
+Fixpoint finite_state (e : ka_term T) : bool :=
+  match e with
+  | Unit _ => true
+  | ka_term_join e1 e2 => finite_state e1 && finite_state e2
+  | ka_term_bottom => true
+  | ka_term_mul e1 e2 => finite_state e1 && finite_state e2
+  | ka_term_star e => false (* This should check that e does not match 1 *)
+                      && finite_state e
+  end.
+
+Lemma finite_stateP e :
+  finite_state e →
+  ∃ A : fsa (generator T) (ka_term T) (λ x, Unit (generator_interp x)),
+    e ≡ fsa_elem A.
+Proof.
+elim: e => /=.
+- move=> s _. admit.
+- move=> _. by exists (fsa_bottom _) => /=.
+- move=> e1 IH1 e2 IH2 /andb_True [H1 H2].
+  have [A1 E1] := IH1 H1.
+  have [A2 E2] := IH2 H2.
+  exists (fsa_join A1 A2). by rewrite /= -E1 -E2.
+- admit.
+- admit.
+Qed.
+
+
+End FSAKATerm.
+
+
+
+
+End FSAKATerm.
+
 
 Section Derivatives.
 
