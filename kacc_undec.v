@@ -689,6 +689,11 @@ have: x ⊔ y ⊑ x ⊔ y by [].
 by rewrite join_sqsubseteq; case.
 Qed.
 
+Lemma sqsubseteq_join x y z : x ⊑ y ∨ x ⊑ z → x ⊑ y ⊔ z.
+Proof.
+case=> ->; [exact: sqsubseteq_join_left|exact: sqsubseteq_join_right].
+Qed.
+
 Lemma bottom_sqsubseteq x : ⊥ ⊑ x.
 Proof. by rewrite sqsubseteq_iff semi_lattice_left_id. Qed.
 
@@ -828,7 +833,7 @@ Variables (T S : semi_lattice) (f : T → S).
 
 Context `{SemiLatticeMorphism T S f}.
 
-Global Instance semi_lattice_morphism_subseteq_proper : Proper ((⊑) ==> (⊑)) f.
+Global Instance semi_lattice_morphism_sqsubseteq_proper : Proper ((⊑) ==> (⊑)) f.
 Proof.
 move=> x y; rewrite !sqsubseteq_iff => {2}<-.
 by rewrite semi_lattice_morphism_join.
@@ -1128,6 +1133,9 @@ End KATermTheory.
 
 Canonical Structure bool_setoid :=
   eq_setoid bool.
+
+Global Instance bool_leibniz_equiv : LeibnizEquiv bool.
+Proof. move=> ??; apply. Qed.
 
 Global Instance bool_one : One bool := true.
 Global Instance bool_mul : Mul bool := andb.
@@ -1443,36 +1451,39 @@ Qed.
 
 End CountTerm.
 
-(* Definition has_one {T : monoid} (e : ka_term T) : bool :=
-  ka_term_elim (λ _, ). *)
 Section HasOne.
 
-Context (T : monoid) (f : T → bool) (Hf : ∀ x, f x = 1 <-> x ≡ 1).
+Class IsOne (T : monoid) := {
+  is_one : T → bool;
+  #[global] is_one_monoid_morphism :: MonoidMorphism is_one;
+  is_one_eq : ∀ x, is_one x = true ↔ x ≡ 1;
+}.
 
-(* Definition f' {T} (xs : ) := ∏ xs. *)
+Context `{IsOne T}.
 
-Definition has_one := ka_term_elim f.
+Definition has_one : ka_term T → bool := ka_term_elim is_one.
 
-Lemma has_one__sqsubseteq_one x : has_one x = 1 <-> 1 ⊑ x.
+Global Instance has_one_morphism : PreKAMorphism has_one.
+Proof. apply _. Qed.
+
+Lemma has_oneP e : has_one e = true ↔ 1 ⊑ e.
 Proof.
-  split.
-  - elim: x; rewrite /has_one /=.
-    + move=> t H.
-      by apply Hf in H; rewrite H.
-    + move=> H.
-      discriminate.
-    + move=> k1 H1 k2 H2 Hjoin.
-      admit.
-    + move=> k1 H1 k2 H2 Hdot.
-      remember (ka_term_elim f k1) as fk1.
-      remember (ka_term_elim f k2) as fk2.
-      admit.
-    + move=> k Hk Hkstar.
-      admit.
-  -
+split; last first.
+  move=> e_gt1; have: 1 ⊑ has_one e.
+    rewrite -[1](@monoid_morphism_one _ _ (@is_one T _)).
+    (* FIXME: Why do we need to unfold this in two steps? *)
+    by rewrite -[is_one 1]/(has_one (Unit 1)) -[Unit 1]/1 e_gt1.
+  by move=> /sqsubseteq_iff/leibniz_equiv_iff; case: has_one.
+elim: e => //.
+- by move=> x /is_one_eq ->.
+- by move=> e1 IH1 e2 IH2; case/orb_true_iff=> [/IH1 e1_gt1|/IH2 e2_gt1];
+  apply: sqsubseteq_join; eauto.
+- move=> e1 IH1 e2 IH2; case/andb_true_iff=> /IH1 e1_gt1 /IH2 e2_gt1.
+  by rewrite -{1}[1](left_id 1) {1}e1_gt1 e2_gt1.
+- move=> e _ _; exact: pre_ka_one_star.
+Qed.
 
 End HasOne.
-
 
 Section PseudoTop.
 
@@ -1677,7 +1688,7 @@ Lemma l_alt e x : l e x ↔ Unit x ⊑ e.
 Proof.
 split; last first.
   move=> x_e; have: l (Unit x) ⊑ l e.
-    by apply: semi_lattice_morphism_subseteq_proper.
+    by apply: semi_lattice_morphism_sqsubseteq_proper.
   by move=> /(_ x); apply => /=.
 elim: e => //= [y|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e IH] in x *.
 - by move=> ->.
@@ -2190,6 +2201,14 @@ Qed.
 
 End FSAStar.
 
+Definition fsa_star' A : fsa := fsa_star (fsa_to_nfa A).
+
+Lemma fsa_elem_star' A :
+  fsa_final (fsa_initial A) = false → fsa_elem (fsa_star' A) ≡ star (fsa_elem A).
+Proof.
+by move=> final_A; rewrite /= elements_singleton /= final_A /= left_id.
+Qed.
+
 Program Definition fsa_singleton x : fsa := {|
   fsa_state := option bool;
   fsa_elem := f x;
@@ -2233,6 +2252,15 @@ Qed.
 Definition fsa_one :=
   fsa_star (fsa_to_nfa fsa_bottom).
 
+Lemma fsa_elem_one : fsa_elem fsa_one ≡ 1.
+Proof. by rewrite /= elements_singleton /= star_bottom left_id. Qed.
+
+Definition fsa_mul_list (As : list fsa) : fsa :=
+  foldr fsa_mul' fsa_one As.
+
+Lemma fsa_elem_mul_list As : fsa_elem (fsa_mul_list As) ≡ ∏ (map fsa_elem As).
+Proof. by elim: As => /= [|A As ->]; rewrite // -fsa_elem_one. Qed.
+
 End Automata.
 
 Global Arguments fsa_one {Σ _ _ _ _}.
@@ -2243,8 +2271,7 @@ Global Arguments fsa_mul' {Σ _ _ _ _}.
 
 Section FSAKATerm.
 
-Context (T : monoid) `{!FinGenMonoid T}.
-(* Context (Σ : Type) `{!EqDecision Σ, !Finite Σ}. *)
+Context (T : monoid) `{!FinGenMonoid T} `{!IsOne T}.
 
 Fixpoint finite_state (e : ka_term T) : bool :=
   match e with
@@ -2252,7 +2279,7 @@ Fixpoint finite_state (e : ka_term T) : bool :=
   | ka_term_join e1 e2 => finite_state e1 && finite_state e2
   | ka_term_bottom => true
   | ka_term_mul e1 e2 => finite_state e1 && finite_state e2
-  | ka_term_star e => bool_decide (count_term e ⊑ 1) && finite_state e
+  | ka_term_star e => negb (has_one e) && finite_state e
   end.
 
 Lemma finite_stateP e :
@@ -2262,14 +2289,9 @@ Lemma finite_stateP e :
 Proof.
 elim: e => /=.
 - move=> s _.
-  have [xs Exs] := generate s.
-  exists (fold_right fsa_mul' (fsa_one) (map fsa_singleton xs)).
-  rewrite Exs monoid_morphism_mul_list map_map.
-  elim: xs Exs => /= [_ | g gs IHs Hs].
-  + rewrite star_bottom right_id. admit.
-  + Search generator_interp.
-    simpl in Hs.
-  admit.
+  have [xs Exs] := generate s; exists (fsa_mul_list (map fsa_singleton xs)).
+  rewrite fsa_elem_mul_list map_map Exs monoid_morphism_mul_list map_map.
+  by apply: monoid_morphism_proper; apply: (@Proper_map' (eq_setoid (generator T)) _).
 - move=> _. by exists (fsa_bottom _) => /=.
 - move=> e1 IH1 e2 IH2 /andb_True [H1 H2].
   have [A1 E1] := IH1 H1.
@@ -2280,31 +2302,15 @@ elim: e => /=.
   have [A2 E2] := IH2 H2.
   exists (fsa_mul A1 (fsa_to_nfa A2)).
   by rewrite /= -E1 -E2.
-- move=> e1 IH1 /andb_True [H1 H2].
-  have [A1 E1] := IH1 H2; move=> {IH1 H2}.
-  exists (fsa_star (fsa_to_nfa A1)).
-  rewrite /= -E1.
-  case Eqn: (negb (existsb (λ σ : fsa_state A1, fsa_final σ) (elements {[fsa_initial A1]}))); move=> /=.
-  + admit.
-  + rewrite negb_false_iff in Eqn.
-    move: Eqn => /existsb_exists [x [G1 G2]].
-
-    Check ka_term_star.
-    Check star.
-  Search ka_term_star star.
-  Search pre_ka_of_bool.
-  clear IH1.
-  Search fsa_star.
-  rewrite ka_star_unfold /=.
-  Print ka_term_star.
-  About Star.
-  Search pre_ka_of_bool.
-  admit.
+- move=> e1 IH1 /andb_True [/negb_True /Is_true_false H1 H2].
+  have {IH1 H2} [A1 E1] := IH1 H2; exists (fsa_star' A1).
+  rewrite fsa_elem_star' -?E1 //; case E: fsa_final => //.
+  have ?: has_one e1 = true; last by congruence.
+  apply/has_oneP; rewrite E1 -fsa_interp_initial.
+  rewrite fsa_derivable E /=; exact: sqsubseteq_join_left.
 Qed.
 
-
 End FSAKATerm.
-
 
 Section Derivatives.
 
