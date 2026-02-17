@@ -2083,7 +2083,6 @@ Definition fsa_mul' (A B : fsa) : fsa :=
 Section FSAStar.
 
 Variables (A : nfa).
-Check Σ.
 Implicit Types (x : Σ) (σ : option (nfa_state A)).
 
 Let interp σ :=
@@ -2266,7 +2265,6 @@ End Automata.
 Global Arguments fsa_one {Σ _ _ _ _}.
 Global Arguments fsa_singleton {Σ _ _ _ _}.
 Global Arguments fsa Σ {_ _} T.
-Check fsa_mul'.
 Global Arguments fsa_mul' {Σ _ _ _ _}.
 
 Section FSAKATerm.

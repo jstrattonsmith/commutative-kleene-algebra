@@ -35,6 +35,7 @@
         devShells.default = pkgs.mkShell {
           propagatedBuildInputs = [
             pkgs.coqPackages.coq-lsp
+            pkgs.rocqPackages.vsrocq-language-server
           ];
           inputsFrom = [
             self'.packages.default
