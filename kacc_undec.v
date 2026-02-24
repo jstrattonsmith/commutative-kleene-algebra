@@ -181,6 +181,45 @@ Qed.
 
 End AllPairsMap.
 
+Section EnumLists.
+
+Context `{!EqDecision T, !Finite T}.
+
+Implicit Types (n : nat) (x y : T) (xs ys : list T).
+
+Fixpoint enum_list_eq n : list (list T) :=
+  match n with
+  | 0 => [[]]
+  | S n => map (λ '(x, xs), x :: xs) (all_pairs (enum T) (enum_list_eq n))
+  end.
+
+Lemma elem_of_enum_list_eq n xs : xs ∈ enum_list_eq n ↔ length xs = n.
+Proof.
+elim: n => [|n IH] /= in xs *.
+  by rewrite elem_of_list_singleton -length_zero_iff_nil.
+rewrite elem_of_list_fmap; split.
+- by case=> [[x {}xs] [-> /= /elem_of_all_pairs [_ /IH <-]]].
+- case: xs => //= x xs [/IH {}IH]; exists (x, xs); split=> //.
+  rewrite elem_of_all_pairs /=; split => //.
+  exact: elem_of_enum.
+Qed.
+
+Definition enum_list_le n : list (list T) :=
+  flat_map enum_list_eq (seq 0 (n + 1)).
+
+Lemma elem_of_enum_list_le n xs : xs ∈ enum_list_le n ↔ length xs ≤ n.
+Proof.
+rewrite /enum_list_le flat_map_concat_map elem_of_concat; split.
+- case=> [_ [] /elem_of_list_fmap [i [] ->]].
+  move=> /elem_of_seq i_n /elem_of_enum_list_eq ->; lia.
+- move=> xs_n; exists (enum_list_eq (length xs)).
+  split; last by rewrite elem_of_enum_list_eq; lia.
+  rewrite elem_of_list_fmap; exists (length xs); split => //.
+  rewrite elem_of_seq; lia.
+Qed.
+
+End EnumLists.
+
 Declare Scope ka_scope.
 Delimit Scope ka_scope with ka.
 Open Scope ka_scope.
