@@ -2355,8 +2355,11 @@ Definition fsa_trans_s (A : fsa) (s : list Σ) (state : fsa_state A) :=
 Proof.
   rewrite //=. *)
 
+Definition string_match_at A (σ : fsa_state A) s :=
+  fsa_final (fsa_trans_s s σ).
+
 Definition string_match (A : fsa) (s : list Σ) :=
-  fsa_final (fsa_trans_s s (fsa_initial A)).
+  string_match_at (fsa_initial A) s.
 
 Definition ka_of_string s := ∏ (map f s).
 
@@ -2369,24 +2372,34 @@ Arguments mul_list {_}.
     (filter (string_match A) (@enum_list_lt Σ _ _ k))
   ). *)
 
-Definition sum_terms_lt_k A k :=
+Definition sum_terms_lt_k_at A (σ : fsa_state A) k :=
   ⨆ (map ∏
   (map
     (map f)
-    (filter (string_match A) (@enum_list_lt Σ _ _ k))
+    (filter (string_match_at σ) (@enum_list_lt Σ _ _ k))
   )
 ).
 
-Definition sum_terms_eq_k A k :=
-  ⨆ (map ∏ (map (map f) (filter (string_match A) (@enum_list_eq Σ _ _ k)))).
+Definition sum_terms_lt_k A k :=
+  sum_terms_lt_k_at (fsa_initial A) k.
 
-Definition string_suffix A s := fsa_interp (fsa_trans_s s (fsa_initial A)).
 
-Definition string_suffix_term A s :=
-  (ka_of_string s) ⋅ fsa_interp (fsa_trans_s s (fsa_initial A)).
+Definition sum_terms_eq_k_at A (σ : fsa_state A) k :=
+  ⨆ (map ∏ (map (map f) (filter (string_match_at σ) (@enum_list_eq Σ _ _ k)))).
 
-Definition sum_suffix_terms_k A k :=
-  ⨆ (map (string_suffix_term A) (@enum_list_eq Σ _ _ k)).
+Definition sum_terms_eq_k A k := sum_terms_eq_k_at (fsa_initial A) k.
+
+Definition string_suffix_at A (σ : fsa_state A) s :=
+  fsa_interp (fsa_trans_s s σ).
+
+Definition string_suffix A s :=
+  string_suffix_at (fsa_initial A) s.
+
+Definition string_suffix_term_at A (σ : fsa_state A) s :=
+  (ka_of_string s) ⋅ fsa_interp (fsa_trans_s s σ).
+
+Definition sum_suffix_terms_k_at A (σ : fsa_state A) k :=
+  ⨆ (map (string_suffix_term_at σ) (@enum_list_eq Σ _ _ k)).
 
 (* QUEST: should I move this up with join_list_join? *)
 Lemma join_map_mul_dist {B : Type} (t1 t2 t3 : B -> T) (ls : list B):
@@ -2430,15 +2443,19 @@ move=> x y ->.
 by rewrite fsa_derivable.
 Qed.
 
-Lemma sum_terms_lt_S_k A k :
-sum_terms_lt_k A (S k) ≡ sum_terms_lt_k A k ⊔ sum_terms_eq_k A k.
+Lemma sum_terms_lt_S_k_at A (σ : fsa_state A) k :
+sum_terms_lt_k_at σ (S k) ≡ sum_terms_lt_k_at σ k ⊔ sum_terms_eq_k_at σ k.
 Proof.
 (* Search seq. *)
-rewrite /sum_terms_lt_k /sum_terms_eq_k {1}/enum_list_lt.
+rewrite /sum_terms_lt_k_at /sum_terms_eq_k_at {1}/enum_list_lt.
 replace (S k) with (k + 1); last by lia.
 (* QUEST: there are some annoying rewrites/unfolds here...is this ok? *)
 by rewrite /string_match seq_app //= flat_map_app filter_app flat_map_enum_list_eq_id !map_map map_app join_list_app /enum_list_lt.
 Qed.
+
+Lemma sum_terms_lt_S_k A k :
+sum_terms_lt_k A (S k) ≡ sum_terms_lt_k A k ⊔ sum_terms_eq_k A k.
+Proof. Admitted. (* Above *)
 
 (* QUEST: this must exist somewhere already...how to find it faster? *)
 Lemma join_elim_left (t1 t2 t3 : T) : t2 ≡ t3 -> t1 ⊔ t2 ≡ t1 ⊔ t3.
@@ -2474,6 +2491,10 @@ apply: (@list_fmap_proper _ equivL) => //.
 move=> x' y' <-.
 by rewrite assoc.
 Qed.
+
+Lemma fsa_elem_k_decomp_gen A (σ : fsa_state A) (k : nat):
+  fsa_interp σ ≡ sum_terms_lt_k_at σ k ⊔ sum_suffix_terms_k_at σ k.
+Proof. (* Prove by induction on k generalizing over σ. *) Admitted.
 
 Lemma fsa_elem_k_decomp A (k : nat):
   fsa_elem A ≡ (sum_terms_lt_k A k) ⊔ (sum_suffix_terms_k A k).
