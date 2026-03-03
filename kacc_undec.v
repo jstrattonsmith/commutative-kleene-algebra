@@ -1,6 +1,7 @@
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.
+(* From Ssreflect Require Import seq. *)
 Require Import Stdlib.Setoids.Setoid.
 Require Import Undecidability.MinskyMachines.MM2.
 From stdpp Require Import base list finite gmap mapset.
@@ -193,6 +194,32 @@ Fixpoint enum_list_eq n : list (list T) :=
   | S n => map (λ '(x, xs), x :: xs) (all_pairs (enum T) (enum_list_eq n))
   end.
 
+Lemma concat_inj {A : Type} (ls ls' : list (list A)) : ls = ls' -> concat ls = concat ls'.
+Proof.
+by move=> ->.
+Qed.
+
+(* Lemma enum_list_eq_right n : Permutation (enum_list_eq (S n)) (map (λ '(x, xs), xs ++ [x]) (all_pairs (enum T) (enum_list_eq n))).
+Proof.
+elim: n => [|n IHn].
+- rewrite //= /all_pairs !concat_map !map_map //.
+- rewrite //=; rewrite //= in IHn.
+  Search map Permutation.
+  rewrite IHn.
+move: IHn; rewrite //= /all_pairs !concat_map !map_map.
+  move=> IHn.
+  Search Permutation.
+  rewrite //=.
+  apply concat_inj.
+  apply map_ext; move=> x.
+  apply map_ext; move=> xs //=. *)
+
+Fixpoint enum_list_eq' n : list (list T) :=
+  match n with
+  | 0 => [[]]
+  | S n => map (λ '(xs, x), xs ++ [x]) (all_pairs (enum_list_eq' n) (enum T))
+  end.
+
 Lemma elem_of_enum_list_eq n xs : xs ∈ enum_list_eq n ↔ length xs = n.
 Proof.
 elim: n => [|n IH] /= in xs *.
@@ -204,12 +231,17 @@ rewrite elem_of_list_fmap; split.
   exact: elem_of_enum.
 Qed.
 
-Definition enum_list_le n : list (list T) :=
-  flat_map enum_list_eq (seq 0 (n + 1)).
-
-Lemma elem_of_enum_list_le n xs : xs ∈ enum_list_le n ↔ length xs ≤ n.
+Lemma flat_map_enum_list_eq_id k : flat_map enum_list_eq [k] = enum_list_eq k.
 Proof.
-rewrite /enum_list_le flat_map_concat_map elem_of_concat; split.
+  by rewrite //= app_nil_r.
+Qed.
+
+Definition enum_list_lt n : list (list T) :=
+  flat_map enum_list_eq (seq 0 n).
+
+Lemma elem_of_enum_list_lt n xs : xs ∈ enum_list_lt n ↔ length xs < n.
+Proof.
+rewrite /enum_list_lt flat_map_concat_map elem_of_concat; split.
 - case=> [_ [] /elem_of_list_fmap [i [] ->]].
   move=> /elem_of_seq i_n /elem_of_enum_list_eq ->; lia.
 - move=> xs_n; exists (enum_list_eq (length xs)).
@@ -219,6 +251,12 @@ rewrite /enum_list_le flat_map_concat_map elem_of_concat; split.
 Qed.
 
 End EnumLists.
+
+Compute @enum_list_eq bool _ _ 3.
+Compute map (λ '(x, xs), xs ++ [x]) (all_pairs (enum bool) (@enum_list_eq bool _ _ 2)).
+
+Compute @enum_list_eq bool _ _ 3.
+Compute @enum_list_eq' bool _ _ 3.
 
 Declare Scope ka_scope.
 Delimit Scope ka_scope with ka.
@@ -373,6 +411,8 @@ Proof. by rewrite /= right_id. Qed.
 Definition mul_list : list T → T := foldr (⋅) 1.
 
 Notation "∏" := mul_list.
+
+(* Arguments mul_list {_}. *)
 
 Lemma mul_list_one xs :
   (∀ x, x ∈ xs → x ≡ 1) →
@@ -1168,6 +1208,11 @@ constructor => //=.
 - by move=> ??; rewrite ka_mul_distr.
 Qed.
 
+Lemma ka_join_right_id (e : ka_term T) : e ⊔ ⊥ ≡ e.
+Proof.
+  by rewrite ka_join_comm; constructor.
+Qed.
+
 End KATermTheory.
 
 Canonical Structure bool_setoid :=
@@ -1846,6 +1891,8 @@ Record fsa := FSA {
     ⨆ (map (λ x, f x ⋅ fsa_interp (fsa_trans x σ)) (enum Σ));
 }.
 
+Arguments fsa_trans {_}.
+
 Global Existing Instance fsa_state_eq_dec.
 Global Existing Instance fsa_state_finite.
 
@@ -2299,7 +2346,179 @@ Definition fsa_mul_list (As : list fsa) : fsa :=
 Lemma fsa_elem_mul_list As : fsa_elem (fsa_mul_list As) ≡ ∏ (map fsa_elem As).
 Proof. by elim: As => /= [|A As ->]; rewrite // -fsa_elem_one. Qed.
 
+
+Definition fsa_trans_s (A : fsa) (s : list Σ) (state : fsa_state A) :=
+  foldl (flip fsa_trans) state s.
+
+(* Lemma fsa_trans_s_unfold A s x (state : fsa_state A):
+  fsa_trans x (fsa_trans_s s state) = fsa_trans_s (x :: s) state.
+Proof.
+  rewrite //=. *)
+
+Definition string_match (A : fsa) (s : list Σ) :=
+  fsa_final (fsa_trans_s s (fsa_initial A)).
+
+Definition ka_of_string s := ∏ (map f s).
+
+
+(* TODO: this Arguments decl conflicts with the ∏/previous mul_list uses. *)
+Arguments mul_list {_}.
+
+(* Definition sum_terms_lt_k A k := join_map ∏ (map
+    (map f)
+    (filter (string_match A) (@enum_list_lt Σ _ _ k))
+  ). *)
+
+Definition sum_terms_lt_k A k :=
+  ⨆ (map ∏
+  (map
+    (map f)
+    (filter (string_match A) (@enum_list_lt Σ _ _ k))
+  )
+).
+
+Definition sum_terms_eq_k A k :=
+  ⨆ (map ∏ (map (map f) (filter (string_match A) (@enum_list_eq Σ _ _ k)))).
+
+Definition string_suffix A s := fsa_interp (fsa_trans_s s (fsa_initial A)).
+
+Definition string_suffix_term A s :=
+  (ka_of_string s) ⋅ fsa_interp (fsa_trans_s s (fsa_initial A)).
+
+Definition sum_suffix_terms_k A k :=
+  ⨆ (map (string_suffix_term A) (@enum_list_eq Σ _ _ k)).
+
+(* QUEST: should I move this up with join_list_join? *)
+Lemma join_map_mul_dist {B : Type} (t1 t2 t3 : B -> T) (ls : list B):
+  ⨆ (map (λ s, t1 s ⋅ (t2 s ⊔ t3 s)) ls)
+  ≡ (⨆ (map (λ s, t1 s ⋅ t2 s) ls))
+    ⊔ (⨆ (map (λ s, t1 s ⋅ t3 s) ls)).
+Proof.
+assert (G : ⨆ (map (λ s, (t1 s) ⋅ (t2 s ⊔ t3 s)) ls) ≡ ⨆ (map (λ s, (t1 s ⋅ t2 s) ⊔ t1 s ⋅t3 s) ls)).
+{
+  apply: join_list_proper.
+  apply: (@list_fmap_proper _ equivL) => //.
+  move=> x y ->.
+  apply pre_ka_right_dist.
+  (* QUEST: type messages on this: *)
+  (* apply ka_mul_join_right. *)
+}
+rewrite {}G.
+apply join_list_join.
+Qed.
+
+Lemma string_derive_one_more A k :
+  ⨆ (map
+     (λ s, ka_of_string s ⋅ fsa_interp (fsa_trans_s s (fsa_initial A)))
+     (enum_list_eq k)
+    )
+  ≡ ⨆ (map
+       (λ s, ka_of_string s ⋅ (
+        pre_ka_of_bool (fsa_final (fsa_trans_s s (fsa_initial A)))
+        ⊔ ⨆ (map
+             (λ x,
+              f x ⋅ fsa_interp (fsa_trans x (fsa_trans_s s (fsa_initial A))))
+             (enum Σ))
+        ))
+    (enum_list_eq k)
+  ).
+Proof.
+apply: join_list_proper.
+(* QUEST: what is equivL? *)
+apply: (@list_fmap_proper _ equivL) => //.
+move=> x y ->.
+by rewrite fsa_derivable.
+Qed.
+
+Lemma sum_terms_lt_S_k A k :
+sum_terms_lt_k A (S k) ≡ sum_terms_lt_k A k ⊔ sum_terms_eq_k A k.
+Proof.
+(* Search seq. *)
+rewrite /sum_terms_lt_k /sum_terms_eq_k {1}/enum_list_lt.
+replace (S k) with (k + 1); last by lia.
+(* QUEST: there are some annoying rewrites/unfolds here...is this ok? *)
+by rewrite /string_match seq_app //= flat_map_app filter_app flat_map_enum_list_eq_id !map_map map_app join_list_app /enum_list_lt.
+Qed.
+
+(* QUEST: this must exist somewhere already...how to find it faster? *)
+Lemma join_elim_left (t1 t2 t3 : T) : t2 ≡ t3 -> t1 ⊔ t2 ≡ t1 ⊔ t3.
+Proof.
+by move=> <-.
+Qed.
+
+Lemma sum_terms_lt_k__to__S_k A k :
+  sum_terms_lt_k A k ⊔ ⨆ (
+    map (λ s : list Σ, ka_of_string s ⋅ pre_ka_of_bool (fsa_final (fsa_trans_s s (fsa_initial A)))) (enum_list_eq k)
+  ) ≡ sum_terms_lt_k A (S k).
+Proof.
+rewrite sum_terms_lt_S_k. apply join_elim_left.
+rewrite /sum_terms_eq_k /string_match.
+elim: (enum_list_eq k) => [| en1 en' IHen]; first by rewrite //=.
+rewrite //=; case en1Final: (fsa_final (fsa_trans_s en1 (fsa_initial A)));
+rewrite filter_cons en1Final /ka_of_string.
+- rewrite ?right_id //=; by apply join_elim_left.
+- rewrite ?right_absorb ?left_id //=.
+Qed.
+
+Lemma blah A strings:
+⨆ (map
+(λ s, ka_of_string s ⋅ ⨆ (map (λ x, f x ⋅ fsa_interp (fsa_trans x (fsa_trans_s s (fsa_initial A)))) (enum Σ))) strings) ≡ ⨆ (map
+(λ s, ⨆ (map (λ x, ka_of_string s ⋅ f x ⋅ fsa_interp (fsa_trans x (fsa_trans_s s (fsa_initial A)))) (enum Σ))) strings).
+Proof.
+apply: join_list_proper.
+apply: (@list_fmap_proper _ equivL) => //.
+move=> x y <-.
+rewrite join_list_right_dist map_map.
+apply: join_list_proper.
+apply: (@list_fmap_proper _ equivL) => //.
+move=> x' y' <-.
+by rewrite assoc.
+Qed.
+
+Lemma fsa_elem_k_decomp A (k : nat):
+  fsa_elem A ≡ (sum_terms_lt_k A k) ⊔ (sum_suffix_terms_k A k).
+Proof.
+(* rewrite /sum_terms_lt_k /sum_suffix_terms_k /string_suffix /string_suffix_state /enum_list_lt //=. *)
+elim: k => [| k IHk] //=.
+(* QUEST: what does ?left_id mean here? specifically the "?<lemma>" *)
+(* rewrite mixin_semi_lattice_left_id; [apply pre_ka_semi_lattice_mixin|].
+  rewrite mixin_monoid_left_id; [apply pre_ka_monoid_mixin|].
+  by rewrite mixin_semi_lattice_comm; [apply pre_ka_semi_lattice_mixin|];
+  rewrite mixin_semi_lattice_left_id; [apply pre_ka_semi_lattice_mixin|]. *)
+- by rewrite /sum_terms_lt_k /sum_suffix_terms_k /string_suffix_term //= fsa_interp_initial ?left_id ?right_id.
+- rewrite /sum_suffix_terms_k /string_suffix_term in IHk. (* QUEST: how to make idiomatic? *)
+  rewrite {}IHk.
+  rewrite string_derive_one_more join_map_mul_dist
+          assoc sum_terms_lt_k__to__S_k.
+  apply join_elim_left.
+  rewrite /sum_suffix_terms_k /string_suffix_term.
+  rewrite blah //= map_map.
+  apply (anti_symm _); apply join_list_sqsubseteq.
+  + move=> _ /elem_of_list_fmap [ys [-> /elem_of_enum_list_eq lys]].
+    apply join_list_sqsubseteq.
+    move=> _ /elem_of_list_fmap [y [-> _]].
+    apply sqsubseteq_join_list.
+    apply elem_of_list_fmap.
+    exists (y, ys). simpl.
+    rewrite /ka_of_string.
+  Search map join_list.
+  rewrite {2}/enum_list_eq.
+
+  (* rewrite -join_list_dist2. *)
+  Search all_pairs.
+  Check join_list_assoc.
+
+  Search map join_list.
+  rewrite join_list_right_dist.
+  Search mul join_list.
+  rewrite join_list_assoc.
+  Search map concat.
+
+
 End Automata.
+(* Set Printing Implicit. *)
+Print fsa.
+Print pre_ka.
 
 Global Arguments fsa_one {Σ _ _ _ _}.
 Global Arguments fsa_singleton {Σ _ _ _ _}.
@@ -2351,6 +2570,7 @@ End FSAKATerm.
 
 Section Derivatives.
 
+Context (T : setoid) `{!EqDecision T, Finite T}.
 Implicit Types (x y : T) (xs ys : list T) (e : ka_term (list T)).
 
 Definition contains_one e : bool :=
