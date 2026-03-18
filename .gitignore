@@ -1,1 +1,4 @@
 .vscode/*
+/.dir-locals.el
+/.direnv/
+/.envrc

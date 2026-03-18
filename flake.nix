@@ -31,6 +31,17 @@
 
         # Equivalent to  inputs'.nixpkgs.legacyPackages.hello;
         packages.default = pkgs.coqPackages.coq-ka-comm-undec;
+
+        devShells.default = pkgs.mkShell {
+          propagatedBuildInputs = [
+            pkgs.coqPackages.coq-lsp
+            pkgs.rocqPackages.vsrocq-language-server
+          ];
+          inputsFrom = [
+            self'.packages.default
+          ];
+        };
+
       };
       flake = {
         # The usual flake attributes can be defined here, including system-
