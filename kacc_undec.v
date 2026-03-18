@@ -258,128 +258,14 @@ Lemma destruct_elem_of_enum_list_eq_left n xs :
   xs ∈ enum_list_eq (S n) ->
     ∃ y ys, ys ∈ enum_list_eq n ∧ xs = y :: ys.
 Proof.
-elim: n xs => [| n IHn] xs.
-- rewrite elem_of_list_fmap /all_pairs //=;
-  move=> [y [-> Hy]].
-  rewrite elem_of_concat in Hy;
-  destruct Hy as [ys [Hys Hy]].
-  rewrite elem_of_list_fmap in Hys;
-  destruct Hys as [y' [Hys Hyenum]].
-  rewrite {}Hys in Hy.
-  rewrite elem_of_list_singleton in Hy;
-  rewrite Hy.
-  exists y', []; split; auto.
-  by apply elem_of_list_singleton.
-- rewrite //= {1}/all_pairs.
-  rewrite elem_of_list_fmap;
-  move=> [y [-> Hy]].
-  apply elem_of_concat in Hy.
-  destruct Hy as [xs' [Hxs' Hy]].
-  apply elem_of_list_fmap in Hxs'.
-  destruct Hxs' as [y' [-> Hy']].
-  apply elem_of_list_fmap in Hy.
-  destruct Hy as [y'' [-> Hy'']].
-  apply IHn in Hy''.
-  clear xs; clear IHn.
-  destruct Hy'' as [x [xs [Hxs ->]]].
-  exists y', (x::xs); split; auto.
-  clear Hy'; clear y'.
-  apply elem_of_list_fmap.
-  exists (x, xs); split; auto.
-  apply elem_of_concat.
-  exists (map (λ xs, pair x xs) (enum_list_eq n)); split.
-  + apply elem_of_list_fmap.
-    exists x; split; last by apply elem_of_enum.
-    apply map_ext. auto.
-  + apply elem_of_list_fmap.
-    exists xs; split; auto.
+rewrite enum_list_eq_Sn.
+move=> /elem_of_list_In /in_map_iff [[x xs'] [<- Hin]].
+exists x, xs'; split; auto.
+move: Hin;
+rewrite /all_pairs => /in_concat [xp [/in_map_iff [x' [<- Hx']] /in_map_iff [xs'' [Hxxsss /elem_of_list_In H]]]].
+injection Hxxsss.
+move=> H1 H2; rewrite -H1; assumption.
 Qed.
-(*
-Lemma bar n ys :
-  ys ∈ enum_list_eq (S n) ->
-    ∃ (y : T) (ys' : list T), (ys = ys' ++ [y] /\ length ys' = n).
-Proof.
-elim: n ys => [| n IHn] ys.
-(* QUEST: why does this struggle with simplified syntax? *)
-- rewrite elem_of_list_fmap /all_pairs //=;
-  move=> [y [-> Hy]].
-  rewrite elem_of_concat in Hy;
-  destruct Hy as [xs [Hxs Hy]].
-  rewrite elem_of_list_fmap in Hxs;
-  destruct Hxs as [y' [Hxs Hyenum]].
-  rewrite {}Hxs in Hy.
-  rewrite elem_of_list_singleton in Hy.
-  rewrite Hy.
-  exists y', [].
-  split; [apply app_nil_l | done].
-- move=> Hys. apply destruct_elem_of_enum_list_eq in Hys.
-
-Lemma foo (y : T) n ys:
-  ys ∈ enum_list_eq n -> ys ++ [y] ∈ enum_list_eq (S n).
-Proof.
-elim: n ys => [| n IHn] ys /elem_of_list_In.
-- move=> [<- | cont] //; rewrite app_nil_l.
-  apply elem_of_list_fmap.
-  exists (y, []); split; first done; rewrite /all_pairs.
-  apply elem_of_concat.
-  exists [(y, [])]; split; last by rewrite elem_of_list_In; left.
-  apply elem_of_list_fmap.
-  exists y; split; first by rewrite //=.
-  apply elem_of_enum.
-- move=> Hys; rewrite //= in Hys.
-  apply
-
-rewrite {1}/all_pairs concat_map => /in_concat //= [ys' [Hys' Hys]].
-  Search In map.
-  move: Hys' => /in_map_iff [x [Hxys' Hxin]]; rewrite -{}Hxys' in Hys.
-  destruct Hx as [x Hxys' Hxin].
-  move=> .
-  Search In map. *)
-
-(*
-Lemma enum_list_eq_S_k_right k ys y :
-  y ∈ enum T -> ys ∈ enum_list_eq k ->
-    ys ++ [y] ∈ map (λ '(x, xs), x :: xs) (all_pairs (enum T) (enum_list_eq k)).
-Proof.
-move=> Hy.
-elim: k ys => [|k IHk].
-- rewrite //= => [ys /elem_of_list_In Hys].
-  case: Hys => [<- |] //=.
-  apply elem_of_list_fmap.
-  exists (y, []).
-  split; first done.
-  rewrite /all_pairs.
-  apply elem_of_concat.
-  exists [(y, [])].
-  split; last by rewrite elem_of_list_In; left.
-  apply elem_of_list_fmap.
-  exists y; rewrite //=.
-- move=> ys /elem_of_enum_list_eq Hys.
-  rewrite /all_pairs //= concat_map.
-  rewrite !map_map elem_of_concat.x
-  exists (map (λ '(x, xs), x :: xs) (all_pairs (enum T) (enum_list_eq k))).
-  split.
-  + apply elem_of_list_fmap.
-    exists y; split; last by done.
-  Search elem_of concat.
-
-  Search map concat.
-  assert (Hys' : ∃ ys' y', length ys' = k /\ ys = ys' ++ [y']).
-  {
-    assert (G : length ys > 0).
-    { lia. }
-    assert (G' : ∀ (ls : list T), length ls > 0 -> length (removelast ls) = pred (length ls)).
-    { elim=> ls; first by rewrite //.
-      move=> l IHl Hls //=. }
-    Search length removelast.
-    Check app_removelast_last.
-    Search last length.
-  }
-  rewrite //=.
-  apply elem_of_list_fmap.
-  Search length cons.
-  apply elem_of_list_fmap.
-  apply IHk in H. *)
 
 Lemma flat_map_enum_list_eq_id k : flat_map enum_list_eq [k] = enum_list_eq k.
 Proof.
@@ -2504,13 +2390,22 @@ Lemma fsa_elem_mul_list As : fsa_elem (fsa_mul_list As) ≡ ∏ (map fsa_elem As
 Proof. by elim: As => /= [|A As ->]; rewrite // -fsa_elem_one. Qed.
 
 
-Definition fsa_trans_s (A : fsa) (s : list Σ) (state : fsa_state A) :=
-  foldl (flip fsa_trans) state s.
+Definition fsa_trans_s (A : fsa) (s : list Σ) (σ : fsa_state A) :=
+  foldl (flip fsa_trans) σ s.
 
-Lemma fsa_trans_s_cons (A : fsa) (x : Σ) (s : list Σ) (state : fsa_state A) : fsa_interp (fsa_trans_s (x :: s) state) ≡ fsa_interp (fsa_trans_s s (fsa_trans x state)).
+Lemma fsa_trans_s_cons (A : fsa) (x : Σ) (s : list Σ) (σ : fsa_state A) :
+  fsa_interp (fsa_trans_s (x :: s) σ) ≡ fsa_interp (fsa_trans_s s (fsa_trans x σ)).
 Proof.
   rewrite //=.
 Qed.
+
+Lemma fsa_trans_s_app (A : fsa) (x : Σ) (s : list Σ) (σ : fsa_state A) :
+  fsa_interp (fsa_trans_s (s ++ [x]) σ) ≡ fsa_interp (fsa_trans x (fsa_trans_s s σ)).
+Proof.
+elim: s σ => [// | /= x' s' IH σ].
+by rewrite IH.
+Qed.
+
 
 Definition string_match_at A (σ : fsa_state A) s :=
   fsa_final (fsa_trans_s s σ).
@@ -2532,13 +2427,22 @@ Lemma ka_of_string_concat_r ys (y : Σ) :
   f y ⋅ ka_of_string ys ≡ ka_of_string (y :: ys).
 Proof. rewrite //=. Qed.
 
+
+Lemma bounded_string_interp (A : fsa) (σ : fsa_state A) y ys k : length ys = k ->
+  ∃ y' ys', length ys' = k ∧
+    ka_of_string (ys ++ [y]) ⋅ fsa_interp (fsa_trans_s (ys ++ [y]) σ) ≡
+    ka_of_string (y' :: ys') ⋅ fsa_interp (fsa_trans_s (y' :: ys') σ).
+Proof.
+elim: k => [/nil_length_inv -> |
+  n IH /elem_of_enum_list_eq /destruct_elem_of_enum_list_eq_left [y' [ys' [Hlenys ->]]]].
+- exists y, []; split; auto.
+- exists y', (ys' ++ [y]); rewrite /=; split; eauto.
+  apply elem_of_enum_list_eq in Hlenys;
+  rewrite length_app Hlenys /=; lia.
+Qed.
+
 (* TODO: this Arguments decl conflicts with the ∏/previous mul_list uses. *)
 Arguments mul_list {_}.
-
-(* Definition sum_terms_lt_k A k := join_map ∏ (map
-    (map f)
-    (filter (string_match A) (@enum_list_lt Σ _ _ k))
-  ). *)
 
 Definition sum_terms_lt_k_at A (σ : fsa_state A) k :=
   ⨆ (map ∏
@@ -2614,17 +2518,12 @@ Qed.
 Lemma sum_terms_lt_S_k_at A (σ : fsa_state A) k :
 sum_terms_lt_k_at σ (S k) ≡ sum_terms_lt_k_at σ k ⊔ sum_terms_eq_k_at σ k.
 Proof.
-(* Search seq. *)
 rewrite /sum_terms_lt_k_at /sum_terms_eq_k_at {1}/enum_list_lt.
 replace (S k) with (k + 1); last by lia.
 (* QUEST: there are some annoying rewrites/unfolds here...is this ok? *)
-by rewrite /string_match seq_app //= flat_map_app filter_app flat_map_enum_list_eq_id !map_map map_app join_list_app /enum_list_lt.
-Qed.
-
-Lemma sum_terms_lt_S_k A k :
-sum_terms_lt_k A (S k) ≡ sum_terms_lt_k A k ⊔ sum_terms_eq_k A k.
-Proof.
-apply sum_terms_lt_S_k_at.
+by rewrite /string_match seq_app //= flat_map_app
+           filter_app flat_map_enum_list_eq_id !map_map
+           map_app join_list_app /enum_list_lt.
 Qed.
 
 (* QUEST: this must exist somewhere already...how to find it faster? *)
@@ -2646,138 +2545,42 @@ rewrite filter_cons en1Final /ka_of_string.
 - rewrite ?right_id /=; by apply join_elim_left.
 - rewrite ?right_absorb ?left_id //=.
 Qed.
-(*
-Lemma blah_at A (σ : fsa_state A) strings:
-⨆ (map (λ s, ka_of_string s ⋅ ⨆ (map (λ x, f x ⋅ fsa_interp (fsa_trans x (fsa_trans_s s σ))) (enum Σ))) strings)
-≡ ⨆ (map (λ s, ⨆ (map (λ x, ka_of_string s ⋅ f x ⋅ fsa_interp (fsa_trans x (fsa_trans_s s σ))) (enum Σ))) strings).
-Proof.
-apply: join_list_proper.
-apply: (@list_fmap_proper _ equivL) => //.
-move=> x y <-.
-rewrite join_list_right_dist map_map.
-apply: join_list_proper.
-apply: (@list_fmap_proper _ equivL) => //.
-move=> x' y' <-.
-by rewrite assoc.
-Qed.
-
-Lemma blah_at_2 A (σ : fsa_state A) k:
-⨆
-(map
-(λ x : Σ * list Σ,
-ka_of_string (let '(x0, xs) := x in x0 :: xs)
-⋅ fsa_interp (fsa_trans_s (let '(x0, xs) := x in x0 :: xs) σ))
-(all_pairs (enum Σ) (enum_list_eq k))) ≡
-⨆
-(map
-(λ x : Σ * list Σ,
-ka_of_string (let '(x0, xs) := x in xs ++ [x0])
-⋅ fsa_interp (fsa_trans_s (let '(x0, xs) := x in x0 :: xs) σ))
-(all_pairs (enum Σ) (enum_list_eq k))).
-Proof.
-Admitted. *)
-
-Lemma swap_string_prefix_suffix (A : fsa) (x' : Σ) (ys : list Σ) (σ : fsa_state A) (k : nat):
-      f x' ⋅ ka_of_string ys ⋅ fsa_interp (fsa_trans_s ys (fsa_trans x' σ))
-⊑ ⨆
-(map (λ s : list Σ, ka_of_string s ⋅ fsa_interp (fsa_trans_s s σ))
-(map (λ '(x0, xs), x0 :: xs) (all_pairs (enum Σ) (enum_list_eq k))))
-    -> ka_of_string ys ⋅ f x' ⋅ fsa_interp (fsa_trans x' (fsa_trans_s ys σ))
-⊑ ⨆
-(map (λ s : list Σ, ka_of_string s ⋅ fsa_interp (fsa_trans_s s σ))
-(map (λ '(x0, xs), x0 :: xs) (all_pairs (enum Σ) (enum_list_eq k)))).
-Proof.
-Admitted.
 
 
 Lemma fsa_elem_k_decomp_gen A (σ : fsa_state A) (k : nat):
   fsa_interp σ ≡ sum_terms_lt_k_at σ k ⊔ sum_suffix_terms_k_at σ k.
 Proof.
-elim: k => [| k IHk] /=.
-- by rewrite /sum_terms_lt_k_at /sum_suffix_terms_k_at
+elim: k => [| k IHk] /=; first by rewrite /sum_terms_lt_k_at /sum_suffix_terms_k_at
              /string_suffix_term_at /ka_of_string /= ?left_id ?right_id.
-- rewrite {}IHk. rewrite {1}/sum_suffix_terms_k_at /string_suffix_at.
-  rewrite string_derive_one_more_at join_map_mul_dist
-          assoc sum_terms_lt_k__to__S_k_at.
-  apply join_elim_left.
-  rewrite /sum_suffix_terms_k_at /string_suffix_term_at.
-  apply (anti_symm _); apply join_list_sqsubseteq;
-  move=> _ /elem_of_list_fmap [ys [-> /elem_of_enum_list_eq Hys]].
-  + rewrite enum_list_eq_Sn join_list_right_dist map_map.
-    apply join_list_sqsubseteq.
-    move=> x /elem_of_list_In /in_map_iff [x' [<- Hxin']].
-    rewrite assoc.
-    apply swap_string_prefix_suffix.
-    rewrite -fsa_trans_s_cons map_map ka_of_string_concat_r.
-    apply sqsubseteq_join_list.
-    rewrite elem_of_list_In in_map_iff.
-    exists (x', ys); split=> //=.
-    rewrite /all_pairs.
-    apply in_concat.
-    exists (map (pair x') (enum_list_eq k)).
-    split.
-    * apply in_map_iff.
-      by exists x'; split.
-    * apply in_map_iff.
-      exists ys; split=> //=.
-      rewrite -elem_of_list_In.
-      by apply elem_of_enum_list_eq.
-  + Check enum_list_eq_Sn.
-
-    Search In.
-    (* rewrite /=.
-    Search join_list sqsubseteq.
-    Search join_list sqsubseteq.
-    Search subseteq.
-    assert (es' : ⨆ (map (λ s, fsa_interp (fsa_trans_s s σ))
-      (map (λ '(x, xs), xs ++ [x]) (all_pairs (enum Σ) (enum_list_eq k))))).
-    have es' := ⨆ (map (λ s, fsa_interp (fsa_trans_s s σ))
-      (map (λ '(x, xs), xs ++ [x]) (all_pairs (enum Σ) (enum_list_eq k)))).
-    Check fsa_derivable.
-    rewrite !map_map.
-    apply list_subseteq_join_list.
-    apply elem_of_subseteq.
-    Search elem_of.
-    Search subseteq.
-    Search join_list sqsubseteq.
-    apply sqsubseteq_join_list; apply elem_of_list_fmap.
-    rewrite map_map.
-    rewrite blah_at_2.
-    rewrite join_list_right_dist map_map.
-    apply sqsubseteq_join_list; apply elem_of_list_fmap.
-    exists ()
-
-
-    Search ka_of_string.
-    apply sqsubseteq_join_list.
-    apply elem_of_list_fmap.
-    exists ()
-    Search sqsubseteq.
-  apply (anti_symm _); apply join_list_sqsubseteq.
-  + move=> _ /elem_of_list_fmap [ys [-> /elem_of_enum_list_eq Hys]].
-    apply join_list_sqsubseteq.
-    move=> _ /elem_of_list_fmap [y [-> K]].
-    rewrite ka_of_string_concat_l.
-    Search enum_list_eq.
-
-
-    apply sqsubseteq_join_list.
-    (* TODO: elem_of_list_fmap here switches to regular equality, not ka_eq *)
-    apply elem_of_list_fmap.
-    exists (ys ++ [y]).
-    rewrite /ka_of_string map_app //=.
-    split; last first.
-    * apply elem_of_enum_list_eq in Hys.
-      admit. (* by apply foo. *)
-    * rewrite mul_list_app. admit.
-  + move=> _ /elem_of_list_fmap
-          [y [-> /elem_of_list_fmap [yp [Hy /elem_of_all_pairs [Hyp1 Hyp2]]]]].
-    apply sqsubseteq_join_list; apply elem_of_list_fmap.
-    exists yp.2.
-    split; last by done. *)
-    (* rewrite {1}fsa_derivable. *)
-
-(* Prove by induction on k generalizing over σ. *) Admitted.
+rewrite {}IHk. rewrite {1}/sum_suffix_terms_k_at /string_suffix_at.
+rewrite string_derive_one_more_at join_map_mul_dist
+        assoc sum_terms_lt_k__to__S_k_at.
+apply join_elim_left.
+rewrite /sum_suffix_terms_k_at /string_suffix_term_at.
+apply (anti_symm _); apply join_list_sqsubseteq;
+move=> _ /elem_of_list_fmap [ys [-> Hys]].
+- rewrite enum_list_eq_Sn join_list_right_dist map_map.
+  apply join_list_sqsubseteq.
+  move=> x /elem_of_list_In /in_map_iff [x' [<- Hxin']].
+  rewrite assoc map_map ka_of_string_concat_l -fsa_trans_s_app.
+  move: Hys => /elem_of_enum_list_eq /(bounded_string_interp σ x') [y' [ys' [Hlenys' Hequiv]]].
+  rewrite Hequiv.
+  apply sqsubseteq_join_list.
+  rewrite elem_of_list_In in_map_iff.
+  exists (y', ys'); split=> //=.
+  rewrite /all_pairs.
+  apply in_concat.
+  exists (map (pair y') (enum_list_eq k)).
+  split.
+  + apply in_map_iff.
+    exists y'; split; auto.
+    rewrite -elem_of_list_In;
+    apply elem_of_enum.
+  + apply in_map_iff.
+    exists ys'; split=> //=.
+    rewrite -elem_of_list_In.
+    by apply elem_of_enum_list_eq.
+- Admitted.
 
 Lemma fsa_elem_k_decomp A (k : nat):
   fsa_elem A ≡ (sum_terms_lt_k A k) ⊔ (sum_suffix_terms_k A k).
