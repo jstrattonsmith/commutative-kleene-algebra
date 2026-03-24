@@ -2708,10 +2708,16 @@ Lemma bounded_output_with_join k1 k2 e1 e2 :
   bounded_output_with k2 e2 →
   bounded_output_with (max k1 k2) (e1 ⊔ e2).
 Proof.
-move=> H1 H2 sl sr Hin.
-(* From Unit (sl, sr) ⊑ e1 ⊔ e2, we get Unit (sl, sr) ⊑ e1 ∨ Unit (sl, sr) ⊑ e2.
-   In each case, apply the respective bound and use max k1 k2 ≥ k1, k2. *)
-Admitted.
+move=> H1 H2 sl sr /l_alt.
+rewrite semi_lattice_morphism_join.
+case=> /l_alt Hin.
+- have := H1 _ _ Hin.
+  have : k1 ≤ max k1 k2 by lia.
+  by nia.
+- have := H2 _ _ Hin.
+  have : k2 ≤ max k1 k2 by lia.
+  by nia.
+Qed.
 
 Lemma bounded_output_join e1 e2 :
   bounded_output e1 →
@@ -2730,14 +2736,14 @@ Lemma bounded_output_with_mul k1 k2 e1 e2 :
   bounded_output_with k2 e2 →
   bounded_output_with (k1 + k2) (e1 ⋅ e2).
 Proof.
-move=> H1 H2 sl sr Hin.
-(* From Unit (sl, sr) ⊑ e1 ⋅ e2, we get a decomposition
-   (sl, sr) = (sl1, sr1) ⋅ (sl2, sr2) = (sl1 ++ sl2, sr1 ++ sr2)
-   with Unit (sl1, sr1) ⊑ e1 and Unit (sl2, sr2) ⊑ e2.
-   Then length sr = length sr1 + length sr2
-     ≤ (length sl1 + 1) * k1 + (length sl2 + 1) * k2
-     ≤ (length sl + 1) * (k1 + k2). *)
-Admitted.
+move=> H1 H2 sl sr /l_alt.
+rewrite pre_ka_morphism_mul.
+move=> [[sl1 sr1] [[sl2 sr2] [Heq [/l_alt H1' /l_alt H2']]]].
+have := H1 _ _ H1'.
+have := H2 _ _ H2'.
+move: Heq => /leibniz_equiv_iff [/= esl esr].
+rewrite esl esr !length_app. nia.
+Qed.
 
 Lemma bounded_output_mul e1 e2 :
   bounded_output e1 →
@@ -2762,12 +2768,17 @@ Lemma bounded_output_with_star k e :
   left_nonempty e →
   bounded_output_with (2 * k) (star e).
 Proof.
-(* Proof sketch from paper: If s ≤ e*, write s = s_1 ⋯ s_n with s_i ≤ e.
-   Then |π_r(s)| = Σ|π_r(s_i)| ≤ Σ(|π_l(s_i)| + 1)·k.
-   Since |π_l(s_i)| ≥ 1, we have |π_l(s_i)| + 1 ≤ 2·|π_l(s_i)|.
-   Thus |π_r(s)| ≤ 2k · Σ|π_l(s_i)| = 2k · |π_l(s)|
-                  ≤ (|π_l(s)| + 1) · 2k. *)
-Admitted.
+move=> Hbo Hne sl sr /l_alt.
+rewrite pre_ka_morphism_star.
+case=> n; revert sl sr; elim: n => [|n IH] sl sr /=.
+- move=> [/= /leibniz_equiv_iff esl /leibniz_equiv_iff esr].
+  subst. simpl. lia.
+- move=> [[sl1 sr1] [[sl2 sr2] [/leibniz_equiv_iff [/= esl esr] [/l_alt He Hrec]]]].
+  have := Hbo _ _ He.
+  have := Hne _ _ He.
+  have := IH _ _ Hrec.
+  rewrite esl esr !length_app. nia.
+Qed.
 
 Lemma bounded_output_star e :
   bounded_output e →
@@ -2785,10 +2796,9 @@ Lemma bounded_output_unit (s : list T * list T) :
   bounded_output (Unit s).
 Proof.
 exists (length s.2).
-move=> sl sr Hin.
-(* Unit (sl, sr) ⊑ Unit s means (sl, sr) ≡ s in the product monoid,
-   so length sr = length s.2 ≤ (length sl + 1) * length s.2. *)
-Admitted.
+move=> sl sr /l_alt /= [/leibniz_equiv_iff -> /leibniz_equiv_iff ->].
+nia.
+Qed.
 
 (** Definition 32: Prefix-free terms. A term [L] is prefix-free if for
     all strings [s1 ≤ L] and [s2 ≤ L], if [s1] is a prefix of [s2],
