@@ -2,3 +2,17 @@
 /.dir-locals.el
 /.direnv/
 /.envrc
+
+# Build artifacts
+RocqMakefile
+RocqMakefile.conf
+.RocqMakefile.d
+*.vo
+*.vos
+*.vok
+*.vo.aux
+*.aux
+*.glob
+*.cache
+*.vio
+.lia.cache
