@@ -1585,6 +1585,30 @@ Qed.
 
 End HasOne.
 
+Section ListIsOne.
+
+Context {T : setoid} `{!LeibnizEquiv T}.
+
+Definition list_is_one (xs : list T) : bool :=
+  match xs with [] => true | _ => false end.
+
+Global Instance list_is_one_morphism : MonoidMorphism list_is_one.
+Proof.
+split.
+- by move=> ?? /leibniz_equiv_iff ->.
+- by [].
+- by case=> [|x xs] [|y ys].
+Qed.
+
+Global Program Instance list_is_one_instance : IsOne (list_monoid T) := {|
+  is_one := list_is_one;
+|}.
+Next Obligation.
+by case=> [|x xs] /=; split => // /leibniz_equiv_iff.
+Qed.
+
+End ListIsOne.
+
 Section PseudoTop.
 
 Context `{FinGenMonoid T}.
