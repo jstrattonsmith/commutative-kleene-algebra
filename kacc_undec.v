@@ -4,7 +4,7 @@ Require Import ssreflect.
 Require Import Stdlib.Setoids.Setoid.
 Require Import Undecidability.MinskyMachines.MM2.
 From stdpp Require Import base list finite gmap mapset.
-(* From Coq Require Import Lia. *)
+From Stdlib Require Import Lia.
 From Stdlib Require Import Bool.
 
 Set Implicit Arguments.
@@ -2771,8 +2771,8 @@ Proof.
 move=> Hbo Hne sl sr /l_alt.
 rewrite pre_ka_morphism_star.
 case=> n; revert sl sr; elim: n => [|n IH] sl sr /=.
-- move=> [/= /leibniz_equiv_iff esl /leibniz_equiv_iff esr].
-  subst. simpl. lia.
+- move=> [/leibniz_equiv_iff Esl /leibniz_equiv_iff Esr].
+  simpl in Esl, Esr. subst. exact (Nat.le_0_l _).
 - move=> [[sl1 sr1] [[sl2 sr2] [/leibniz_equiv_iff [/= esl esr] [/l_alt He Hrec]]]].
   have := Hbo _ _ He.
   have := Hne _ _ He.
@@ -2795,9 +2795,9 @@ Qed.
 Lemma bounded_output_unit (s : list T * list T) :
   bounded_output (Unit s).
 Proof.
-exists (length s.2).
-move=> sl sr /l_alt /= [/leibniz_equiv_iff -> /leibniz_equiv_iff ->].
-nia.
+destruct s as [s1 s2]; exists (length s2).
+move=> sl sr /l_alt /= [/leibniz_equiv_iff Esl /leibniz_equiv_iff Esr].
+simpl in Esl, Esr. subst. nia.
 Qed.
 
 (** Definition 32: Prefix-free terms. A term [L] is prefix-free if for
