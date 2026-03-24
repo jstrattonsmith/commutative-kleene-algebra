@@ -2633,12 +2633,12 @@ Fixpoint derivative x e : ka_term (list T) :=
 
 
 
-Record fsa : Type := {
+(* Record fsa : Type := {
   fsa_state : setoid;
   fsa_state_leibniz : LeibnizEquiv fsa_state;
   fsa_state_eq_dec : EqDecision fsa_state;
   fsa_state_finite : Finite fsa_state;
-}.
+}. *)
 
 
 Section RepresentableRelations.
@@ -2698,9 +2698,9 @@ Qed.
 Lemma bounded_output_with_bot k :
   bounded_output_with k (⊥ : ka_term (list T * list T)).
 Proof.
-move=> sl sr.
-(* Unit (sl, sr) ⊑ ⊥ is vacuously false: no string is below bottom. *)
-Admitted.
+move=> sl sr /l_alt.
+by rewrite pre_ka_morphism_bottom.
+Qed.
 
 Lemma bounded_output_with_join k1 k2 e1 e2 :
   bounded_output_with k1 e1 →

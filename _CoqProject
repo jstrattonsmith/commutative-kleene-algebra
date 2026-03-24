@@ -1,0 +1,5 @@
+-arg "-w -convert_concl_no_check"
+-arg "-w -redundant-canonical-projection"
+-arg "-w -notation-overridden"
+
+kacc_undec.v
