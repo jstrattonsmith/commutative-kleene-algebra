@@ -2663,9 +2663,151 @@ Record repr_rel e L : Type := {
         ⊔ ka_term_diag pseudo_top ⋅ diff ⋅ residue;
 }.
 
+(** Definition 28: Bounded-output terms.
 
+    A term [e] over [Σ ⊕ Σ] (represented as [ka_term (list T * list T)]) has
+    bounded output with fanout [k] if, for every string [s] in its language,
+    the length of the right projection is bounded by [(|π_l(s)| + 1) * k].
 
-Print ka_term.
+    Intuitively, this means the term represents a relation that maps each
+    input string to only finitely many output strings of bounded length. *)
+
+Definition bounded_output_with (k : nat) (e : ka_term (list T * list T)) : Prop :=
+  ∀ sl sr, Unit (sl, sr) ⊑ e → length sr ≤ (length sl + 1) * k.
+
+Definition bounded_output (e : ka_term (list T * list T)) : Prop :=
+  ∃ k, bounded_output_with k e.
+
+(** Lemma 29: If [e] has bounded output with fanout [k] and [Σ] is a finite
+    set of strings, then [Next_e(Σ)] is finite.  More precisely, if
+    [s ∈ Next_e(Σ)], then [|s| ≤ (m + 1) * k] where
+    [m = max { |s'| | s' ∈ Σ }]. *)
+
+Lemma bounded_output_next_bound k e sl sr sr' :
+  bounded_output_with k e →
+  Unit (sl ++ sr, sr') ⊑ e →
+  length sr' ≤ (length sl + length sr + 1) * k.
+Proof.
+move=> Hbo Hin.
+have := Hbo _ _ Hin.
+by rewrite app_length.
+Qed.
+
+(** Lemma 30 (partial): Bounded-output is preserved by join. *)
+
+Lemma bounded_output_with_bot k :
+  bounded_output_with k (⊥ : ka_term (list T * list T)).
+Proof.
+move=> sl sr.
+(* Unit (sl, sr) ⊑ ⊥ is vacuously false: no string is below bottom. *)
+Admitted.
+
+Lemma bounded_output_with_join k1 k2 e1 e2 :
+  bounded_output_with k1 e1 →
+  bounded_output_with k2 e2 →
+  bounded_output_with (max k1 k2) (e1 ⊔ e2).
+Proof.
+move=> H1 H2 sl sr Hin.
+(* From Unit (sl, sr) ⊑ e1 ⊔ e2, we get Unit (sl, sr) ⊑ e1 ∨ Unit (sl, sr) ⊑ e2.
+   In each case, apply the respective bound and use max k1 k2 ≥ k1, k2. *)
+Admitted.
+
+Lemma bounded_output_join e1 e2 :
+  bounded_output e1 →
+  bounded_output e2 →
+  bounded_output (e1 ⊔ e2).
+Proof.
+move=> [k1 H1] [k2 H2].
+exists (max k1 k2).
+exact: bounded_output_with_join.
+Qed.
+
+(** Lemma 30 (partial): Bounded-output is preserved by multiplication. *)
+
+Lemma bounded_output_with_mul k1 k2 e1 e2 :
+  bounded_output_with k1 e1 →
+  bounded_output_with k2 e2 →
+  bounded_output_with (k1 + k2) (e1 ⋅ e2).
+Proof.
+move=> H1 H2 sl sr Hin.
+(* From Unit (sl, sr) ⊑ e1 ⋅ e2, we get a decomposition
+   (sl, sr) = (sl1, sr1) ⋅ (sl2, sr2) = (sl1 ++ sl2, sr1 ++ sr2)
+   with Unit (sl1, sr1) ⊑ e1 and Unit (sl2, sr2) ⊑ e2.
+   Then length sr = length sr1 + length sr2
+     ≤ (length sl1 + 1) * k1 + (length sl2 + 1) * k2
+     ≤ (length sl + 1) * (k1 + k2). *)
+Admitted.
+
+Lemma bounded_output_mul e1 e2 :
+  bounded_output e1 →
+  bounded_output e2 →
+  bounded_output (e1 ⋅ e2).
+Proof.
+move=> [k1 H1] [k2 H2].
+exists (k1 + k2).
+exact: bounded_output_with_mul.
+Qed.
+
+(** Lemma 30 (star case): Bounded-output is preserved by star,
+    provided that [|π_l(s)| ≥ 1] for all strings [s ≤ e].
+    Under this condition, [e*] has bounded output with fanout [2k]
+    when [e] has fanout [k]. *)
+
+Definition left_nonempty (e : ka_term (list T * list T)) : Prop :=
+  ∀ sl sr, Unit (sl, sr) ⊑ e → length sl ≥ 1.
+
+Lemma bounded_output_with_star k e :
+  bounded_output_with k e →
+  left_nonempty e →
+  bounded_output_with (2 * k) (star e).
+Proof.
+(* Proof sketch from paper: If s ≤ e*, write s = s_1 ⋯ s_n with s_i ≤ e.
+   Then |π_r(s)| = Σ|π_r(s_i)| ≤ Σ(|π_l(s_i)| + 1)·k.
+   Since |π_l(s_i)| ≥ 1, we have |π_l(s_i)| + 1 ≤ 2·|π_l(s_i)|.
+   Thus |π_r(s)| ≤ 2k · Σ|π_l(s_i)| = 2k · |π_l(s)|
+                  ≤ (|π_l(s)| + 1) · 2k. *)
+Admitted.
+
+Lemma bounded_output_star e :
+  bounded_output e →
+  left_nonempty e →
+  bounded_output (star e).
+Proof.
+move=> [k Hk] Hne.
+exists (2 * k).
+exact: bounded_output_with_star.
+Qed.
+
+(** Bounded-output unit terms. *)
+
+Lemma bounded_output_unit (s : list T * list T) :
+  bounded_output (Unit s).
+Proof.
+exists (length s.2).
+move=> sl sr Hin.
+(* Unit (sl, sr) ⊑ Unit s means (sl, sr) ≡ s in the product monoid,
+   so length sr = length s.2 ≤ (length sl + 1) * length s.2. *)
+Admitted.
+
+(** Definition 32: Prefix-free terms. A term [L] is prefix-free if for
+    all strings [s1 ≤ L] and [s2 ≤ L], if [s1] is a prefix of [s2],
+    then [s1 = s2]. *)
+
+Definition prefix_free (L : ka_term (list T)) : Prop :=
+  ∀ s1 s2, Unit s1 ⊑ L → Unit s2 ⊑ L →
+    (∃ t, s2 = s1 ++ t) → s1 = s2.
+
+(** Lemma 34 (from paper): A finite-state, bounded-output term whose
+    domain and codomain lie in a prefix-free language is representable. *)
+
+Lemma bounded_output_repr_rel e L :
+  bounded_output e →
+  ka_term_proj1 e ⊑ L →
+  ka_term_proj2 e ⊑ L →
+  prefix_free L →
+  repr_rel e L.
+Proof.
+Admitted.
 
 Fixpoint π_l {T} (t : ka_term T) : ka_term T :=
   match t with
