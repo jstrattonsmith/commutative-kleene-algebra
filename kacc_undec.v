@@ -2691,7 +2691,7 @@ Lemma bounded_output_next_bound k (e : ka_term (list T * list T)) sl sr sr' :
 Proof.
 move=> Hbo Hin.
 have := Hbo _ _ Hin.
-by rewrite app_length.
+by rewrite List.length_app.
 Qed.
 
 (** Lemma 30 (partial): Bounded-output is preserved by join. *)
