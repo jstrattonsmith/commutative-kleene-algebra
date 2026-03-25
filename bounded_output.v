@@ -224,6 +224,19 @@ Section FSANext.
 Context {Σ : setoid} `{!EqDecision Σ, !LeibnizEquiv Σ, !Finite Σ}.
 Variable A : fsa (Σ + Σ) (ka_term (list Σ * list Σ)) (Unit ∘ generator_interp).
 
+(** Encode a pair (sl, sr) as a string over Σ + Σ. *)
+Definition encode_pair (sl sr : list Σ) : list (Σ + Σ) :=
+  map inl sl ++ map inr sr.
+
+(** Check if a pair (sl, sr) is accepted by the automaton. *)
+Definition pair_match (sl sr : list Σ) : bool :=
+  string_match A (encode_pair sl sr).
+
+(** The next function: given [sl] and a bound on [sr] length,
+    enumerate all [sr] up to that bound that are accepted paired with [sl]. *)
+Definition fsa_next (bound : nat) (sl : list Σ) : list (list Σ) :=
+  filter (pair_match sl) (@enum_list_lt Σ _ _ bound).
+
 End FSANext.
 
 (** Lemma 34 (from paper): A finite-state, bounded-output term whose
