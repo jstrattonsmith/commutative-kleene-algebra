@@ -2946,10 +2946,12 @@ Qed.
 Lemma left_has_emptyb_false_r e :
   left_nonempty e → left_has_emptyb e = false.
 Proof.
-(* The reverse direction requires showing that 1 ⊑ ka_term_proj1 e
-   implies ∃ sr, Unit ([], sr) ⊑ e, which needs a surjectivity
-   property of projection on languages. *)
-Admitted.
+rewrite /left_has_emptyb /left_nonempty => Hne.
+apply/Bool.not_true_iff_false. move=> /has_oneP /l_alt.
+rewrite l_natural => -[[sl sr] /= [/leibniz_equiv_iff Esl /l_alt Hin]].
+simpl in Esl. subst sl.
+have := Hne _ _ Hin. simpl. lia.
+Qed.
 
 Lemma bounded_output_with_star k e :
   bounded_output_with k e →
