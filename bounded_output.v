@@ -215,6 +215,7 @@ Definition prefix_free (L : ka_term (list T)) : Prop :=
     domain and codomain lie in a prefix-free language is representable. *)
 
 Lemma bounded_output_repr_rel e L :
+  finite_state e →
   bounded_output e →
   ka_term_proj1 e ⊑ L →
   ka_term_proj2 e ⊑ L →
