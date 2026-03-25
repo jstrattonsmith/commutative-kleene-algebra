@@ -185,7 +185,7 @@ elim: n σ => [|n IH] σ.
     ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
     ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ error
     ⊔ error.
-  { admit. }
+  { by rewrite !pre_ka_right_dist -!assoc. }
 
   (* Hop 6: ⨆diag(σ) ⊑ pseudo_top, so ⨆diag(σ)·pt ⊑ pt and ⨆diag(σ)·error ⊑ error *)
   have hop6 :
