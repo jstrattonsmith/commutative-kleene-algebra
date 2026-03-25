@@ -221,21 +221,34 @@ Definition prefix_free (L : ka_term (list T)) : Prop :=
 
 Section FSANext.
 
-Context {Σ : setoid} `{!EqDecision Σ, !LeibnizEquiv Σ, !Finite Σ}.
-Variable A : fsa (Σ + Σ) (ka_term (list Σ * list Σ)) (Unit ∘ generator_interp).
+Variable A : fsa (T + T) (ka_term (list T * list T)) (Unit ∘ generator_interp).
+Variable bo : bounded_output (fsa_elem A).
 
-(** Encode a pair (sl, sr) as a string over Σ + Σ. *)
-Definition encode_pair (sl sr : list Σ) : list (Σ + Σ) :=
+(** Encode a pair (sl, sr) as a string over T + T. *)
+Definition encode_pair (sl sr : list T) : list (T + T) :=
   map inl sl ++ map inr sr.
 
 (** Check if a pair (sl, sr) is accepted by the automaton. *)
-Definition pair_match (sl sr : list Σ) : bool :=
+Definition pair_match (sl sr : list T) : bool :=
   string_match A (encode_pair sl sr).
 
-(** The next function: given [sl] and a bound on [sr] length,
-    enumerate all [sr] up to that bound that are accepted paired with [sl]. *)
-Definition fsa_next (bound : nat) (sl : list Σ) : list (list Σ) :=
-  filter (pair_match sl) (@enum_list_lt Σ _ _ bound).
+(** The next function: given [sl], compute the bound from the
+    bounded_output witness and enumerate all accepted [sr]. *)
+Definition fsa_next (sl : list T) : list (list T) :=
+  let k := proj1_sig bo in
+  filter (pair_match sl) (@enum_list_lt T _ _ ((length sl + 1) * k + 1)).
+
+Lemma fsa_next_spec (sl sr : list T) :
+  sr ∈ fsa_next sl ↔ Unit (sl, sr) ⊑ fsa_elem A.
+Proof.
+rewrite /fsa_next elem_of_list_filter /pair_match /string_match
+        /encode_pair elem_of_enum_list_lt.
+split.
+- (* sr is short enough and accepted → Unit (sl, sr) ⊑ fsa_elem A *)
+  admit.
+- (* Unit (sl, sr) ⊑ fsa_elem A → sr is short enough and accepted *)
+  admit.
+Admitted.
 
 End FSANext.
 
