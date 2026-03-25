@@ -734,6 +734,63 @@ move=> _ /elem_of_list_fmap [xs [-> Hxs]].
 Qed.
 
 
+(** Connection between string_match and fsa_interp / fsa_elem. *)
+
+Lemma string_match_at_sound A (σ : fsa_state A) (s : list Σ) :
+  string_match_at σ s = true →
+  ka_of_string s ⊑ fsa_interp σ.
+Proof.
+move=> Hmatch.
+have Hdecomp := fsa_elem_k_decomp_gen σ (S (length s)).
+have Hlt : ka_of_string s ⊑ sum_terms_lt_k_at σ (S (length s)).
+{ rewrite /sum_terms_lt_k_at.
+  apply: sqsubseteq_join_list; apply/elem_of_list_fmap.
+  exists (map f s); split; first by rewrite /ka_of_string.
+  apply/elem_of_list_fmap.
+  exists s; split => //.
+  rewrite elem_of_list_filter elem_of_enum_list_lt /= Hmatch. split => //. lia. }
+etransitivity; first exact: Hlt.
+rewrite sqsubseteq_iff Hdecomp assoc semi_lattice_idemp //.
+Qed.
+
+Lemma string_match_sound A (s : list Σ) :
+  string_match A s = true →
+  ka_of_string s ⊑ fsa_elem A.
+Proof.
+rewrite /string_match => Hmatch.
+have H := string_match_at_sound Hmatch.
+etransitivity; first exact: H.
+rewrite sqsubseteq_iff fsa_interp_initial semi_lattice_idemp //.
+Qed.
+
+Lemma string_match_at_complete A (σ : fsa_state A) (s : list Σ) :
+  ka_of_string s ⊑ fsa_interp σ →
+  string_match_at σ s = true.
+Proof.
+(* Use the language interpretation: ka_of_string s ⊑ fsa_interp σ
+   implies l (fsa_interp σ) (∏(map f s)), which by the automaton
+   semantics means s is accepted from σ. *)
+Admitted.
+
+Lemma string_match_at_iff A (σ : fsa_state A) (s : list Σ) :
+  string_match_at σ s = true ↔ ka_of_string s ⊑ fsa_interp σ.
+Proof.
+split.
+- exact: string_match_at_sound.
+- exact: string_match_at_complete.
+Qed.
+
+Lemma string_match_iff A (s : list Σ) :
+  string_match A s = true ↔ ka_of_string s ⊑ fsa_elem A.
+Proof.
+split.
+- exact: string_match_sound.
+- rewrite /string_match => H.
+  apply: string_match_at_complete.
+  etransitivity; first exact: H.
+  rewrite sqsubseteq_iff fsa_interp_initial semi_lattice_idemp //.
+Qed.
+
 End Automata.
 
 Global Arguments fsa_one {Σ _ _ _ _}.
