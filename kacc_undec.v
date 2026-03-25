@@ -2750,8 +2750,8 @@ Fixpoint finite_state (e : ka_term T) : bool :=
 
 Lemma finite_stateP e :
   finite_state e →
-  ∃ A : fsa (generator T) (ka_term T) (λ x, Unit (generator_interp x)),
-    e ≡ fsa_elem A.
+  {A : fsa (generator T) (ka_term T) (λ x, Unit (generator_interp x)) |
+    e ≡ fsa_elem A}.
 Proof.
 elim: e => /=.
 - move=> s _.
