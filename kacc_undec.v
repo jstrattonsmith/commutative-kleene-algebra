@@ -2986,6 +2986,32 @@ move=> sl sr /l_alt /= [/leibniz_equiv_iff Esl /leibniz_equiv_iff Esr].
 simpl in Esl, Esr. subst. nia.
 Qed.
 
+(** Boolean check for bounded output: traverses the term and verifies
+    that every starred subterm satisfies left_nonempty (via left_has_emptyb). *)
+
+Fixpoint bounded_outputb (e : ka_term (list T * list T)) : bool :=
+  match e with
+  | Unit _ => true
+  | ka_term_bottom => true
+  | ka_term_join e1 e2 => bounded_outputb e1 && bounded_outputb e2
+  | ka_term_mul e1 e2 => bounded_outputb e1 && bounded_outputb e2
+  | ka_term_star e => negb (left_has_emptyb e) && bounded_outputb e
+  end.
+
+Lemma bounded_outputbP e :
+  bounded_outputb e = true → bounded_output e.
+Proof.
+elim: e.
+- move=> s _. exact: bounded_output_unit.
+- move=> _. exists 0. exact: bounded_output_with_bot.
+- move=> e1 IH1 e2 IH2 /andb_true_iff [/IH1 H1 /IH2 H2].
+  exact: bounded_output_join.
+- move=> e1 IH1 e2 IH2 /andb_true_iff [/IH1 H1 /IH2 H2].
+  exact: bounded_output_mul.
+- move=> e IH /andb_true_iff [/negb_true_iff /left_has_emptyb_falseP Hne /IH Hbo].
+  exact: bounded_output_star.
+Qed.
+
 (** Definition 32: Prefix-free terms. A term [L] is prefix-free if for
     all strings [s1 ≤ L] and [s2 ≤ L], if [s1] is a prefix of [s2],
     then [s1 = s2]. *)
