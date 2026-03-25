@@ -735,9 +735,6 @@ Qed.
 
 
 End Automata.
-(* Set Printing Implicit. *)
-Print fsa.
-Print pre_ka.
 
 Global Arguments fsa_one {Σ _ _ _ _}.
 Global Arguments fsa_singleton {Σ _ _ _ _}.
