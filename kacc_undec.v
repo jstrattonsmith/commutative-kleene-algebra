@@ -2004,9 +2004,7 @@ Lemma l_natural (e : ka_term M) :
 Proof.
 apply: (@ka_term_ext _ _ (fun e => l (ka_term_map f e))
                          (fun e => lang_map f (l e)) _ _).
-intro x; cbv beta; intro s; split.
-- move=> Hs; exists x; split => //.
-- by case=> t [] Ht ->.
+by move=> x y /=; split; eauto; case=> _ [-> ->].
 Qed.
 
 End LangNaturality.
