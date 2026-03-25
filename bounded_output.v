@@ -211,6 +211,32 @@ Definition prefix_free (L : ka_term (list T)) : Prop :=
   ∀ s1 s2, Unit s1 ⊑ L → Unit s2 ⊑ L →
     (∃ t, s2 = s1 ++ t) → s1 = s2.
 
+(** Construction of the next function for finite-state terms.
+
+    For a finite-state term [e] over [list T * list T], the automaton [A]
+    has generators [T + T] (left and right alphabet symbols).
+    Given [sl : list T], we feed [map inl sl] to the automaton to reach
+    a state, then enumerate all [sr] accepted from that state via
+    [map inr sr]. The bounded-output property bounds the length of [sr]. *)
+
+Section FSANext.
+
+Context {Σ : Type} `{!EqDecision Σ, !Finite Σ}.
+Context {S : pre_ka} (f : Σ → S).
+Variable A : fsa Σ S f.
+
+(** State reached after reading a prefix. *)
+Definition fsa_state_after (sl : list Σ) : fsa_state A :=
+  fsa_trans_s sl (fsa_initial A).
+
+(** The next function: enumerate all strings of bounded length accepted
+    from the state reached after reading [sl]. *)
+Definition fsa_next (bound : nat) (sl : list Σ) : list (list Σ) :=
+  let σ := fsa_state_after sl in
+  filter (string_match_at σ) (@enum_list_lt Σ _ _ bound).
+
+End FSANext.
+
 (** Lemma 34 (from paper): A finite-state, bounded-output term whose
     domain and codomain lie in a prefix-free language is representable. *)
 
