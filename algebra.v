@@ -420,6 +420,56 @@ rewrite map_app !map_map monoid_morphism_mul; split.
   by rewrite mul_list_one ?left_id // => ? /elem_of_list_fmap [? [] -> _].
 Qed.
 
+Context {Hsz1 : SizedMonoid G1 T1} {Hsz2 : SizedMonoid G2 T2}.
+
+Definition sum_lefts (gs : list (G1 + G2)) : list G1 :=
+  omap (λ x, match x with inl g => Some g | inr _ => None end) gs.
+
+Definition sum_rights (gs : list (G1 + G2)) : list G2 :=
+  omap (λ x, match x with inl _ => None | inr g => Some g end) gs.
+
+Lemma sum_lefts_rights_length (gs : list (G1 + G2)) :
+  length gs = length (sum_lefts gs) + length (sum_rights gs).
+Proof. elim: gs => [|[g|g] gs IH] //=; lia. Qed.
+
+Lemma prod_gen_proj1 (gs : list (G1 + G2)) :
+  fst (∏ (map generator_interp gs)) ≡ ∏ (map generator_interp (sum_lefts gs)).
+Proof.
+rewrite (monoid_morphism_mul_list (f := fst)) map_map.
+elim: gs => [|[g|g] gs IH] //=.
+- by rewrite IH.
+- by rewrite IH left_id.
+Qed.
+
+Lemma prod_gen_proj2 (gs : list (G1 + G2)) :
+  snd (∏ (map generator_interp gs)) ≡ ∏ (map generator_interp (sum_rights gs)).
+Proof.
+rewrite (monoid_morphism_mul_list (f := snd)) map_map.
+elim: gs => [|[g|g] gs IH] //=.
+- by rewrite IH left_id.
+- by rewrite IH.
+Qed.
+
+Global Instance prod_sized_monoid : SizedMonoid (G1 + G2) (prod_monoid T1 T2).
+Proof.
+constructor => gs [x y] [/= Hx Hy].
+have Hxe : x ≡ ∏ (map generator_interp (sum_lefts gs)).
+{ rewrite -prod_gen_proj1 Hx //. }
+have Hye : y ≡ ∏ (map generator_interp (sum_rights gs)).
+{ rewrite -prod_gen_proj2 Hy //. }
+rewrite sum_lefts_rights_length.
+rewrite (@sized_monoid _ _ _ Hsz1 (sum_lefts gs) x Hxe).
+rewrite (@sized_monoid _ _ _ Hsz2 (sum_rights gs) y Hye).
+set gxy := proj1_sig (generate (x, y)).
+have Hgxy := proj2_sig (generate (x, y)).
+have [/= Hgx Hgy] := Hgxy.
+have Hlx := @sized_monoid _ _ _ Hsz1 (sum_lefts gxy) x
+              (transitivity Hgx (prod_gen_proj1 gxy)).
+have Hly := @sized_monoid _ _ _ Hsz2 (sum_rights gxy) y
+              (transitivity Hgy (prod_gen_proj2 gxy)).
+by rewrite -Hlx -Hly sum_lefts_rights_length.
+Qed.
+
 End ProdFinGen.
 
 (** Semi Lattices *)
