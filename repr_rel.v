@@ -142,8 +142,79 @@ elim: n σ => [|n IH] σ.
   etransitivity; last (apply: pre_ka_mul_mono;
     [exact: pre_ka_one_star | reflexivity]).
   by rewrite left_id.
-- (* Inductive step *)
-  admit.
+- (* Inductive step: follow the paper's chain of 8 hops *)
+  set σ' := next_set σ.
+  set err_base := ka_term_diag pseudo_top ⋅ diff ⋅ residue R.
+
+  (* Hop 1: unfold star *)
+  have hop1 : strings_r σ ⋅ star e ≡
+    strings_r σ ⊔ strings_r σ ⋅ e ⋅ star e.
+  { admit. }
+
+  (* Hop 2: apply expand_rel_sum *)
+  have hop2 : strings_r σ ⊔ strings_r σ ⋅ e ⋅ star e ⊑
+    strings_r σ ⊔ (⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⊔ err_base) ⋅ star e.
+  { admit. }
+
+  (* Hop 3: distribute · e* and simplify err_base · e* = error *)
+  have hop3 : strings_r σ ⊔ (⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⊔ err_base) ⋅ star e ≡
+    strings_r σ ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⋅ star e ⊔ error.
+  { admit. }
+
+  (* Hop 4: apply IH to σ' *)
+  have hop4 : strings_r σ ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⋅ star e ⊔ error ⊑
+    strings_r σ
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ (pseudo_top ⋅ strings_r (next_lt n σ') ⊔ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e ⊔ error)
+    ⊔ error.
+  { admit. }
+
+  (* Hop 5: distribute ⨆diag(σ) over the three summands *)
+  have hop5 :
+    strings_r σ
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ (pseudo_top ⋅ strings_r (next_lt n σ') ⊔ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e ⊔ error)
+    ⊔ error
+    ≡
+    strings_r σ
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ pseudo_top ⋅ strings_r (next_lt n σ')
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ error
+    ⊔ error.
+  { admit. }
+
+  (* Hop 6: ⨆diag(σ) ⊑ pseudo_top, so ⨆diag(σ)·pt ⊑ pt and ⨆diag(σ)·error ⊑ error *)
+  have hop6 :
+    strings_r σ
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ pseudo_top ⋅ strings_r (next_lt n σ')
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ error
+    ⊔ error
+    ⊑
+    pseudo_top ⋅ strings_r σ
+    ⊔ pseudo_top ⋅ strings_r (next_lt n σ')
+    ⊔ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
+    ⊔ error.
+  { admit. }
+
+  (* Hop 7: reassemble using next_lt_succ and next_iter_succ *)
+  have hop7 :
+    pseudo_top ⋅ strings_r σ
+    ⊔ pseudo_top ⋅ strings_r (next_lt n σ')
+    ⊔ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
+    ⊔ error
+    ≡
+    pseudo_top ⋅ strings_r (next_lt (S n) σ)
+    ⊔ pseudo_top ⋅ strings_r (next_iter (S n) σ) ⋅ star e
+    ⊔ error.
+  { admit. }
+
+  (* Compose all hops *)
+  rewrite hop1.
+  etransitivity; first exact: hop2.
+  rewrite hop3.
+  etransitivity; first exact: hop4.
+  rewrite hop5.
+  etransitivity; first exact: hop6.
+  by rewrite hop7.
 Admitted.
 
 (** Theorem 22: If Next^n_e(Σ) = ∅, then
