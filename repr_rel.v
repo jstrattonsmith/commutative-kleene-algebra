@@ -128,13 +128,24 @@ apply/join_list_sqsubseteq => _ /elem_of_list_fmap [xs [-> _]].
 exact: unit_le_pseudo_top.
 Qed.
 
+Lemma dpseudo_top_finite (σ : list (list T)) :
+  let dpseudo_top := ka_term_diag pseudo_top in
+  ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ dpseudo_top ⊑ dpseudo_top.
+Proof.
+rewrite /= join_list_left_dist map_map join_list_sqsubseteq.
+move=> _ /elem_of_list_fmap [xs [] -> ?].
+have -> : Unit (xs, xs) ≡ ka_term_diag (Unit xs) by [].
+by rewrite -monoid_morphism_mul pseudo_top_absorb.
+Qed.
+
 Lemma repr_rel_iter (n : nat) (σ : list (list T)) :
+  let dpseudo_top := ka_term_diag pseudo_top in
   strings_r σ ⋅ star e ⊑
-    pseudo_top ⋅ strings_r (next_lt n σ)
-    ⊔ pseudo_top ⋅ strings_r (next_iter n σ) ⋅ star e
+    dpseudo_top ⋅ strings_r (next_lt n σ)
+    ⊔ dpseudo_top ⋅ strings_r (next_iter n σ) ⋅ star e
     ⊔ error.
 Proof.
-elim: n σ => [|n IH] σ.
+elim: n σ => [|n IH] σ dpseudo_top.
 - (* Base case: x ⊑ pseudo_top ⋅ x since 1 ⊑ pseudo_top *)
   etransitivity; last (apply: sqsubseteq_join; left;
     apply: sqsubseteq_join; right; reflexivity).
@@ -166,7 +177,7 @@ elim: n σ => [|n IH] σ.
   (* Hop 4: apply IH to σ' *)
   have hop4 : strings_r σ ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⋅ star e ⊔ error ⊑
     strings_r σ
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ (pseudo_top ⋅ strings_r (next_lt n σ') ⊔ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e ⊔ error)
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ (dpseudo_top ⋅ strings_r (next_lt n σ') ⊔ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e ⊔ error)
     ⊔ error.
   { apply: join_mono; last reflexivity.
     apply: join_mono; first reflexivity.
@@ -177,12 +188,12 @@ elim: n σ => [|n IH] σ.
   (* Hop 5: distribute ⨆diag(σ) over the three summands *)
   have hop5 :
     strings_r σ
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ (pseudo_top ⋅ strings_r (next_lt n σ') ⊔ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e ⊔ error)
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ (dpseudo_top ⋅ strings_r (next_lt n σ') ⊔ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e ⊔ error)
     ⊔ error
     ≡
     strings_r σ
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ pseudo_top ⋅ strings_r (next_lt n σ')
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ dpseudo_top ⋅ strings_r (next_lt n σ')
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
     ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ error
     ⊔ error.
   { by rewrite !pre_ka_right_dist -!assoc. }
@@ -190,57 +201,54 @@ elim: n σ => [|n IH] σ.
   (* Hop 6: ⨆diag(σ) ⊑ pseudo_top, so ⨆diag(σ)·pt ⊑ pt and ⨆diag(σ)·error ⊑ error *)
   have hop6 :
     strings_r σ
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ pseudo_top ⋅ strings_r (next_lt n σ')
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ dpseudo_top ⋅ strings_r (next_lt n σ')
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
     ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ error
     ⊔ error
     ⊑
-    pseudo_top ⋅ strings_r σ
-    ⊔ pseudo_top ⋅ strings_r (next_lt n σ')
-    ⊔ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
+    dpseudo_top ⋅ strings_r σ
+    ⊔ dpseudo_top ⋅ strings_r (next_lt n σ')
+    ⊔ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
     ⊔ error.
   { have Hd := diag_units_le_pseudo_top σ.
-    have Hpt : pseudo_top ⋅ pseudo_top ⊑ (pseudo_top : ka_term (list T * list T)).
-    { exact: pseudo_top_finite _ (pre_ka_one_star _). }
+
     (* Each of the 5 LHS summands lands in the RHS *)
     rewrite !join_sqsubseteq; repeat split.
     (* strings_r σ ⊑ pseudo_top ⋅ strings_r σ ⊔ ... *)
     - etransitivity; last apply: sqsubseteq_join_left.
       etransitivity; last apply: sqsubseteq_join_left.
       etransitivity; last apply: sqsubseteq_join_left.
-      rewrite -{1}[strings_r σ]left_id.
-      exact: pre_ka_mul_mono (pre_ka_one_star _) (reflexivity _).
+      rewrite -{1}[strings_r σ](left_id 1).
+      apply: pre_ka_mul_mono => //; exact: pre_ka_one_star.
     (* ⨆diag · pt · next_lt ⊑ pt · next_lt ⊔ ... *)
     - etransitivity; last apply: sqsubseteq_join_left.
       etransitivity; last apply: sqsubseteq_join_left.
       etransitivity; last apply: sqsubseteq_join_right.
-      apply: pre_ka_mul_mono; last reflexivity.
-      exact: transitivity (pre_ka_mul_mono Hd (reflexivity _)) Hpt.
+      apply: pre_ka_mul_mono => //; exact: dpseudo_top_finite.
     (* ⨆diag · pt · next_iter · e* ⊑ pt · next_iter · e* ⊔ ... *)
     - etransitivity; last apply: sqsubseteq_join_left.
       etransitivity; last apply: sqsubseteq_join_right.
       apply: pre_ka_mul_mono; last reflexivity.
-      apply: pre_ka_mul_mono; last reflexivity.
-      exact: transitivity (pre_ka_mul_mono Hd (reflexivity _)) Hpt.
+      apply: pre_ka_mul_mono => //; exact: dpseudo_top_finite.
     (* ⨆diag · error ⊑ error *)
     - etransitivity; last apply: sqsubseteq_join_right.
-      rewrite /error -!assoc.
+      rewrite /error !assoc.
       apply: pre_ka_mul_mono; last reflexivity.
       apply: pre_ka_mul_mono; last reflexivity.
       apply: pre_ka_mul_mono; last reflexivity.
-      exact: transitivity (pre_ka_mul_mono Hd (reflexivity _)) Hpt.
+      exact: dpseudo_top_finite.
     (* error ⊑ error *)
     - exact: sqsubseteq_join_right. }
 
   (* Hop 7: reassemble using next_lt_succ and next_iter_succ *)
   have hop7 :
-    pseudo_top ⋅ strings_r σ
-    ⊔ pseudo_top ⋅ strings_r (next_lt n σ')
-    ⊔ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
+    dpseudo_top ⋅ strings_r σ
+    ⊔ dpseudo_top ⋅ strings_r (next_lt n σ')
+    ⊔ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
     ⊔ error
     ≡
-    pseudo_top ⋅ strings_r (next_lt (S n) σ)
-    ⊔ pseudo_top ⋅ strings_r (next_iter (S n) σ) ⋅ star e
+    dpseudo_top ⋅ strings_r (next_lt (S n) σ)
+    ⊔ dpseudo_top ⋅ strings_r (next_iter (S n) σ) ⋅ star e
     ⊔ error.
   { by rewrite next_lt_succ strings_r_app pre_ka_right_dist next_iter_succ -assoc. }
 
@@ -260,7 +268,7 @@ Qed.
 Lemma repr_rel_iter_empty (n : nat) (σ : list (list T)) :
   next_iter n σ = [] →
   strings_r σ ⋅ star e ⊑
-    pseudo_top ⋅ strings_r (next_lt n σ) ⊔ error.
+    ka_term_diag pseudo_top ⋅ strings_r (next_lt n σ) ⊔ error.
 Proof.
 move=> Hempty.
 etransitivity; first exact: repr_rel_iter n σ.
@@ -271,6 +279,5 @@ by rewrite right_id.
 Qed.
 
 End ReprRelIteration.
-
 
 End RepresentableRelations.
