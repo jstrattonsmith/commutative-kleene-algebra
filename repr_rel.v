@@ -154,7 +154,9 @@ elim: n σ => [|n IH] σ.
   (* Hop 2: apply expand_rel_sum *)
   have hop2 : strings_r σ ⊔ strings_r σ ⋅ e ⋅ star e ⊑
     strings_r σ ⊔ (⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⊔ err_base) ⋅ star e.
-  { admit. }
+  { apply: join_mono; first reflexivity.
+    apply: pre_ka_mul_mono; last reflexivity.
+    exact: expand_rel_sum. }
 
   (* Hop 3: distribute · e* and simplify err_base · e* = error *)
   have hop3 : strings_r σ ⊔ (⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⊔ err_base) ⋅ star e ≡
