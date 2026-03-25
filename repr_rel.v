@@ -242,7 +242,7 @@ elim: n σ => [|n IH] σ.
     pseudo_top ⋅ strings_r (next_lt (S n) σ)
     ⊔ pseudo_top ⋅ strings_r (next_iter (S n) σ) ⋅ star e
     ⊔ error.
-  { admit. }
+  { by rewrite next_lt_succ strings_r_app pre_ka_right_dist next_iter_succ -assoc. }
 
   (* Compose all hops *)
   rewrite hop1.
@@ -252,7 +252,7 @@ elim: n σ => [|n IH] σ.
   rewrite hop5.
   etransitivity; first exact: hop6.
   by rewrite hop7.
-Admitted.
+Qed.
 
 (** Theorem 22: If Next^n_e(Σ) = ∅, then
       Σ_r · e* ≤ Σ* · Next^{<n}(Σ)_r + Σ* · Σ≠ · ρ *)
