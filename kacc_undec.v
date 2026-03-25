@@ -2769,43 +2769,6 @@ Qed.
 
 End FSAKATerm.
 
-Section Derivatives.
-
-Context (T : setoid) `{!EqDecision T, Finite T}.
-Implicit Types (x y : T) (xs ys : list T) (e : ka_term (list T)).
-
-Definition contains_one e : bool :=
-  ka_term_elim (λ xs, ∏ (map (λ _, ⊥) xs)) e.
-
-Fixpoint derivative x e : ka_term (list T) :=
-  match e with
-  | Unit [] =>
-    ⊥
-  | Unit (y :: ys) =>
-    if bool_decide (x = y) then 1 else ⊥
-  | ka_term_bottom =>
-    ⊥
-  | ka_term_join e1 e2 =>
-    derivative x e1 ⊔ derivative x e2
-  | ka_term_mul e1 e2 =>
-    derivative x e1 ⋅ e2 ⊔
-    (if contains_one e1 then 1 else ⊥) ⋅ derivative x e2
-  | ka_term_star e =>
-    derivative x e ⋅ star e
-  end.
-
-
-
-
-(* Record fsa : Type := {
-  fsa_state : setoid;
-  fsa_state_leibniz : LeibnizEquiv fsa_state;
-  fsa_state_eq_dec : EqDecision fsa_state;
-  fsa_state_finite : Finite fsa_state;
-}. *)
-
-End Derivatives.
-
 Section RepresentableRelations.
 
 Context (T : setoid) `{!LeibnizEquiv T, !EqDecision T, !Finite T}.
