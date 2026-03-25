@@ -1445,6 +1445,20 @@ Proof. by constructor; case: (H). Qed.
 
 End PreKAMorphismTheory.
 
+Global Instance compose_pre_ka_morphism (T S R : pre_ka)
+  (f : T → S) (g : S → R) :
+  PreKAMorphism f → PreKAMorphism g →
+  PreKAMorphism (g ∘ f).
+Proof.
+move=> ??; constructor.
+- solve_proper.
+- by rewrite /= !pre_ka_morphism_one.
+- by move=> ??; rewrite /= !pre_ka_morphism_mul.
+- by rewrite /= !pre_ka_morphism_bottom.
+- by move=> ??; rewrite /= !pre_ka_morphism_join.
+- by move=> ?; rewrite /= !pre_ka_morphism_star.
+Qed.
+
 Fixpoint ka_term_elim (T : Type) (S : pre_ka) (f : T → S) (e : ka_term T) : S :=
   match e with
   | Unit x => f x
@@ -1486,6 +1500,25 @@ constructor=> //=.
 Qed.
 
 End KATermElim.
+
+Section KATermUP.
+
+Variables (T : monoid) (S : pre_ka) (g h : ka_term T → S).
+Context `{!PreKAMorphism g, !PreKAMorphism h}.
+
+Lemma ka_term_ext :
+  (∀ x, g (Unit x) ≡ h (Unit x)) →
+  ∀ e, g e ≡ h e.
+Proof.
+move=> Hunit; elim=> /=.
+- exact: Hunit.
+- by rewrite !pre_ka_morphism_bottom.
+- by move=> e1 IH1 e2 IH2; rewrite !pre_ka_morphism_join IH1 IH2.
+- by move=> e1 IH1 e2 IH2; rewrite !pre_ka_morphism_mul IH1 IH2.
+- by move=> e IH; rewrite !pre_ka_morphism_star IH.
+Qed.
+
+End KATermUP.
 
 Definition ka_term_map {T} {S : monoid} (f : T → S) : ka_term T → ka_term S :=
   ka_term_elim (Unit ∘ f).
@@ -1678,6 +1711,8 @@ Qed.
 
 Canonical Structure lang_setoid :=
   @Setoid lang _ _.
+
+Global Existing Instance lang_car_proper.
 
 Global Instance lang_proper : Proper ((≡) ==> (≡) ==> iff) lang_car.
 Proof.
@@ -1958,6 +1993,23 @@ constructor.
 Qed.
 
 End LangMap.
+
+Section LangNaturality.
+
+Variables (M N : monoid) (f : M → N).
+Context `{!MonoidMorphism f}.
+
+Lemma l_natural (e : ka_term M) :
+  l (ka_term_map f e) ≡ lang_map f (l e).
+Proof.
+apply: (@ka_term_ext _ _ (fun e => l (ka_term_map f e))
+                         (fun e => lang_map f (l e)) _ _).
+intro x; cbv beta; intro s; split.
+- move=> Hs; exists x; split => //.
+- by case=> t [] Ht ->.
+Qed.
+
+End LangNaturality.
 
 Section KATermProj.
 
