@@ -2853,7 +2853,18 @@ Lemma expand_rel_sum (σ : list (list T)) :
     ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r (next_set σ)
     ⊔ ka_term_diag pseudo_top ⋅ diff ⋅ residue R.
 Proof.
-Admitted.
+rewrite /strings_r join_list_left_dist map_map.
+apply/join_list_sqsubseteq => _ /elem_of_list_fmap [xs [-> xs_σ]] /=.
+etransitivity; first exact: expand_rel R xs.
+apply: join_mono; last reflexivity.
+apply: pre_ka_mul_mono.
+- apply: sqsubseteq_join_list; apply/elem_of_list_fmap; eauto.
+- apply/join_list_sqsubseteq => _ /elem_of_list_fmap [ys [-> ys_next]].
+  apply: sqsubseteq_join_list; apply/elem_of_list_fmap.
+  exists ys; split => //.
+  rewrite /next_set; apply/elem_of_list_In/in_flat_map.
+  exists xs; split; exact/elem_of_list_In.
+Qed.
 
 (** Lemma 21: Iteration of a representable relation.
     For e : Rel(L), there exists ρ such that for every n and finite Σ ⊆ L:
