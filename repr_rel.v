@@ -149,7 +149,7 @@ elim: n σ => [|n IH] σ.
   (* Hop 1: unfold star *)
   have hop1 : strings_r σ ⋅ star e ≡
     strings_r σ ⊔ strings_r σ ⋅ e ⋅ star e.
-  { admit. }
+  { by rewrite {1}pre_ka_star_unfold pre_ka_right_dist right_id assoc. }
 
   (* Hop 2: apply expand_rel_sum *)
   have hop2 : strings_r σ ⊔ strings_r σ ⋅ e ⋅ star e ⊑
