@@ -2,4 +2,11 @@
 -arg "-w -redundant-canonical-projection"
 -arg "-w -notation-overridden"
 
-kacc_undec.v
+-R . kacc
+
+utils.v
+algebra.v
+pre_ka.v
+lang.v
+automata.v
+repr_rel.v
