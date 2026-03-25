@@ -743,7 +743,7 @@ Global Arguments fsa_mul' {Σ _ _ _ _}.
 
 Section FSAKATerm.
 
-Context (T : monoid) `{!FinGenMonoid T} `{!IsOne T}.
+Context `{!FinGenMonoid G T, !EqDecision G, !Finite G, !IsOne T}.
 
 Fixpoint finite_state (e : ka_term T) : bool :=
   match e with
@@ -756,14 +756,14 @@ Fixpoint finite_state (e : ka_term T) : bool :=
 
 Lemma finite_stateP e :
   finite_state e →
-  {A : fsa (generator T) (ka_term T) (λ x, Unit (generator_interp x)) |
+  {A : fsa G (ka_term T) (λ x, Unit (generator_interp x)) |
     e ≡ fsa_elem A}.
 Proof.
 elim: e => /=.
 - move=> s _.
   have [xs Exs] := generate s; exists (fsa_mul_list (map fsa_singleton xs)).
   rewrite fsa_elem_mul_list map_map Exs monoid_morphism_mul_list map_map.
-  by apply: monoid_morphism_proper; apply: (@Proper_map' (eq_setoid (generator T)) _).
+  by apply: monoid_morphism_proper; apply: (@Proper_map' (eq_setoid G) _).
 - move=> _. by exists (fsa_bottom _) => /=.
 - move=> e1 IH1 e2 IH2 /andb_True [H1 H2].
   have [A1 E1] := IH1 H1.

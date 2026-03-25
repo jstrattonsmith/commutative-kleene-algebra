@@ -221,19 +221,8 @@ Definition prefix_free (L : ka_term (list T)) : Prop :=
 
 Section FSANext.
 
-Context {Σ : Type} `{!EqDecision Σ, !Finite Σ}.
-Context {S : pre_ka} (f : Σ → S).
-Variable A : fsa Σ S f.
-
-(** State reached after reading a prefix. *)
-Definition fsa_state_after (sl : list Σ) : fsa_state A :=
-  fsa_trans_s sl (fsa_initial A).
-
-(** The next function: enumerate all strings of bounded length accepted
-    from the state reached after reading [sl]. *)
-Definition fsa_next (bound : nat) (sl : list Σ) : list (list Σ) :=
-  let σ := fsa_state_after sl in
-  filter (string_match_at σ) (@enum_list_lt Σ _ _ bound).
+Context {Σ : setoid} `{!EqDecision Σ, !LeibnizEquiv Σ, !Finite Σ}.
+Variable A : fsa (Σ + Σ) (ka_term (list Σ * list Σ)) (Unit ∘ generator_interp).
 
 End FSANext.
 

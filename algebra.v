@@ -234,15 +234,12 @@ move=> ??; split.
 - by move=> ??; rewrite /= !monoid_morphism_mul.
 Qed.
 
-Class FinGenMonoid (T : monoid) := {
-  generator : Type;
-  generator_interp : generator → T;
-  #[global] generator_eq_dec :: EqDecision generator;
-  #[global] generator_finite :: Finite generator;
-  generate x : {l : list generator | x ≡ ∏ (map generator_interp l) };
+Class FinGenMonoid (G : Type) (T : monoid) := {
+  generator_interp : G → T;
+  generate x : {l : list G | x ≡ ∏ (map generator_interp l) };
 }.
 
-Arguments generator T {_}.
+Global Hint Mode FinGenMonoid - ! : typeclasses.
 
 Section ListMonoid.
 
@@ -269,10 +266,9 @@ End ListMonoid.
 
 Section ListFinGen.
 
-Context {T : setoid} `{!LeibnizEquiv T, !EqDecision T, !Finite T}.
+Context {T : setoid} `{!LeibnizEquiv T}.
 
-Global Program Instance list_fin_gen : FinGenMonoid (list_monoid T) := {|
-  generator := T;
+Global Program Instance list_fin_gen : FinGenMonoid T (list_monoid T) := {|
   generator_interp x := [x];
 |}.
 
@@ -381,11 +377,10 @@ Arguments prod_inj2 {T S}.
 
 Section ProdFinGen.
 
-Context `{!FinGenMonoid T1, !FinGenMonoid T2}.
+Context `{!FinGenMonoid G1 T1, !FinGenMonoid G2 T2}.
 
-Global Program Instance prod_fin_gen : FinGenMonoid (T1 * T2)%type := {|
-  generator := generator T1 + generator T2;
-  generator_interp (x : generator T1 + generator T2) :=
+Global Program Instance prod_fin_gen : FinGenMonoid (G1 + G2) (T1 * T2)%type := {|
+  generator_interp (x : G1 + G2) :=
     match x return T1 * T2 with
     | inl x => (generator_interp x, 1)
     | inr x => (1, generator_interp x)

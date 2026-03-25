@@ -743,10 +743,10 @@ End ProdIsOne.
 
 Section PseudoTop.
 
-Context `{FinGenMonoid T}.
+Context `{!FinGenMonoid G T, !EqDecision G, !Finite G}.
 
 Definition pseudo_top : ka_term T :=
-  star (⨆ (map (λ g, Unit (generator_interp g)) (enum (generator T)))).
+  star (⨆ (map (λ g, Unit (generator_interp g)) (enum G))).
 
 Lemma pseudo_top_absorb x : Unit x ⋅ pseudo_top ⊑ pseudo_top.
 Proof.
@@ -754,7 +754,7 @@ case: (generate x) => xs -> {x}; elim: xs=> [|x xs IH] //=.
   by rewrite left_id.
 rewrite monoid_morphism_mul -assoc IH /pseudo_top.
 set f := λ x', Unit (generator_interp x').
-have /sqsubseteq_join_list x_gen: f x ∈ map f (enum (generator T)).
+have /sqsubseteq_join_list x_gen: f x ∈ map f (enum G).
   apply/elem_of_list_fmap; exists x; split => //.
   exact: elem_of_enum.
 rewrite /f in x_gen; rewrite x_gen; exact: pre_ka_mul_star.
@@ -774,5 +774,4 @@ Qed.
 
 End PseudoTop.
 
-Arguments pseudo_top {T _}.
-
+Arguments pseudo_top {G T _ _ _}.
