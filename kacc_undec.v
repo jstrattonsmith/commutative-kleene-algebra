@@ -2828,6 +2828,79 @@ Record repr_rel e L : Type := {
         ⊔ ka_term_diag pseudo_top ⋅ diff ⋅ residue;
 }.
 
+(** Lifting a finite set of strings to a KA term. *)
+
+Definition strings_r (σ : list (list T)) : ka_term (list T * list T) :=
+  ⨆ (map (λ xs, Unit (1, xs)) σ).
+
+(** Next function: image of a set of strings under a representable relation. *)
+
+Section ReprRelIteration.
+
+Variable e : ka_term (list T * list T).
+Variable L : ka_term (list T).
+Variable R : repr_rel e L.
+
+Definition next_set (σ : list (list T)) : list (list T) :=
+  flat_map (next R) σ.
+
+Fixpoint next_iter (n : nat) (σ : list (list T)) : list (list T) :=
+  match n with
+  | 0 => σ
+  | Datatypes.S n => next_set (next_iter n σ)
+  end.
+
+Fixpoint next_lt (n : nat) (σ : list (list T)) : list (list T) :=
+  match n with
+  | 0 => []
+  | Datatypes.S n => next_lt n σ ++ next_iter n σ
+  end.
+
+Definition error : ka_term (list T * list T) :=
+  ka_term_diag pseudo_top ⋅ diff ⋅ residue R.
+
+(** Lemma 21: Iteration of a representable relation.
+    For e : Rel(L), there exists ρ such that for every n and finite Σ ⊆ L:
+      Σ_r · e* ≤ Σ* · Next^{<n}(Σ)_r + Σ* · Next^n(Σ)_r · e* + Σ* · Σ≠ · ρ *)
+
+Lemma repr_rel_iter (n : nat) (σ : list (list T)) :
+  strings_r σ ⋅ star e ⊑
+    pseudo_top ⋅ strings_r (next_lt n σ)
+    ⊔ pseudo_top ⋅ strings_r (next_iter n σ) ⋅ star e
+    ⊔ error.
+Proof.
+elim: n σ => [|n IH] σ.
+- (* Base case: strings_r σ ⋅ e* ⊑ ⊥ ⊔ pseudo_top ⋅ strings_r σ ⋅ e* ⊔ error
+     Holds because x ⊑ pseudo_top ⋅ x (since 1 ⊑ pseudo_top). *)
+  etransitivity; last (apply: sqsubseteq_join; left;
+    apply: sqsubseteq_join; right; reflexivity).
+  rewrite -assoc.
+  etransitivity; last (apply: pre_ka_mul_mono;
+    [exact: pre_ka_one_star | reflexivity]).
+  by rewrite left_id.
+- (* Inductive step: unfold e* = 1 + e·e*, apply expand_rel to
+     each string in σ, then apply IH to next_set σ. *)
+  admit.
+Admitted.
+
+(** Theorem 22: If Next^n_e(Σ) = ∅, then
+      Σ_r · e* ≤ Σ* · Next^{<n}(Σ)_r + Σ* · Σ≠ · ρ *)
+
+Lemma repr_rel_iter_empty (n : nat) (σ : list (list T)) :
+  next_iter n σ = [] →
+  strings_r σ ⋅ star e ⊑
+    pseudo_top ⋅ strings_r (next_lt n σ) ⊔ error.
+Proof.
+move=> Hempty.
+etransitivity; first exact: repr_rel_iter n σ.
+rewrite Hempty /strings_r /=.
+(* The middle term has ⨆ [] = ⊥, so pseudo_top ⋅ ⊥ ⋅ star e ≡ ⊥ *)
+rewrite (@right_absorb _ _ (⊥ : ka_term _) _ _) (@left_absorb _ _ (⊥ : ka_term _) _ _).
+by rewrite right_id.
+Qed.
+
+End ReprRelIteration.
+
 (** Definition 28: Bounded-output terms.
 
     A term [e] over [Σ ⊕ Σ] (represented as [ka_term (list T * list T)]) has
