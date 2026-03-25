@@ -161,7 +161,7 @@ elim: n σ => [|n IH] σ.
   (* Hop 3: distribute · e* and simplify err_base · e* = error *)
   have hop3 : strings_r σ ⊔ (⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⊔ err_base) ⋅ star e ≡
     strings_r σ ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⋅ star e ⊔ error.
-  { admit. }
+  { rewrite pre_ka_left_dist /error /err_base -!assoc. by rewrite [_ ⊔ _ ⋅ _]assoc. }
 
   (* Hop 4: apply IH to σ' *)
   have hop4 : strings_r σ ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⋅ star e ⊔ error ⊑
