@@ -454,6 +454,14 @@ elim: xs => //= [|x xs IH].
 - by rewrite monoid_morphism_mul IH.
 Qed.
 
+Lemma monoid_morphism_power `{MonoidMorphism T1 T2 f} (x : T1) n :
+  f (x ^ n) ≡ (f x) ^ n.
+Proof.
+elim: n => [|n IH] /=.
+- exact: monoid_morphism_one.
+- by rewrite monoid_morphism_mul IH.
+Qed.
+
 Global Instance one_monoid_morphism (T S : monoid) :
   MonoidMorphism (λ x : T, @one S _).
 Proof.
@@ -1868,6 +1876,101 @@ elim: e => /=; try by eauto.
 Qed.
 
 End Languages.
+
+Section LangMap.
+
+Variables (T S : monoid) (f : T → S).
+Context `{!MonoidMorphism f}.
+
+Program Definition lang_map (L : lang T) : lang S :=
+  {| lang_car := λ s, ∃ t, s ≡ f t ∧ L t |}.
+Next Obligation.
+move=> L s1 s2 es; split; case=> t [] et Lt; exists t; split => //.
+- by rewrite -es.
+- by rewrite es.
+Qed.
+
+Global Instance lang_map_proper : Proper ((≡) ==> (≡)) lang_map.
+Proof.
+move=> L1 L2 eL s /=; split; case=> t [] et Lt; exists t; split => //;
+by [rewrite (eL t)|rewrite -(eL t)].
+Qed.
+
+Lemma lang_map_one : lang_map 1 ≡ (1 : lang S).
+Proof.
+move=> s /=; split.
+- by case=> t [] -> /= ->; rewrite monoid_morphism_one.
+- by move=> es; exists 1; rewrite monoid_morphism_one; split.
+Qed.
+
+Lemma lang_map_mul (A B : lang T) : lang_map (A ⋅ B) ≡ lang_map A ⋅ lang_map B.
+Proof.
+move=> s /=; split.
+- case=> t [] et [] t1 [] t2 [] et12 [] At1 Bt2.
+  exists (f t1), (f t2); split; first by rewrite et et12 monoid_morphism_mul.
+  split; [exists t1 | exists t2]; eauto.
+- case=> s1 [] s2 [] es [] [t1 [] et1 At1] [t2 [] et2 Bt2].
+  exists (t1 ⋅ t2); split; first by rewrite monoid_morphism_mul -et1 -et2.
+  by exists t1, t2.
+Qed.
+
+Global Instance lang_map_monoid_morphism : MonoidMorphism lang_map.
+Proof.
+split.
+- exact: lang_map_proper.
+- exact: lang_map_one.
+- exact: lang_map_mul.
+Qed.
+
+Lemma lang_map_bottom : lang_map ⊥ ≡ (⊥ : lang S).
+Proof.
+by move=> s /=; split => // - [t []].
+Qed.
+
+Lemma lang_map_join (A B : lang T) : lang_map (A ⊔ B) ≡ lang_map A ⊔ lang_map B.
+Proof.
+move=> s /=; split.
+- case=> t [] et [At|Bt]; [left|right]; exists t; eauto.
+- case=> [[t [] et At]|[t [] et Bt]]; exists t; split => //; [left|right] => //.
+Qed.
+
+Lemma lang_map_star (A : lang T) : lang_map (star A) ≡ star (lang_map A).
+Proof.
+move=> s /=; split.
+- case=> t [] et [n]; revert s t et; elim: n => [|n IH] s t et /=.
+  + move=> et1; exists 0 => /=; by rewrite et et1 monoid_morphism_one.
+  + case=> t1 [] t2 [] et12 [] At1 Hn.
+    have [m Hm] := IH _ _ (reflexivity (f t2)) Hn.
+    exists (S m) => /=; exists (f t1), (f t2); split.
+    * by rewrite et et12 monoid_morphism_mul.
+    * split; [by exists t1|exact: Hm].
+- case=> [n]; revert s; elim: n => [|n IH] s /=.
+  + move=> es; exists 1; split; first by rewrite monoid_morphism_one.
+    by exists 0.
+  + case=> s1 [] s2 [] es [] [t1 [] et1 At1] Hn.
+    have [t2 [et2 [m Hm]]] : ∃ t2, s2 ≡ f t2 ∧ ∃ m, (A ^ m) t2.
+    { exact: IH. }
+    exists (t1 ⋅ t2); split.
+    * by rewrite monoid_morphism_mul -et1 -et2.
+    * exists (S m) => /=; exists t1, t2; eauto.
+Qed.
+
+Lemma lang_map_pre_ka_mixin : PreKAMixin (lang S).
+Proof. exact: lang_pre_ka_mixin. Qed.
+
+Global Instance lang_map_pre_ka_morphism : PreKAMorphism lang_map.
+Proof.
+constructor.
+- constructor.
+  + exact: lang_map_proper.
+  + exact: lang_map_one.
+  + exact: lang_map_mul.
+- exact: lang_map_bottom.
+- exact: lang_map_join.
+- exact: lang_map_star.
+Qed.
+
+End LangMap.
 
 Section KATermProj.
 
