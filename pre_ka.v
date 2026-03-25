@@ -711,6 +711,36 @@ Qed.
 
 End ListIsOne.
 
+Section ProdIsOne.
+
+Context {T S : monoid} `{!IsOne T, !IsOne S}.
+
+Definition prod_is_one (p : T * S) : bool :=
+  is_one p.1 && is_one p.2.
+
+Global Instance prod_is_one_morphism : MonoidMorphism prod_is_one.
+Proof.
+split.
+- move=> [a1 a2] [b1 b2] [/= e1 e2].
+  by rewrite /prod_is_one /= e1 e2.
+- by rewrite /prod_is_one /= !monoid_morphism_one.
+- move=> [x1 x2] [y1 y2]; rewrite /prod_is_one /=.
+  rewrite !monoid_morphism_mul /=.
+  by case: (is_one x1); case: (is_one x2); case: (is_one y1); case: (is_one y2).
+Qed.
+
+Global Program Instance prod_is_one_instance : IsOne (prod_monoid T S) := {|
+  is_one := prod_is_one;
+|}.
+Next Obligation.
+move=> [x y]; rewrite /prod_is_one /=.
+split.
+- move=> /andb_true_iff [/is_one_eq ex /is_one_eq ey]; by split.
+- case=> [/= ex ey]; apply/andb_true_iff; split; apply/is_one_eq => //.
+Qed.
+
+End ProdIsOne.
+
 Section PseudoTop.
 
 Context `{FinGenMonoid T}.
