@@ -743,7 +743,7 @@ End ProdIsOne.
 
 Section PseudoTop.
 
-Context `{!FinGenMonoid G T, !EqDecision G, !Finite G}.
+Context `{!MonoidGen G T, !EqDecision G, !Finite G}.
 
 Definition pseudo_top : ka_term T :=
   star (⨆ (map (λ g, Unit (generator_interp g)) (enum G))).

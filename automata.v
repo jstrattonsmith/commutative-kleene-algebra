@@ -800,7 +800,7 @@ Global Arguments fsa_mul' {Σ _ _ _ _}.
 
 Section FSAKATerm.
 
-Context `{!FinGenMonoid G T, !EqDecision G, !Finite G, !IsOne T}.
+Context `{!MonoidGen G T, !EqDecision G, !Finite G, !IsOne T}.
 
 Fixpoint finite_state (e : ka_term T) : bool :=
   match e with
