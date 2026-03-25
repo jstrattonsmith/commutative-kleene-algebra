@@ -2810,13 +2810,13 @@ Definition next_set (σ : list (list T)) : list (list T) :=
 Fixpoint next_iter (n : nat) (σ : list (list T)) : list (list T) :=
   match n with
   | 0 => σ
-  | Datatypes.S n => next_set (next_iter n σ)
+  | S n => next_set (next_iter n σ)
   end.
 
 Fixpoint next_lt (n : nat) (σ : list (list T)) : list (list T) :=
   match n with
   | 0 => []
-  | Datatypes.S n => next_lt n σ ++ next_iter n σ
+  | S n => next_lt n σ ++ next_iter n σ
   end.
 
 Definition error : ka_term (list T * list T) :=
