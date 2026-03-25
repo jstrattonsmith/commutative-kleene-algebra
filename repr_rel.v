@@ -168,7 +168,11 @@ elim: n σ => [|n IH] σ.
     strings_r σ
     ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ (pseudo_top ⋅ strings_r (next_lt n σ') ⊔ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e ⊔ error)
     ⊔ error.
-  { admit. }
+  { apply: join_mono; last reflexivity.
+    apply: join_mono; first reflexivity.
+    rewrite -assoc.
+    apply: pre_ka_mul_mono; first reflexivity.
+    exact: IH. }
 
   (* Hop 5: distribute ⨆diag(σ) over the three summands *)
   have hop5 :
