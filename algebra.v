@@ -248,6 +248,8 @@ Class SizedMonoid (G : Type) (T : monoid) `{!MonoidGen G T} := {
       length gs = length (proj1_sig (generate x));
 }.
 
+Arguments SizedMonoid G T {_}.
+
 Section ListMonoid.
 
 Variable T : setoid.
@@ -281,6 +283,19 @@ Global Program Instance list_fin_gen : MonoidGen T (list_monoid T) := {|
 
 Next Obligation.
 by move=> xs; exists xs; elim: xs => //= x xs <-.
+Qed.
+
+Lemma list_gen_length (gs : list T) :
+  ∏ (map (generator_interp (T := list_monoid T)) gs) = gs.
+Proof. by elim: gs => //= g gs' ->. Qed.
+
+Global Instance list_sized_monoid : SizedMonoid T (list_monoid T).
+Proof.
+constructor => gs xs /leibniz_equiv_iff Hxs.
+rewrite list_gen_length in Hxs. subst xs.
+destruct (generate gs) as [l Hl] => /=.
+apply leibniz_equiv_iff in Hl.
+by rewrite list_gen_length in Hl; subst l.
 Qed.
 
 End ListFinGen.
