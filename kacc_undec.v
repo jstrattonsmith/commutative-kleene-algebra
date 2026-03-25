@@ -1937,22 +1937,10 @@ Qed.
 Lemma lang_map_star (A : lang T) : lang_map (star A) ≡ star (lang_map A).
 Proof.
 move=> s /=; split.
-- case=> t [] et [n]; revert s t et; elim: n => [|n IH] s t et /=.
-  + move=> et1; exists 0 => /=; by rewrite et et1 monoid_morphism_one.
-  + case=> t1 [] t2 [] et12 [] At1 Hn.
-    have [m Hm] := IH _ _ (reflexivity (f t2)) Hn.
-    exists (S m) => /=; exists (f t1), (f t2); split.
-    * by rewrite et et12 monoid_morphism_mul.
-    * split; [by exists t1|exact: Hm].
-- case=> [n]; revert s; elim: n => [|n IH] s /=.
-  + move=> es; exists 1; split; first by rewrite monoid_morphism_one.
-    by exists 0.
-  + case=> s1 [] s2 [] es [] [t1 [] et1 At1] Hn.
-    have [t2 [et2 [m Hm]]] : ∃ t2, s2 ≡ f t2 ∧ ∃ m, (A ^ m) t2.
-    { exact: IH. }
-    exists (t1 ⋅ t2); split.
-    * by rewrite monoid_morphism_mul -et1 -et2.
-    * exists (S m) => /=; exists t1, t2; eauto.
+- case=> t [] et [n Hn]; exists n.
+  by rewrite -(monoid_morphism_power (f := lang_map) A n); exists t.
+- case=> [n]; rewrite -(monoid_morphism_power (f := lang_map) A n).
+  by case=> t [] et Hn; exists t; split => //; exists n.
 Qed.
 
 Lemma lang_map_pre_ka_mixin : PreKAMixin (lang S).
@@ -1961,10 +1949,9 @@ Proof. exact: lang_pre_ka_mixin. Qed.
 Global Instance lang_map_pre_ka_morphism : PreKAMorphism lang_map.
 Proof.
 constructor.
-- constructor.
-  + exact: lang_map_proper.
-  + exact: lang_map_one.
-  + exact: lang_map_mul.
+- exact: lang_map_proper.
+- exact: lang_map_one.
+- exact: lang_map_mul.
 - exact: lang_map_bottom.
 - exact: lang_map_join.
 - exact: lang_map_star.
