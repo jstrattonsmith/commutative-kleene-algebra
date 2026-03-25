@@ -256,12 +256,6 @@ Qed.
 
 End EnumLists.
 
-Compute @enum_list_eq bool _ _ 3.
-Compute map (λ '(x, xs), xs ++ [x]) (all_pairs (enum bool) (@enum_list_eq bool _ _ 2)).
-
-Compute @enum_list_eq bool _ _ 3.
-(* Compute @enum_list_eq' bool _ _ 3. *)
-
 Declare Scope ka_scope.
 Delimit Scope ka_scope with ka.
 Open Scope ka_scope.
