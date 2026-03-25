@@ -199,7 +199,38 @@ elim: n σ => [|n IH] σ.
     ⊔ pseudo_top ⋅ strings_r (next_lt n σ')
     ⊔ pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
     ⊔ error.
-  { admit. }
+  { have Hd := diag_units_le_pseudo_top σ.
+    have Hpt : pseudo_top ⋅ pseudo_top ⊑ (pseudo_top : ka_term (list T * list T)).
+    { exact: pseudo_top_finite _ (pre_ka_one_star _). }
+    (* Each of the 5 LHS summands lands in the RHS *)
+    rewrite !join_sqsubseteq; repeat split.
+    (* strings_r σ ⊑ pseudo_top ⋅ strings_r σ ⊔ ... *)
+    - etransitivity; last apply: sqsubseteq_join_left.
+      etransitivity; last apply: sqsubseteq_join_left.
+      etransitivity; last apply: sqsubseteq_join_left.
+      rewrite -{1}[strings_r σ]left_id.
+      exact: pre_ka_mul_mono (pre_ka_one_star _) (reflexivity _).
+    (* ⨆diag · pt · next_lt ⊑ pt · next_lt ⊔ ... *)
+    - etransitivity; last apply: sqsubseteq_join_left.
+      etransitivity; last apply: sqsubseteq_join_left.
+      etransitivity; last apply: sqsubseteq_join_right.
+      apply: pre_ka_mul_mono; last reflexivity.
+      exact: transitivity (pre_ka_mul_mono Hd (reflexivity _)) Hpt.
+    (* ⨆diag · pt · next_iter · e* ⊑ pt · next_iter · e* ⊔ ... *)
+    - etransitivity; last apply: sqsubseteq_join_left.
+      etransitivity; last apply: sqsubseteq_join_right.
+      apply: pre_ka_mul_mono; last reflexivity.
+      apply: pre_ka_mul_mono; last reflexivity.
+      exact: transitivity (pre_ka_mul_mono Hd (reflexivity _)) Hpt.
+    (* ⨆diag · error ⊑ error *)
+    - etransitivity; last apply: sqsubseteq_join_right.
+      rewrite /error -!assoc.
+      apply: pre_ka_mul_mono; last reflexivity.
+      apply: pre_ka_mul_mono; last reflexivity.
+      apply: pre_ka_mul_mono; last reflexivity.
+      exact: transitivity (pre_ka_mul_mono Hd (reflexivity _)) Hpt.
+    (* error ⊑ error *)
+    - exact: sqsubseteq_join_right. }
 
   (* Hop 7: reassemble using next_lt_succ and next_iter_succ *)
   have hop7 :
