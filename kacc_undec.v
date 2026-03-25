@@ -2823,11 +2823,8 @@ Variable R : repr_rel e L.
 Definition next_set (σ : list (list T)) : list (list T) :=
   flat_map (next R) σ.
 
-Fixpoint next_iter (n : nat) (σ : list (list T)) : list (list T) :=
-  match n with
-  | 0 => σ
-  | S n => next_set (next_iter n σ)
-  end.
+Definition next_iter (n : nat) (σ : list (list T)) : list (list T) :=
+  Nat.iter n next_set σ.
 
 Fixpoint next_lt (n : nat) (σ : list (list T)) : list (list T) :=
   match n with
@@ -2870,6 +2867,39 @@ Qed.
     For e : Rel(L), there exists ρ such that for every n and finite Σ ⊆ L:
       Σ_r · e* ≤ Σ* · Next^{<n}(Σ)_r + Σ* · Next^n(Σ)_r · e* + Σ* · Σ≠ · ρ *)
 
+(** Helper: next_lt (S n) σ is σ ++ next_lt n (next_set σ). *)
+
+Lemma next_iter_succ (n : nat) (σ : list (list T)) :
+  next_iter (S n) σ = next_iter n (next_set σ).
+Proof. exact: Nat.iter_succ_r. Qed.
+
+Lemma next_lt_succ (n : nat) (σ : list (list T)) :
+  next_lt (S n) σ = σ ++ next_lt n (next_set σ).
+Proof.
+elim: n σ => [|n IHn] σ.
+- by simpl; rewrite app_nil_r.
+- change (next_lt (S n) σ ++ next_iter (S n) σ =
+         σ ++ (next_lt n (next_set σ) ++ next_iter n (next_set σ))).
+  rewrite IHn -next_iter_succ.
+  by rewrite app_assoc.
+Qed.
+
+(** Helper: ⨆(map (λ xs, Unit(xs,xs)) σ) ⊑ pseudo_top *)
+
+Lemma unit_le_pseudo_top (x : list T * list T) :
+  Unit x ⊑ (pseudo_top : ka_term (list T * list T)).
+Proof.
+etransitivity; last exact: pseudo_top_absorb x.
+(* Unit x ⊑ Unit x ⋅ pseudo_top, since 1 ⊑ pseudo_top *)
+Admitted.
+
+Lemma diag_units_le_pseudo_top (σ : list (list T)) :
+  ⨆ (map (λ xs, Unit (xs, xs) : ka_term (list T * list T)) σ) ⊑ pseudo_top.
+Proof.
+apply/join_list_sqsubseteq => _ /elem_of_list_fmap [xs [-> _]].
+exact: unit_le_pseudo_top.
+Qed.
+
 Lemma repr_rel_iter (n : nat) (σ : list (list T)) :
   strings_r σ ⋅ star e ⊑
     pseudo_top ⋅ strings_r (next_lt n σ)
@@ -2884,19 +2914,94 @@ elim: n σ => [|n IH] σ.
   etransitivity; last (apply: pre_ka_mul_mono;
     [exact: pre_ka_one_star | reflexivity]).
   by rewrite left_id.
-- (* Inductive step *)
-  (* Step 1: Unfold star: e* = 1 + e · e* *)
-  rewrite {1}pre_ka_star_unfold pre_ka_right_dist right_id.
-  (* Goal: strings_r σ ⊔ strings_r σ ⋅ e ⋅ star e ⊑ ... *)
-  (* Step 2: strings_r σ ⊑ pseudo_top ⋅ strings_r σ ⊑ pseudo_top ⋅ strings_r (next_lt (S n) σ) *)
-  rewrite join_sqsubseteq; split.
-  + (* strings_r σ ⊑ pseudo_top ⋅ strings_r (next_lt (S n) σ) ⊔ ...
-       Holds because σ ⊆ next_lt (S n) σ and 1 ⊑ pseudo_top. *)
-    admit.
-  + (* strings_r σ ⋅ e ⋅ e* : use expand_rel_sum, then IH on next_set σ.
-       The error_base · e* = error by definition. *)
-    admit.
-Admitted.
+- (* Inductive step: follow paper proof chain *)
+  set σ' := next_set σ.
+  set err_base := ka_term_diag pseudo_top ⋅ diff ⋅ residue R.
+
+  (* Step 1: e* = 1 + e · e* *)
+  have step1 : strings_r σ ⋅ star e ≡
+    strings_r σ ⊔ strings_r σ ⋅ e ⋅ star e.
+  { by rewrite {1}pre_ka_star_unfold pre_ka_right_dist right_id assoc. }
+
+  (* Step 2: apply expand_rel_sum *)
+  have step2 : strings_r σ ⋅ e ⋅ star e ⊑
+    (⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⊔ err_base) ⋅ star e.
+  { apply: pre_ka_mul_mono; last reflexivity.
+    exact: expand_rel_sum. }
+
+  (* Step 3: distribute · e* *)
+  have step3 : (⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⊔ err_base) ⋅ star e ≡
+    ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⋅ star e ⊔ err_base ⋅ star e.
+  { by rewrite pre_ka_left_dist. }
+
+  (* Step 4: apply IH to σ' *)
+  have step4 : strings_r σ' ⋅ star e ⊑
+    pseudo_top ⋅ strings_r (next_lt n σ') ⊔
+    pseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e ⊔ error.
+  { exact: IH. }
+
+  (* Step 5: ⨆(diag σ) ⊑ pseudo_top *)
+  have step5 : ⨆ (map (λ xs, Unit (xs, xs) : ka_term _) σ) ⊑ pseudo_top.
+  { exact: diag_units_le_pseudo_top. }
+
+  (* Step 6: err_base · e* ⊑ error *)
+  have step6 : err_base ⋅ star e ⊑ error.
+  { rewrite /error /err_base. reflexivity. }
+
+  (* Step 7: pseudo_top · pseudo_top ⊑ pseudo_top *)
+  have step7 : pseudo_top ⋅ pseudo_top ⊑ (pseudo_top : ka_term (list T * list T)).
+  { exact: pseudo_top_finite _ (pre_ka_one_star _). }
+
+  (* Compose: *)
+  rewrite step1 join_sqsubseteq; split.
+  + (* strings_r σ ⊑ pseudo_top · strings_r (next_lt (S n) σ) ⊔ ... *)
+    etransitivity; last apply: sqsubseteq_join_left.
+    etransitivity; last apply: sqsubseteq_join_left.
+    rewrite next_lt_succ strings_r_app.
+    rewrite -{1}[strings_r σ]left_id.
+    apply: pre_ka_mul_mono; first exact: pre_ka_one_star.
+    exact: sqsubseteq_join_left.
+  + (* strings_r σ · e · e* ⊑ ... *)
+    etransitivity; first exact: step2.
+    rewrite step3 join_sqsubseteq; split.
+    * (* ⨆(diag σ) · strings_r σ' · e* ⊑ ... *)
+      rewrite assoc.
+      etransitivity.
+      { apply: pre_ka_mul_mono; first exact: step5. reflexivity. }
+      etransitivity.
+      { apply: pre_ka_mul_mono; last exact: step4. reflexivity. }
+      rewrite !pre_ka_right_dist !assoc join_sqsubseteq; split; last first.
+      -- (* pseudo_top · error ⊑ error *)
+         etransitivity; last apply: sqsubseteq_join_right.
+         rewrite /error -!assoc.
+         apply: pre_ka_mul_mono; last reflexivity.
+         apply: pre_ka_mul_mono; last reflexivity.
+         apply: pre_ka_mul_mono; last reflexivity.
+         exact: step7.
+      -- rewrite join_sqsubseteq; split.
+         ++ (* pseudo_top · pseudo_top · strings_r(next_lt n σ') ⊑ pseudo_top · strings_r(next_lt (S n) σ) *)
+            etransitivity; last apply: sqsubseteq_join_left.
+            etransitivity; last apply: sqsubseteq_join_left.
+            rewrite -assoc.
+            etransitivity.
+            { apply: pre_ka_mul_mono; first exact: step7. reflexivity. }
+            apply: pre_ka_mul_mono; first reflexivity.
+            rewrite next_lt_succ strings_r_app.
+            exact: sqsubseteq_join_right.
+         ++ (* pseudo_top · pseudo_top · strings_r(next_iter n σ') · e* ⊑ pseudo_top · strings_r(next_iter (S n) σ) · e* *)
+            etransitivity; last apply: sqsubseteq_join_left.
+            etransitivity; last apply: sqsubseteq_join_right.
+            rewrite -!assoc.
+            etransitivity.
+            { apply: pre_ka_mul_mono; first exact: step7. reflexivity. }
+            rewrite !assoc.
+            apply: pre_ka_mul_mono; last reflexivity.
+            apply: pre_ka_mul_mono; first reflexivity.
+            rewrite next_iter_succ. reflexivity.
+    * (* err_base · e* ⊑ error ⊑ ... *)
+      etransitivity; first exact: step6.
+      exact: sqsubseteq_join_right.
+Qed.
 
 (** Theorem 22: If Next^n_e(Σ) = ∅, then
       Σ_r · e* ≤ Σ* · Next^{<n}(Σ)_r + Σ* · Σ≠ · ρ *)
