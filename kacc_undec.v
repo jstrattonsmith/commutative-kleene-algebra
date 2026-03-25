@@ -2886,12 +2886,12 @@ Qed.
 
 (** Helper: ⨆(map (λ xs, Unit(xs,xs)) σ) ⊑ pseudo_top *)
 
-Lemma unit_le_pseudo_top (x : list T * list T) :
-  Unit x ⊑ (pseudo_top : ka_term (list T * list T)).
+Lemma unit_le_pseudo_top (x : list T * list T) : Unit x ⊑ pseudo_top.
 Proof.
 etransitivity; last exact: pseudo_top_absorb x.
-(* Unit x ⊑ Unit x ⋅ pseudo_top, since 1 ⊑ pseudo_top *)
-Admitted.
+rewrite -{1}[Unit x](right_id 1); apply: pre_ka_mul_mono => //.
+exact: pre_ka_one_star.
+Qed.
 
 Lemma diag_units_le_pseudo_top (σ : list (list T)) :
   ⨆ (map (λ xs, Unit (xs, xs) : ka_term (list T * list T)) σ) ⊑ pseudo_top.
