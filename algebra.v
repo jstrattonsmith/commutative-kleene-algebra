@@ -241,6 +241,13 @@ Class MonoidGen (G : Type) (T : monoid) := {
 
 Global Hint Mode MonoidGen - ! : typeclasses.
 
+Class SizedMonoid (G : Type) (T : monoid) `{!MonoidGen G T} := {
+  sized_monoid :
+    ∀ (gs : list G) (x : T),
+      x ≡ ∏ (map generator_interp gs) →
+      length gs = length (proj1_sig (generate x));
+}.
+
 Section ListMonoid.
 
 Variable T : setoid.
