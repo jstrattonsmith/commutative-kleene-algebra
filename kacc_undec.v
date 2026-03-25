@@ -2930,27 +2930,23 @@ Definition left_nonempty (e : ka_term (list T * list T)) : Prop :=
 Definition left_has_emptyb (e : ka_term (list T * list T)) : bool :=
   has_one (ka_term_proj1 e).
 
-Lemma left_has_emptyb_false_l e :
-  left_has_emptyb e = false → left_nonempty e.
+Lemma left_has_emptyb_falseP e :
+  left_has_emptyb e = false ↔ left_nonempty e.
 Proof.
-rewrite /left_has_emptyb /left_nonempty => Hf sl sr Hin.
-destruct sl as [|x sl']; last by simpl; lia.
-exfalso.
-have : has_one (@ka_term_proj1 (list_monoid T) (list_monoid T) e) = true.
-{ apply/has_oneP.
-  rewrite -(@pre_ka_morphism_one _ _ (@ka_term_proj1 (list_monoid T) (list_monoid T)) _).
-  exact: semi_lattice_morphism_sqsubseteq_proper Hin. }
-by rewrite Hf.
-Qed.
-
-Lemma left_has_emptyb_false_r e :
-  left_nonempty e → left_has_emptyb e = false.
-Proof.
-rewrite /left_has_emptyb /left_nonempty => Hne.
-apply/Bool.not_true_iff_false. move=> /has_oneP /l_alt.
-rewrite l_natural => -[[sl sr] /= [/leibniz_equiv_iff Esl /l_alt Hin]].
-simpl in Esl. subst sl.
-have := Hne _ _ Hin. simpl. lia.
+rewrite /left_has_emptyb /left_nonempty; split.
+- move=> Hf sl sr Hin.
+  destruct sl as [|x sl']; last by simpl; lia.
+  exfalso.
+  have : has_one (@ka_term_proj1 (list_monoid T) (list_monoid T) e) = true.
+  { apply/has_oneP.
+    rewrite -(@pre_ka_morphism_one _ _ (@ka_term_proj1 (list_monoid T) (list_monoid T)) _).
+    exact: semi_lattice_morphism_sqsubseteq_proper Hin. }
+  by rewrite Hf.
+- move=> Hne.
+  apply/Bool.not_true_iff_false. move=> /has_oneP /l_alt.
+  rewrite l_natural => -[[sl sr] /= [/leibniz_equiv_iff Esl /l_alt Hin]].
+  simpl in Esl. subst sl.
+  have := Hne _ _ Hin. simpl. lia.
 Qed.
 
 Lemma bounded_output_with_star k e :
