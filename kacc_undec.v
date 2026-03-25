@@ -2783,6 +2783,7 @@ Record repr_rel e L : Type := {
   repr_rel_dom : ka_term_proj1 e ⊑ L;
   repr_rel_cod : ka_term_proj2 e ⊑ L;
   next : list T → list (list T);
+  next_spec : ∀ sl sr, sr ∈ next sl ↔ Unit (sl, sr) ⊑ e;
   residue : ka_term (list T * list T);
   expand_rel :
     ∀ xs : list T,
@@ -2820,7 +2821,24 @@ Fixpoint next_lt (n : nat) (σ : list (list T)) : list (list T) :=
   end.
 
 Definition error : ka_term (list T * list T) :=
-  ka_term_diag pseudo_top ⋅ diff ⋅ residue R.
+  ka_term_diag pseudo_top ⋅ diff ⋅ residue R ⋅ star e.
+
+(** Helper: strings_r distributes over append. *)
+
+Lemma strings_r_app (σ1 σ2 : list (list T)) :
+  strings_r (σ1 ++ σ2) ≡ strings_r σ1 ⊔ strings_r σ2.
+Proof.
+by rewrite /strings_r map_app join_list_app.
+Qed.
+
+(** Helper: expand_rel summed over a list of strings. *)
+
+Lemma expand_rel_sum (σ : list (list T)) :
+  strings_r σ ⋅ e ⊑
+    ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r (next_set σ)
+    ⊔ ka_term_diag pseudo_top ⋅ diff ⋅ residue R.
+Proof.
+Admitted.
 
 (** Lemma 21: Iteration of a representable relation.
     For e : Rel(L), there exists ρ such that for every n and finite Σ ⊆ L:
@@ -2833,17 +2851,25 @@ Lemma repr_rel_iter (n : nat) (σ : list (list T)) :
     ⊔ error.
 Proof.
 elim: n σ => [|n IH] σ.
-- (* Base case: strings_r σ ⋅ e* ⊑ ⊥ ⊔ pseudo_top ⋅ strings_r σ ⋅ e* ⊔ error
-     Holds because x ⊑ pseudo_top ⋅ x (since 1 ⊑ pseudo_top). *)
+- (* Base case: x ⊑ pseudo_top ⋅ x since 1 ⊑ pseudo_top *)
   etransitivity; last (apply: sqsubseteq_join; left;
     apply: sqsubseteq_join; right; reflexivity).
   rewrite -assoc.
   etransitivity; last (apply: pre_ka_mul_mono;
     [exact: pre_ka_one_star | reflexivity]).
   by rewrite left_id.
-- (* Inductive step: unfold e* = 1 + e·e*, apply expand_rel to
-     each string in σ, then apply IH to next_set σ. *)
-  admit.
+- (* Inductive step *)
+  (* Step 1: Unfold star: e* = 1 + e · e* *)
+  rewrite {1}pre_ka_star_unfold pre_ka_right_dist right_id.
+  (* Goal: strings_r σ ⊔ strings_r σ ⋅ e ⋅ star e ⊑ ... *)
+  (* Step 2: strings_r σ ⊑ pseudo_top ⋅ strings_r σ ⊑ pseudo_top ⋅ strings_r (next_lt (S n) σ) *)
+  rewrite join_sqsubseteq; split.
+  + (* strings_r σ ⊑ pseudo_top ⋅ strings_r (next_lt (S n) σ) ⊔ ...
+       Holds because σ ⊆ next_lt (S n) σ and 1 ⊑ pseudo_top. *)
+    admit.
+  + (* strings_r σ ⋅ e ⋅ e* : use expand_rel_sum, then IH on next_set σ.
+       The error_base · e* = error by definition. *)
+    admit.
 Admitted.
 
 (** Theorem 22: If Next^n_e(Σ) = ∅, then
