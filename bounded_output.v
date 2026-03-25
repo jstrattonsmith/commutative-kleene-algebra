@@ -31,8 +31,8 @@ Implicit Types (e : ka_term (list T * list T)) (L : ka_term (list T)).
 Definition bounded_output_with (k : nat) (e : ka_term (list T * list T)) : Prop :=
   ∀ sl sr, Unit (sl, sr) ⊑ e → length sr ≤ (length sl + 1) * k.
 
-Definition bounded_output (e : ka_term (list T * list T)) : Prop :=
-  ∃ k, bounded_output_with k e.
+Definition bounded_output (e : ka_term (list T * list T)) : Type :=
+  {k | bounded_output_with k e}.
 
 (** Lemma 29: If [e] has bounded output with fanout [k] and [Σ] is a finite
     set of strings, then [Next_e(Σ)] is finite.  More precisely, if
