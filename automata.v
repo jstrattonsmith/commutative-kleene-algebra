@@ -904,9 +904,8 @@ Proof.
 elim: e => /=.
 - move=> s _.
   exists (fsa_mul_list (map fsa_singleton (generate s))).
-  rewrite fsa_elem_mul_list map_map.
-  admit.
-
+  rewrite fsa_elem_mul_list map_map {1}(generateP s).
+  by rewrite monoid_morphism_mul_list map_map.
 - move=> _. by exists (fsa_bottom _) => /=.
 - move=> e1 IH1 e2 IH2 /andb_True [H1 H2].
   have [A1 E1] := IH1 H1.
@@ -923,6 +922,6 @@ elim: e => /=.
   have ?: has_one e1 = true; last by congruence.
   apply/has_oneP; rewrite E1 -fsa_interp_initial.
   rewrite fsa_derivable E /=; exact: sqsubseteq_join_left.
-Admitted.
+Qed.
 
 End FSAKATerm.
