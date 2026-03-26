@@ -215,6 +215,19 @@ Definition prefix_free (L : ka_term (list T)) : Prop :=
   ∀ s1 s2, Unit s1 ⊑ L → Unit s2 ⊑ L →
     (∃ t, s2 = s1 ++ t) → s1 = s2.
 
+(** Lemma 33 (normal form): If two lists diverge (share a common prefix
+    then have different next characters), their pairing factors through diff. *)
+
+Lemma list_diverge (s s' : list T) :
+  ¬ (∃ t, s' = s ++ t) →
+  ¬ (∃ t, s = s' ++ t) →
+  Unit (s, s') ⊑ ka_term_diag pseudo_top ⋅ @diff T _ _ ⋅ pseudo_top.
+Proof.
+(* Proof by induction on s. Base cases: one list is a prefix of the other,
+   contradiction. Inductive case: if heads match, recurse; if heads differ,
+   this is the divergence point. *)
+Admitted.
+
 (** Construction of the next function for finite-state terms.
 
     For a finite-state term [e] over [list T * list T], the automaton [A]
