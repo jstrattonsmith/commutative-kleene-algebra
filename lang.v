@@ -198,6 +198,14 @@ elim: e => //= [y|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e IH] in x *.
   by apply: pre_ka_mul_mono.
 Qed.
 
+Lemma Unit_inj (x y : T) : Unit x ≡ Unit y → x ≡ y.
+Proof.
+move=> Heq.
+have /l_alt Hx : Unit x ⊑ Unit x by reflexivity.
+have /l_alt : Unit x ⊑ Unit y by rewrite Heq.
+by move=> /= ->.
+Qed.
+
 Lemma l_reflects_order xs ys :
   l (⨆ (map Unit xs)) ⊑ l (⨆ (map Unit ys)) →
   ⨆ (map Unit xs) ⊑ ⨆ (map Unit ys).

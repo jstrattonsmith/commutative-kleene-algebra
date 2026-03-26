@@ -822,14 +822,6 @@ Proof. symmetry. exact: sized_monoid. Qed.
 
 (** Two ka_of_string are ≡ only if they have the same length *)
 
-Lemma Unit_inj (x y : M) : Unit x ≡ Unit y → x ≡ y.
-Proof.
-move=> Heq.
-have /l_alt Hx : Unit x ⊑ Unit x by reflexivity.
-have /l_alt : Unit x ⊑ Unit y by rewrite Heq.
-by move=> /= ->.
-Qed.
-
 Lemma ka_of_string_sized (s1 s2 : list G) :
   ka_of_string f s1 ≡ ka_of_string f s2 → length s1 = length s2.
 Proof.
