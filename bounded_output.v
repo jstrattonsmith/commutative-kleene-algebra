@@ -306,6 +306,21 @@ Lemma bounded_output_repr_rel e L :
   prefix_free L →
   repr_rel e L.
 Proof.
+move=> Hfs Hbo Hdom Hcod Hpf.
+have [A EA] := finite_stateP Hfs.
+have Hbo' : bounded_output (fsa_elem A).
+{ destruct Hbo as [k Hk]. exists k. move=> sl sr Hin. apply: Hk.
+  by rewrite EA. }
+refine {|
+  repr_rel_dom := Hdom;
+  repr_rel_cod := Hcod;
+  next := fsa_next Hbo';
+  residue := ⊥;
+|}.
+- (* next_spec *)
+  move=> sl sr. rewrite fsa_next_spec. by rewrite EA.
+- (* expand_rel *)
+  admit.
 Admitted.
 
 
