@@ -395,8 +395,12 @@ have Hwl_bound : length wl ≤ max_witness_lsize.
 (* Hpf : length p.2 ≤ (length p.1 + length wl + 1) * k0
    Hwl_bound : length wl ≤ max_witness_lsize
    Goal : length p.2 ≤ (length p.1 + 1) * adjusted_fanout *)
-admit.
-Admitted.
+rewrite /adjusted_fanout Nat.mul_assoc.
+etransitivity; first exact: Hpf.
+apply: Nat.mul_le_mono_r.
+move: Hwl_bound. set a := length (fst p). set b := length wl. set c := max_witness_lsize.
+move=> Hbc. nia.
+Qed.
 
 End Lemma31.
 
