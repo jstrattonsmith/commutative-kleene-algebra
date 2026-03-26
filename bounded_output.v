@@ -431,11 +431,15 @@ refine {|
 - (* next_spec *)
   move=> sl sr. rewrite fsa_next_spec. by rewrite EA.
 - (* expand_rel *)
-  (* Following the paper's proof of Lemma 34:
-     Decompose e via Lemma 31 into strings s' with |s'| ≤ p and suffix terms.
-     Split strings into those with π_l(s') = xs (giving Next_e(xs)) and
-     those with π_l(s') ≠ xs (going to error via prefix-freeness).
-     Suffix terms also go to error. *)
+  (* Following the paper's proof of Lemma 34. *)
+  move=> xs.
+  (* Rewrite e to fsa_elem A *)
+  rewrite {1}EA.
+  (* Decompose fsa_elem A via fsa_elem_k_decomp_gen *)
+  (* The proof has three parts:
+     (4) strings with π_l(s') = xs biject with Next_e(xs)
+     (5) strings with π_l(s') ≠ xs go to error via prefix-freeness
+     (6) suffix terms go to error since e_s ⊑ rho_e *)
   admit.
 Admitted.
 
