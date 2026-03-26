@@ -295,6 +295,28 @@ Qed.
 
 End FSANext.
 
+(** Lemma 31 (core): For a bounded-output term, if [Unit (sl, sr) ⋅ t ⊑ e]
+    for some nonzero [t] with a witness of left-size [m], then
+    [length sr ≤ (length sl + m + 1) * k]. *)
+
+Lemma bounded_output_prefix k e (sl sr : list T) (t : ka_term _) :
+  bounded_output_with k e →
+  Unit (sl, sr) ⋅ t ⊑ e →
+  ∀ tl tr, l t (tl, tr) →
+  length sr ≤ (length sl + length tl + 1) * k.
+Proof.
+move=> Hk Hle tl tr Ht.
+have Hprod : Unit ((sl, sr) ⋅ (tl, tr)) ⊑ e.
+{ etransitivity; last exact: Hle.
+  rewrite {1}monoid_morphism_mul.
+  have /l_alt Ht' := Ht.
+  etransitivity; last (apply: pre_ka_mul_mono; [reflexivity | exact: Ht']).
+  rewrite sqsubseteq_iff semi_lattice_idemp //. }
+have := Hk _ _ Hprod.
+rewrite /= !length_app.
+nia.
+Qed.
+
 (** Lemma 34 (from paper): A finite-state, bounded-output term whose
     domain and codomain lie in a prefix-free language is representable. *)
 
