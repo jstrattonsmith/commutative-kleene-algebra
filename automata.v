@@ -748,34 +748,6 @@ etransitivity; first exact: H.
 rewrite sqsubseteq_iff fsa_interp_initial semi_lattice_idemp //.
 Qed.
 
-Lemma string_match_at_complete A (σ : fsa_state A) (s : list Σ) :
-  ka_of_string s ⊑ fsa_interp σ →
-  string_match_at σ s = true.
-Proof.
-(* Use the language interpretation: ka_of_string s ⊑ fsa_interp σ
-   implies l (fsa_interp σ) (∏(map f s)), which by the automaton
-   semantics means s is accepted from σ. *)
-Admitted.
-
-Lemma string_match_at_iff A (σ : fsa_state A) (s : list Σ) :
-  string_match_at σ s = true ↔ ka_of_string s ⊑ fsa_interp σ.
-Proof.
-split.
-- exact: string_match_at_sound.
-- exact: string_match_at_complete.
-Qed.
-
-Lemma string_match_iff A (s : list Σ) :
-  string_match A s = true ↔ ka_of_string s ⊑ fsa_elem A.
-Proof.
-split.
-- exact: string_match_sound.
-- rewrite /string_match => H.
-  apply: string_match_at_complete.
-  etransitivity; first exact: H.
-  rewrite sqsubseteq_iff fsa_interp_initial semi_lattice_idemp //.
-Qed.
-
 End Automata.
 
 Global Arguments fsa_one {Σ _ _ _ _}.
@@ -873,7 +845,8 @@ Qed.
 Lemma string_match_at_complete_sized
     (A : fsa G T f) (σ : fsa_state A) (s : list G) :
   ka_of_string f s ⊑ fsa_interp σ →
-  string_match_at σ s = true.
+  ∃ s', ∏ (map generator_interp s') ≡ ∏ (map generator_interp s) ∧
+        string_match_at σ s' = true.
 Proof.
 move=> Hle.
 set m := ∏ (map generator_interp s).
@@ -887,16 +860,26 @@ have Hdecomp := fsa_elem_k_decomp_gen σ (S (length s)).
 rewrite Hdecomp semi_lattice_morphism_join in Hle'.
 case: Hle' => Hle'.
 - (* Case 1: l (sum_terms_lt_k_at ...) m *)
-  (* Unit m ⊑ sum_terms_lt_k_at σ (S (length s)), and string_match_at_sound
-     gives us that any accepted s' has ka_of_string s' ⊑ fsa_interp σ. *)
-  admit.
+  rewrite /sum_terms_lt_k_at semi_lattice_morphism_join_list map_map in Hle'.
+  case/elem_of_lang_join_list: Hle' => Λ [] /elem_of_list_fmap [s' [] -> s's].
+  case/elem_of_list_filter: s's => σs' _; rewrite ka_of_string_Unit /= => s's.
+  exists s'; split => //; exact/Is_true_true.
 - (* Case 2: contradiction via msize *)
   exfalso.
   have Hge : msize m ≥ S (length s).
   { apply: unit_le_sum_suffix_terms_k. apply/l_alt. exact: Hle'. }
   have Hms : msize m = length s by exact: ka_of_string_msize.
   lia.
-Admitted.
+Qed.
+
+Lemma string_match_complete_sized
+    (A : fsa G T f) (s : list G) :
+  ka_of_string f s ⊑ fsa_elem A →
+  ∃ s', ∏ (map generator_interp s') ≡ ∏ (map generator_interp s) ∧
+        string_match A s' = true.
+Proof.
+rewrite -fsa_interp_initial; exact: string_match_at_complete_sized.
+Qed.
 
 End StringMatchComplete.
 
