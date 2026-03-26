@@ -31,6 +31,10 @@ Implicit Types (e : ka_term (list T * list T)) (L : ka_term (list T)).
 Definition bounded_output_with (k : nat) (e : ka_term (list T * list T)) : Prop :=
   ∀ sl sr, Unit (sl, sr) ⊑ e → length sr ≤ (length sl + 1) * k.
 
+Lemma bounded_output_with_mono k1 k2 e :
+  k1 ≤ k2 → bounded_output_with k1 e → bounded_output_with k2 e.
+Proof. move=> Hle H1 sl sr Hin. have := H1 _ _ Hin. nia. Qed.
+
 Definition bounded_output (e : ka_term (list T * list T)) : Type :=
   {k | bounded_output_with k e}.
 
