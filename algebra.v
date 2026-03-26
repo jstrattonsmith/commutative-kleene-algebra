@@ -237,7 +237,8 @@ Qed.
 
 Class MonoidGen (G : Type) (T : monoid) := {
   generator_interp : G → T;
-  generate x : {l : list G | x ≡ ∏ (map generator_interp l) };
+  generate : T → list G;
+  generateP : ∀ x, x ≡ ∏ (map generator_interp (generate x));
 }.
 
 Global Hint Mode MonoidGen - ! : typeclasses.
@@ -246,7 +247,7 @@ Class SizedMonoid (G : Type) (T : monoid) `{!MonoidGen G T} := {
   sized_monoid :
     ∀ (gs : list G) (x : T),
       x ≡ ∏ (map generator_interp gs) →
-      length gs = length (proj1_sig (generate x));
+      length gs = length (generate x);
 }.
 
 Arguments SizedMonoid G T {_}.
@@ -256,7 +257,7 @@ Section MSize.
 Context {G : Type} {T : monoid} `{!MonoidGen G T, !SizedMonoid G T}.
 
 Definition msize (x : T) : nat :=
-  length (proj1_sig (generate x)).
+  length (generate ( x)).
 
 Lemma msize_gen (gs : list G) :
   msize (∏ (map generator_interp gs)) = length gs.
@@ -268,24 +269,18 @@ Proof. exact: (msize_gen []). Qed.
 Lemma msize_mul (x y : T) : msize (x ⋅ y) = msize x + msize y.
 Proof.
 rewrite /msize.
-destruct (generate x) as [lx Elx], (generate y) as [ly Ely],
-         (generate (x ⋅ y)) as [lxy Elxy] => /=.
-have Hcat : x ⋅ y ≡ ∏ (map generator_interp (lx ++ ly)).
-{ by rewrite map_app mul_list_app Elx Ely. }
-have := @sized_monoid _ _ _ _ (lx ++ ly) _ Hcat.
-have := @sized_monoid _ _ _ _ lxy _ Elxy.
-rewrite length_app => -> ->.
-lia.
+have Hcat : x ⋅ y ≡ ∏ (map generator_interp (generate x ++ generate y)).
+{ rewrite map_app mul_list_app -(generateP x) -(generateP y) //. }
+have := @sized_monoid _ _ _ _ (generate x ++ generate y) _ Hcat.
+rewrite length_app => <-. lia.
 Qed.
 
 Lemma msize_proper (x y : T) : x ≡ y → msize x = msize y.
 Proof.
 move=> Hxy. rewrite /msize.
-set gx := generate x. set gy := generate y.
-have Hx := @sized_monoid _ _ _ _ (proj1_sig gx) y
-              (transitivity (symmetry Hxy) (proj2_sig gx)).
-have Hy := @sized_monoid _ _ _ _ (proj1_sig gy) y (proj2_sig gy).
-by rewrite Hx Hy.
+have Hx := @sized_monoid _ _ _ _ (generate x) y
+              (transitivity (symmetry Hxy) (generateP x)).
+by rewrite Hx.
 Qed.
 
 Lemma msize_generator (g : G) : msize (generator_interp g) = 1%nat.
@@ -328,10 +323,10 @@ Context {T : setoid} `{!LeibnizEquiv T}.
 
 Global Program Instance list_fin_gen : MonoidGen T (list_monoid T) := {|
   generator_interp x := [x];
+  generate xs := xs;
 |}.
-
 Next Obligation.
-by move=> xs; exists xs; elim: xs => //= x xs <-.
+move=> xs; symmetry. by elim: xs => //= x xs' ->.
 Qed.
 
 Lemma list_gen_length (gs : list T) :
@@ -341,10 +336,7 @@ Proof. by elim: gs => //= g gs' ->. Qed.
 Global Instance list_sized_monoid : SizedMonoid T (list_monoid T).
 Proof.
 constructor => gs xs /leibniz_equiv_iff Hxs.
-rewrite list_gen_length in Hxs. subst xs.
-destruct (generate gs) as [l Hl] => /=.
-apply leibniz_equiv_iff in Hl.
-by rewrite list_gen_length in Hl; subst l.
+by rewrite list_gen_length in Hxs; subst xs.
 Qed.
 
 End ListFinGen.
@@ -456,16 +448,16 @@ Global Program Instance prod_fin_gen : MonoidGen (G1 + G2) (T1 * T2)%type := {|
     | inl x => (generator_interp x, 1)
     | inr x => (1, generator_interp x)
     end;
+  generate p := map inl (generate p.1) ++ map inr (generate p.2);
 |}.
-
 Next Obligation.
-case=> x y.
-have [[lx ex] [ly ey]] := (generate x, generate y).
-exists (map inl lx ++ map inr ly).
+case=> x y /=.
 rewrite map_app !map_map monoid_morphism_mul; split.
-- rewrite monoid_morphism_mul !monoid_morphism_mul_list !map_map /= -ex.
+- rewrite monoid_morphism_mul !monoid_morphism_mul_list !map_map /=
+          -(generateP x).
   by rewrite mul_list_one ?right_id // => ? /elem_of_list_fmap [? [] -> _].
-- rewrite monoid_morphism_mul !monoid_morphism_mul_list !map_map /= -ey.
+- rewrite monoid_morphism_mul !monoid_morphism_mul_list !map_map /=
+          -(generateP y).
   by rewrite mul_list_one ?left_id // => ? /elem_of_list_fmap [? [] -> _].
 Qed.
 
@@ -509,8 +501,8 @@ have Hye : y ≡ ∏ (map generator_interp (sum_rights gs)).
 rewrite sum_lefts_rights_length.
 rewrite (@sized_monoid _ _ _ Hsz1 (sum_lefts gs) x Hxe).
 rewrite (@sized_monoid _ _ _ Hsz2 (sum_rights gs) y Hye).
-set gxy := proj1_sig (generate (x, y)).
-have Hgxy := proj2_sig (generate (x, y)).
+set gxy := generate (x, y).
+have Hgxy := generateP (x, y).
 have [/= Hgx Hgy] := Hgxy.
 have Hlx := @sized_monoid _ _ _ Hsz1 (sum_lefts gxy) x
               (transitivity Hgx (prod_gen_proj1 gxy)).

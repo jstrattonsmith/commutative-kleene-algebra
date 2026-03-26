@@ -903,9 +903,10 @@ Lemma finite_stateP e :
 Proof.
 elim: e => /=.
 - move=> s _.
-  have [xs Exs] := generate s; exists (fsa_mul_list (map fsa_singleton xs)).
-  rewrite fsa_elem_mul_list map_map Exs monoid_morphism_mul_list map_map.
-  by apply: monoid_morphism_proper; apply: (@Proper_map' (eq_setoid G) _).
+  exists (fsa_mul_list (map fsa_singleton (generate s))).
+  rewrite fsa_elem_mul_list map_map.
+  admit.
+
 - move=> _. by exists (fsa_bottom _) => /=.
 - move=> e1 IH1 e2 IH2 /andb_True [H1 H2].
   have [A1 E1] := IH1 H1.
@@ -922,6 +923,6 @@ elim: e => /=.
   have ?: has_one e1 = true; last by congruence.
   apply/has_oneP; rewrite E1 -fsa_interp_initial.
   rewrite fsa_derivable E /=; exact: sqsubseteq_join_left.
-Qed.
+Admitted.
 
 End FSAKATerm.

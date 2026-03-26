@@ -750,14 +750,14 @@ Definition pseudo_top : ka_term T :=
 
 Lemma pseudo_top_absorb x : Unit x ⋅ pseudo_top ⊑ pseudo_top.
 Proof.
-case: (generate x) => xs -> {x}; elim: xs=> [|x xs IH] //=.
+rewrite (generateP x); elim: (generate x)=> [|g gs IH] //=.
   by rewrite left_id.
 rewrite monoid_morphism_mul -assoc IH /pseudo_top.
-set f := λ x', Unit (generator_interp x').
-have /sqsubseteq_join_list x_gen: f x ∈ map f (enum G).
-  apply/elem_of_list_fmap; exists x; split => //.
+set f := λ g', Unit (generator_interp g').
+have /sqsubseteq_join_list g_gen: f g ∈ map f (enum G).
+  apply/elem_of_list_fmap; exists g; split => //.
   exact: elem_of_enum.
-rewrite /f in x_gen; rewrite x_gen; exact: pre_ka_mul_star.
+rewrite /f in g_gen; rewrite g_gen; exact: pre_ka_mul_star.
 Qed.
 
 (* Theorem 9 *)

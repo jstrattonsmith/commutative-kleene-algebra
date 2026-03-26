@@ -257,8 +257,8 @@ split.
   by rewrite semi_lattice_idemp.
 - (* Backward: Unit (sl, sr) ⊑ fsa_elem A → sr ∈ fsa_next sl *)
   move=> Hle.
-  set s := proj1_sig (generate (sl, sr)).
-  have Es := proj2_sig (generate (sl, sr)).
+  set s := generate (sl, sr).
+  have Es := generateP (sl, sr).
   have Hkas : ka_of_string (Unit ∘ generator_interp) s ⊑ fsa_elem A.
   { etransitivity; last exact: Hle.
     rewrite sqsubseteq_iff ka_of_string_Unit Es semi_lattice_idemp //. }
