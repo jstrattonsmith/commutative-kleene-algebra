@@ -582,24 +582,17 @@ Lemma ka_of_string_concat_r ys (y : Σ) :
   f y ⋅ ka_of_string ys ≡ ka_of_string (y :: ys).
 Proof. rewrite //=. Qed.
 
-
-(* TODO: this Arguments decl conflicts with the ∏/previous mul_list uses. *)
-Arguments mul_list {_}.
-
 Definition sum_terms_lt_k_at A (σ : fsa_state A) k :=
-  ⨆ (map ∏
-  (map
-    (map f)
+  ⨆ (map ka_of_string
     (filter (string_match_at σ) (@enum_list_lt Σ _ _ k))
-  )
-).
+  ).
 
 Definition sum_terms_lt_k A k :=
   sum_terms_lt_k_at (fsa_initial A) k.
 
 
 Definition sum_terms_eq_k_at A (σ : fsa_state A) k :=
-  ⨆ (map ∏ (map (map f) (filter (string_match_at σ) (@enum_list_eq Σ _ _ k)))).
+  ⨆ (map ka_of_string (filter (string_match_at σ) (@enum_list_eq Σ _ _ k))).
 
 Definition sum_terms_eq_k A k := sum_terms_eq_k_at (fsa_initial A) k.
 
@@ -664,13 +657,8 @@ rewrite /sum_terms_lt_k_at /sum_terms_eq_k_at {1}/enum_list_lt.
 replace (S k) with (k + 1); last by lia.
 (* QUEST: there are some annoying rewrites/unfolds here...is this ok? *)
 by rewrite /string_match seq_app //= flat_map_app
-           filter_app flat_map_enum_list_eq_id !map_map
+           filter_app flat_map_enum_list_eq_id
            map_app join_list_app /enum_list_lt.
-Qed.
-
-Lemma join_elim_left (t1 t2 t3 : T) : t2 ≡ t3 -> t1 ⊔ t2 ≡ t1 ⊔ t3.
-Proof.
-by move=> <-.
 Qed.
 
 Lemma sum_terms_lt_k__to__S_k_at A (σ : fsa_state A) k :
@@ -678,12 +666,12 @@ Lemma sum_terms_lt_k__to__S_k_at A (σ : fsa_state A) k :
     map (λ s : list Σ, ka_of_string s ⋅ pre_ka_of_bool (fsa_final (fsa_trans_s s σ))) (enum_list_eq k)
   ) ≡ sum_terms_lt_k_at σ (S k).
 Proof.
-rewrite sum_terms_lt_S_k_at. apply join_elim_left.
+rewrite sum_terms_lt_S_k_at; f_equiv.
 rewrite /sum_terms_eq_k_at /string_match_at.
 elim: (enum_list_eq k) => [| en1 en' IHen]; first rewrite //=.
 rewrite /=; case en1Final: (fsa_final (fsa_trans_s en1 σ));
 rewrite filter_cons en1Final /ka_of_string.
-- rewrite ?right_id /=; exact: join_elim_left.
+- by rewrite ?right_id /=; f_equiv.
 - rewrite ?right_absorb ?left_id //=.
 Qed.
 
@@ -696,8 +684,7 @@ first by rewrite /sum_terms_lt_k_at /sum_suffix_terms_k_at
              /string_suffix_term_at /ka_of_string /= ?left_id ?right_id.
 rewrite {}IHk {1}/sum_suffix_terms_k_at /string_suffix_at.
 rewrite string_derive_one_more_at join_map_mul_dist
-        assoc sum_terms_lt_k__to__S_k_at.
-apply join_elim_left.
+        assoc sum_terms_lt_k__to__S_k_at; f_equiv.
 rewrite /sum_suffix_terms_k_at /string_suffix_term_at.
 apply (anti_symm _); apply join_list_sqsubseteq;
 move=> _ /elem_of_list_fmap [xs [-> Hxs]].
@@ -745,8 +732,6 @@ have Hdecomp := fsa_elem_k_decomp_gen σ (S (length s)).
 have Hlt : ka_of_string s ⊑ sum_terms_lt_k_at σ (S (length s)).
 { rewrite /sum_terms_lt_k_at.
   apply: sqsubseteq_join_list; apply/elem_of_list_fmap.
-  exists (map f s); split; first by rewrite /ka_of_string.
-  apply/elem_of_list_fmap.
   exists s; split => //.
   rewrite elem_of_list_filter elem_of_enum_list_lt /= Hmatch. split => //. lia. }
 etransitivity; first exact: Hlt.
@@ -849,7 +834,7 @@ have Hle' : Unit m ⊑ fsa_interp σ.
 move/l_alt: Hle' => Hle'.
 (* Decompose: fsa_interp σ ≡ sum_terms_lt_k σ (S (length s)) ⊔ suffix_terms *)
 have Hdecomp := fsa_elem_k_decomp_gen σ (S (length s)).
-rewrite Hdecomp in Hle'.
+rewrite Hdecomp semi_lattice_morphism_join in Hle'.
 case: Hle' => Hle'.
 - (* Case 1: l (sum_terms_lt_k_at ...) m
      Some s' with length s' < S(length s) and string_match σ s' has

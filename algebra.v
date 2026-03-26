@@ -188,6 +188,7 @@ Qed.
 End MonoidTheory.
 
 Notation "x ^ n" := (power x n) : ka_scope.
+Arguments mul_list {_}.
 Notation "∏" := mul_list : ka_scope.
 
 Class MonoidMorphism (T S : monoid) (f : T → S) := {
