@@ -224,38 +224,26 @@ Section FSANext.
 Variable A : fsa (T + T) (ka_term (list T * list T)) (Unit ∘ generator_interp).
 Variable bo : bounded_output (fsa_elem A).
 
-(** Encode a pair (sl, sr) as a string over T + T. *)
-Definition encode_pair (sl sr : list T) : list (T + T) :=
-  map inl sl ++ map inr sr.
+(** Extract left and right projections from a string over T + T. *)
+Definition sum_lefts_str (w : list (T + T)) : list T :=
+  omap (λ x, match x with inl g => Some g | inr _ => None end) w.
 
-(** Check if a pair (sl, sr) is accepted by the automaton. *)
-Definition pair_match (sl sr : list T) : bool :=
-  string_match A (encode_pair sl sr).
+Definition sum_rights_str (w : list (T + T)) : list T :=
+  omap (λ x, match x with inl _ => None | inr g => Some g end) w.
 
-(** The next function: given [sl], compute the bound from the
-    bounded_output witness and enumerate all accepted [sr]. *)
+(** The next function: enumerate all strings over T + T up to a bound,
+    filter those accepted by A whose left projection equals sl,
+    return their right projections. *)
 Definition fsa_next (sl : list T) : list (list T) :=
   let k := proj1_sig bo in
-  filter (pair_match sl) (@enum_list_lt T _ _ ((length sl + 1) * k + 1)).
-
-Lemma ka_of_encode_pair (sl sr : list T) :
-  ka_of_string (Unit ∘ generator_interp) (encode_pair sl sr) ≡ Unit (sl, sr).
-Proof.
-rewrite /encode_pair /ka_of_string map_app mul_list_app !map_map /=.
-have Hl : ∏ (map (λ x, (Unit ∘ generator_interp) (inl x)) sl) ≡ Unit (sl, [] : list T).
-{ elim: sl => [|x sl' IH] //=.
-  by rewrite IH -monoid_morphism_mul /=. }
-have Hr : ∏ (map (λ x, (Unit ∘ generator_interp) (inr x)) sr) ≡ Unit ([] : list T, sr).
-{ elim: sr => [|x sr' IH] //=.
-  by rewrite IH -monoid_morphism_mul /=. }
-rewrite Hl Hr -monoid_morphism_mul /=.
-Admitted.
+  let bound := (length sl + 1) * k + length sl in
+  map sum_rights_str
+    (filter (λ w, string_match A w && bool_decide (sum_lefts_str w = sl))
+            (@enum_list_lt (T + T) _ _ (S bound))).
 
 Lemma fsa_next_spec (sl sr : list T) :
   sr ∈ fsa_next sl ↔ Unit (sl, sr) ⊑ fsa_elem A.
 Proof.
-rewrite /fsa_next elem_of_list_filter elem_of_enum_list_lt /pair_match.
-(* Needs ka_of_encode_pair to connect string_match to Unit (sl, sr) ⊑ fsa_elem A *)
 Admitted.
 
 End FSANext.
