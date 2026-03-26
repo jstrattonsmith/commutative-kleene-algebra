@@ -820,6 +820,29 @@ Lemma msize_mul_ge (x y : M) :
   msize (x ⋅ y) ≥ msize x.
 Proof. rewrite msize_mul. lia. Qed.
 
+Lemma unit_le_sum_terms_lt_k (A : fsa G T f) (σ : fsa_state A) k (m : M) :
+  Unit m ⊑ sum_terms_lt_k_at σ k → msize m < k.
+Proof.
+move/l_alt => Hle.
+rewrite /sum_terms_lt_k_at semi_lattice_morphism_join_list in Hle.
+apply elem_of_lang_join_list in Hle.
+destruct Hle as [B [HB Hm]].
+apply elem_of_list_fmap in HB.
+destruct HB as [s' [-> Hs']].
+apply elem_of_list_fmap in Hs'.
+destruct Hs' as [s'' [-> Hs'']].
+apply elem_of_list_filter in Hs''.
+destruct Hs'' as [_ Hlen].
+apply elem_of_enum_list_lt in Hlen.
+(* Hm : l (l (ka_of_string f s'')) m *)
+have Hm' : Unit m ⊑ ka_of_string f s'' by apply/l_alt.
+have Hm'' : Unit m ⊑ Unit (∏ (map generator_interp s'')).
+{ etransitivity; first exact: Hm'.
+  rewrite sqsubseteq_iff ka_of_string_Unit semi_lattice_idemp //. }
+move/l_alt: Hm'' => /= Heq.
+by rewrite (msize_proper Heq) ka_of_string_msize.
+Qed.
+
 Lemma string_match_at_complete_sized
     (A : fsa G T f) (σ : fsa_state A) (s : list G) :
   ka_of_string f s ⊑ fsa_interp σ →
