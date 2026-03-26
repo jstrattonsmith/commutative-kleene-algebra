@@ -218,20 +218,33 @@ Definition prefix_free (L : ka_term (list T)) : Prop :=
 (** Lemma 33 (normal form): If two lists diverge (share a common prefix
     then have different next characters), their pairing factors through diff. *)
 
-Lemma diag_unit_absorb (x : T) :
-  Unit ([x], [x]) ⋅ ka_term_diag pseudo_top ⊑ ka_term_diag pseudo_top.
+Lemma diag_unit_absorb (s : list T) :
+  Unit (s, s) ⋅ ka_term_diag pseudo_top ⊑ ka_term_diag pseudo_top.
 Proof.
-(* Unit([x],[x]) = ka_term_diag(Unit [x]) and
-   ka_term_diag(Unit [x]) ⋅ ka_term_diag pseudo_top ⊑ ka_term_diag(Unit [x] ⋅ pseudo_top)
-   ⊑ ka_term_diag pseudo_top by pseudo_top_absorb *)
-Admitted.
+have -> : Unit (s, s) ≡ ka_term_diag (Unit s) by [].
+by rewrite -monoid_morphism_mul pseudo_top_absorb.
+Qed.
+
+Lemma unit_le_diff (x x' : T) :
+  x ≠ x' → Unit ([x], [x']) ⊑ @diff T _ _.
+Proof.
+move=> Hne. rewrite /diff.
+apply: sqsubseteq_join_list; apply/elem_of_list_fmap.
+exists (x, x'); split => //.
+apply/elem_of_list_filter; split; last exact: elem_of_enum.
+by apply/Is_true_true/bool_decide_eq_true.
+Qed.
 
 Lemma diff_unit (x x' : T) :
   x ≠ x' → Unit ([x], [x']) ⊑ ka_term_diag pseudo_top ⋅ @diff T _ _.
 Proof.
-(* Unit([x],[x']) = ka_term_diag(1) ⋅ Unit([x],[x'])
-   ⊑ ka_term_diag pseudo_top ⋅ diff since Unit([x],[x']) ⊑ diff when x ≠ x' *)
-Admitted.
+move=> Hne.
+rewrite -(left_id 1 (⋅) (Unit ([x], [x']))).
+apply: pre_ka_mul_mono; last exact: unit_le_diff Hne.
+have -> : (1 : ka_term _) ≡ ka_term_diag (1 : ka_term (list T)) by [].
+rewrite -monoid_morphism_one.
+exact: semi_lattice_morphism_sqsubseteq_proper (pre_ka_one_star _).
+Qed.
 
 Lemma list_diverge (s s' : list T) :
   ¬ (∃ t, s' = s ++ t) →
@@ -245,9 +258,9 @@ elim: s s' => [|x s IH] [|x' s'] Hns Hns'.
 - case: (decide (x = x')) => [->|Hne].
   + (* Same head: recurse *)
     have Hns1 : ¬ (∃ t, s' = s ++ t).
-    { move=> [t Ht]; apply: Hns; exists t; rewrite /= Ht //. }
+    { move=> [t Ht]; apply: Hns; exists t. rewrite /mul /= Ht //. }
     have Hns1' : ¬ (∃ t, s = s' ++ t).
-    { move=> [t Ht]; apply: Hns'; exists t; rewrite /= Ht //. }
+    { move=> [t Ht]; apply: Hns'; exists t. rewrite /mul /=. by rewrite Ht. }
     (* Unit(x::s, x::s') = Unit([x],[x]) ⋅ Unit(s, s') *)
     etransitivity.
     { rewrite sqsubseteq_iff {1}monoid_morphism_mul semi_lattice_idemp //. }
