@@ -269,9 +269,7 @@ elim: s s' => [|x s IH] [|x' s'] Hns Hns'.
     { rewrite Hsplit. reflexivity. }
     etransitivity.
     { apply: pre_ka_mul_mono; [reflexivity | exact: IH _ Hns1 Hns1']. }
-    (* Goal: Unit([x'],[x']) ⋅ (diag_pt ⋅ diff ⋅ pt) ⊑ diag_pt ⋅ diff ⋅ pt *)
-    (* = ((Unit([x'],[x']) ⋅ diag_pt) ⋅ diff) ⋅ pt ⊑ (diag_pt ⋅ diff) ⋅ pt *)
-    admit.
+    by rewrite !assoc diag_unit_absorb.
   + (* Different heads: divergence *)
     have Hsplit : Unit (x :: s, x' :: s') ≡ Unit ([x], [x']) ⋅ Unit (s, s').
     { have -> : (x :: s, x' :: s') = ([x], [x']) ⋅ (s, s') by done.
@@ -281,7 +279,7 @@ elim: s s' => [|x s IH] [|x' s'] Hns Hns'.
     apply: pre_ka_mul_mono.
     * exact: diff_unit Hne.
     * exact: unit_le_pseudo_top.
-Admitted.
+Qed.
 
 (** Construction of the next function for finite-state terms.
 
