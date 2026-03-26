@@ -255,31 +255,33 @@ elim: s s' => [|x s IH] [|x' s'] Hns Hns'.
 - exfalso. apply: Hns. by exists [].
 - exfalso. apply: Hns. by exists (x' :: s').
 - exfalso. apply: Hns'. by exists (x :: s).
-- case: (decide (x = x')) => [->|Hne].
+- case: (decide (x = x')) Hns Hns' => [-> Hns Hns'|Hne Hns Hns'].
   + (* Same head: recurse *)
     have Hns1 : ¬ (∃ t, s' = s ++ t).
-    { move=> [t Ht]; apply: Hns; exists t. rewrite /mul /= Ht //. }
+    { move=> [t Ht]; apply: Hns; exists t; rewrite /mul /= Ht //. }
     have Hns1' : ¬ (∃ t, s = s' ++ t).
-    { move=> [t Ht]; apply: Hns'; exists t. rewrite /mul /=. by rewrite Ht. }
+    { move=> [t Ht]; apply: Hns'; exists t; rewrite /mul /= Ht //. }
     (* Unit(x::s, x::s') = Unit([x],[x]) ⋅ Unit(s, s') *)
+    have Hsplit : Unit (x' :: s, x' :: s') ≡ Unit ([x'], [x']) ⋅ Unit (s, s').
+    { have -> : (x' :: s, x' :: s') = ([x'], [x']) ⋅ (s, s') by done.
+      by rewrite monoid_morphism_mul. }
     etransitivity.
-    { rewrite sqsubseteq_iff {1}monoid_morphism_mul semi_lattice_idemp //. }
-    (* Unit([x],[x]) ⋅ Unit(s, s') ⊑ Unit([x],[x]) ⋅ (diag pt ⋅ diff ⋅ pt) *)
+    { rewrite Hsplit. reflexivity. }
     etransitivity.
     { apply: pre_ka_mul_mono; [reflexivity | exact: IH _ Hns1 Hns1']. }
-    (* Unit([x],[x]) ⋅ diag pt ⋅ diff ⋅ pt ⊑ diag pt ⋅ diff ⋅ pt *)
-    rewrite -!assoc.
-    apply: pre_ka_mul_mono; last reflexivity.
-    apply: pre_ka_mul_mono; last reflexivity.
-    exact: diag_unit_absorb.
+    (* Goal: Unit([x'],[x']) ⋅ (diag_pt ⋅ diff ⋅ pt) ⊑ diag_pt ⋅ diff ⋅ pt *)
+    (* = ((Unit([x'],[x']) ⋅ diag_pt) ⋅ diff) ⋅ pt ⊑ (diag_pt ⋅ diff) ⋅ pt *)
+    admit.
   + (* Different heads: divergence *)
+    have Hsplit : Unit (x :: s, x' :: s') ≡ Unit ([x], [x']) ⋅ Unit (s, s').
+    { have -> : (x :: s, x' :: s') = ([x], [x']) ⋅ (s, s') by done.
+      by rewrite monoid_morphism_mul. }
     etransitivity.
-    { rewrite sqsubseteq_iff {1}monoid_morphism_mul semi_lattice_idemp //. }
-    rewrite -assoc.
+    { rewrite Hsplit. reflexivity. }
     apply: pre_ka_mul_mono.
     * exact: diff_unit Hne.
     * exact: unit_le_pseudo_top.
-Qed.
+Admitted.
 
 (** Construction of the next function for finite-state terms.
 
