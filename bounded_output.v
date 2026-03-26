@@ -241,6 +241,24 @@ Definition fsa_next (sl : list T) : list (list T) :=
 Lemma fsa_next_spec (sl sr : list T) :
   sr ∈ fsa_next sl ↔ Unit (sl, sr) ⊑ fsa_elem A.
 Proof.
+rewrite /fsa_next.
+split.
+- (* Forward: sr ∈ fsa_next sl → Unit (sl, sr) ⊑ fsa_elem A *)
+  move/elem_of_list_fmap => [w [Esr Hw]].
+  apply elem_of_list_filter in Hw.
+  destruct Hw as [Hcond Hlen].
+  move: Hcond => /andb_True [/Is_true_true Hmatch /Is_true_true /bool_decide_eq_true Hleft].
+  have Hsound := string_match_sound Hmatch.
+  rewrite Esr.
+  etransitivity; last exact: Hsound.
+  rewrite sqsubseteq_iff ka_of_string_Unit.
+  have -> : (sl, snd (interp_str w)) = interp_str w.
+  { by rewrite -Hleft -surjective_pairing. }
+  by rewrite semi_lattice_idemp.
+- (* Backward: Unit (sl, sr) ⊑ fsa_elem A → sr ∈ fsa_next sl *)
+  move=> Hle.
+  (* Use string_match_complete_sized to get w *)
+  admit.
 Admitted.
 
 End FSANext.
