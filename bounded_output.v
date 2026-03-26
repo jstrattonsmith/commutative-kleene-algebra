@@ -280,14 +280,18 @@ split.
          have Es' : (sl, sr) = ∏ (map generator_interp s) by apply leibniz_equiv_iff.
          by rewrite Hw' -Es'.
     * apply/elem_of_enum_list_lt.
-      have [k Hk] := bo.
+      destruct bo as [k Hk].
       have Hsr := Hk sl sr Hle.
       have /leibniz_equiv_iff Hw' := Hw.
       have Es' : (sl, sr) = ∏ (map generator_interp s) by apply leibniz_equiv_iff.
-      (* length w = length sl + length sr ≤ bound *)
-      (* length w = length sl + length sr ≤ bound *)
-      admit.
-Admitted.
+      (* length w = length sl + length sr *)
+      have Hwlen : length w = length sl + length sr.
+      { have Heqw : (sl, sr) ≡ ∏ (map generator_interp w).
+        { by rewrite /interp_str Hw' -Es'. }
+        rewrite (@sized_monoid _ _ _ _ w _ Heqw) /s /= length_app !length_fmap //. }
+      have Hbound : length sl + length sr < S ((length sl + 1) * k + length sl) by nia.
+      rewrite Hwlen. exact Hbound.
+Qed.
 
 End FSANext.
 
