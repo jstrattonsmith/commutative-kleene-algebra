@@ -257,8 +257,36 @@ split.
   by rewrite semi_lattice_idemp.
 - (* Backward: Unit (sl, sr) ⊑ fsa_elem A → sr ∈ fsa_next sl *)
   move=> Hle.
-  (* Use string_match_complete_sized to get w *)
-  admit.
+  set s := proj1_sig (generate (sl, sr)).
+  have Es := proj2_sig (generate (sl, sr)).
+  have Hkas : ka_of_string (Unit ∘ generator_interp) s ⊑ fsa_elem A.
+  { etransitivity; last exact: Hle.
+    rewrite sqsubseteq_iff ka_of_string_Unit Es semi_lattice_idemp //. }
+  have [w [Hw Hmatch]] := string_match_complete_sized Hkas.
+  apply/elem_of_list_fmap.
+  exists w; split.
+  + (* sr = snd (interp_str w) *)
+    rewrite /interp_str.
+    have /leibniz_equiv_iff Hw' := Hw.
+    have Es' : (sl, sr) = ∏ (map generator_interp s) by apply leibniz_equiv_iff.
+    by rewrite Hw' -Es'.
+  + (* w ∈ filter ... (enum_list_lt ...) *)
+    apply/elem_of_list_filter; split.
+    * apply/andb_True; split.
+      -- exact/Is_true_true.
+      -- apply/Is_true_true/bool_decide_eq_true.
+         rewrite /interp_str.
+         have /leibniz_equiv_iff Hw' := Hw.
+         have Es' : (sl, sr) = ∏ (map generator_interp s) by apply leibniz_equiv_iff.
+         by rewrite Hw' -Es'.
+    * apply/elem_of_enum_list_lt.
+      have [k Hk] := bo.
+      have Hsr := Hk sl sr Hle.
+      have /leibniz_equiv_iff Hw' := Hw.
+      have Es' : (sl, sr) = ∏ (map generator_interp s) by apply leibniz_equiv_iff.
+      (* length w = length sl + length sr ≤ bound *)
+      (* length w = length sl + length sr ≤ bound *)
+      admit.
 Admitted.
 
 End FSANext.
