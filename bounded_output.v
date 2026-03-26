@@ -435,11 +435,12 @@ refine {|
   move=> xs.
   (* Rewrite e to fsa_elem A *)
   rewrite {1}EA.
-  (* Decompose fsa_elem A via fsa_elem_k_decomp_gen *)
-  (* The proof has three parts:
-     (4) strings with π_l(s') = xs biject with Next_e(xs)
-     (5) strings with π_l(s') ≠ xs go to error via prefix-freeness
-     (6) suffix terms go to error since e_s ⊑ rho_e *)
+  (* The proof decomposes fsa_elem A via Lemma 31, distributes Unit([], xs),
+     then handles three cases:
+     (4) strings with π_l(s') = xs biject with Next_e(xs) → main term
+     (5) strings with π_l(s') ≠ xs → error via prefix-freeness (Lemma 33)
+     (6) suffix terms → error since fsa_interp σ ⊑ rho_e
+     Each case requires significant KA reasoning. *)
   admit.
 Admitted.
 
