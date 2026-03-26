@@ -250,6 +250,54 @@ Class SizedMonoid (G : Type) (T : monoid) `{!MonoidGen G T} := {
 
 Arguments SizedMonoid G T {_}.
 
+Section MSize.
+
+Context {G : Type} {T : monoid} `{!MonoidGen G T, !SizedMonoid G T}.
+
+Definition msize (x : T) : nat :=
+  length (proj1_sig (generate x)).
+
+Lemma msize_gen (gs : list G) :
+  msize (∏ (map generator_interp gs)) = length gs.
+Proof. symmetry. exact: sized_monoid. Qed.
+
+Lemma msize_one : msize 1 = 0.
+Proof. exact: (msize_gen []). Qed.
+
+Lemma msize_mul (x y : T) : msize (x ⋅ y) = msize x + msize y.
+Proof.
+rewrite /msize.
+destruct (generate x) as [lx Elx], (generate y) as [ly Ely],
+         (generate (x ⋅ y)) as [lxy Elxy] => /=.
+have Hcat : x ⋅ y ≡ ∏ (map generator_interp (lx ++ ly)).
+{ by rewrite map_app mul_list_app Elx Ely. }
+have := @sized_monoid _ _ _ _ (lx ++ ly) _ Hcat.
+have := @sized_monoid _ _ _ _ lxy _ Elxy.
+rewrite length_app => -> ->.
+lia.
+Qed.
+
+Lemma msize_proper (x y : T) : x ≡ y → msize x = msize y.
+Proof.
+move=> Hxy. rewrite /msize.
+set gx := generate x. set gy := generate y.
+have Hx := @sized_monoid _ _ _ _ (proj1_sig gx) y
+              (transitivity (symmetry Hxy) (proj2_sig gx)).
+have Hy := @sized_monoid _ _ _ _ (proj1_sig gy) y (proj2_sig gy).
+by rewrite Hx Hy.
+Qed.
+
+Lemma msize_generator (g : G) : msize (generator_interp g) = 1%nat.
+Proof.
+rewrite /msize.
+have Hgen : generator_interp g ≡ ∏ (map generator_interp [g]).
+{ simpl. by rewrite right_id. }
+have H := @sized_monoid _ _ _ _ [g] _ Hgen.
+simpl in H. rewrite H //.
+Qed.
+
+End MSize.
+
 Section ListMonoid.
 
 Variable T : setoid.
