@@ -798,6 +798,80 @@ Global Arguments fsa_singleton {Σ _ _ _ _}.
 Global Arguments fsa Σ {_ _} T.
 Global Arguments fsa_mul' {Σ _ _ _ _}.
 
+Section StringMatchComplete.
+
+Context {M : monoid} {G : Type} `{!EqDecision G, !Finite G}.
+Context `{!MonoidGen G M, !SizedMonoid G M}.
+
+Let T := ka_term M.
+Let f : G → T := Unit ∘ generator_interp.
+
+(** ka_of_string f s ≡ Unit (∏(map generator_interp s)) *)
+
+Lemma ka_of_string_Unit (s : list G) :
+  ka_of_string f s ≡ Unit (∏ (map generator_interp s)).
+Proof.
+rewrite /ka_of_string /f -map_map monoid_morphism_mul_list //.
+Qed.
+
+(** msize of the monoid element encoded by s is length s *)
+
+Lemma ka_of_string_msize (s : list G) :
+  msize (∏ (map generator_interp s)) = length s.
+Proof. symmetry. exact: sized_monoid. Qed.
+
+(** Two ka_of_string are ≡ only if they have the same length *)
+
+Lemma Unit_inj (x y : M) : Unit x ≡ Unit y → x ≡ y.
+Proof.
+move=> Heq.
+have /l_alt Hx : Unit x ⊑ Unit x by reflexivity.
+have /l_alt : Unit x ⊑ Unit y by rewrite Heq.
+by move=> /= ->.
+Qed.
+
+Lemma ka_of_string_sized (s1 s2 : list G) :
+  ka_of_string f s1 ≡ ka_of_string f s2 → length s1 = length s2.
+Proof.
+rewrite !ka_of_string_Unit => /Unit_inj Heq.
+by rewrite -!ka_of_string_msize (msize_proper Heq).
+Qed.
+
+(** A product x ⋅ y with msize x ≥ 1 cannot be ≡ to something of smaller msize *)
+
+Lemma msize_mul_ge (x y : M) :
+  msize (x ⋅ y) ≥ msize x.
+Proof. rewrite msize_mul. lia. Qed.
+
+Lemma string_match_at_complete_sized
+    (A : fsa G T f) (σ : fsa_state A) (s : list G) :
+  ka_of_string f s ⊑ fsa_interp σ →
+  string_match_at σ s = true.
+Proof.
+move=> Hle.
+set m := ∏ (map generator_interp s).
+(* ka_of_string f s ≡ Unit m, so Unit m ⊑ fsa_interp σ *)
+have Hle' : Unit m ⊑ fsa_interp σ.
+{ etransitivity; last exact: Hle.
+  rewrite sqsubseteq_iff ka_of_string_Unit semi_lattice_idemp //. }
+move/l_alt: Hle' => Hle'.
+(* Decompose: fsa_interp σ ≡ sum_terms_lt_k σ (S (length s)) ⊔ suffix_terms *)
+have Hdecomp := fsa_elem_k_decomp_gen σ (S (length s)).
+rewrite Hdecomp in Hle'.
+case: Hle' => Hle'.
+- (* Case 1: l (sum_terms_lt_k_at ...) m
+     Some s' with length s' < S(length s) and string_match σ s' has
+     ka_of_string f s' matching m. *)
+  admit.
+- (* Case 2: l (sum_suffix_terms_k_at ...) m
+     Some s' with length s' = S(length s) contributes, so
+     m = ∏(map gen s') ⋅ t. Then msize m = length s' + msize t ≥ S(length s).
+     But msize m = length s. Contradiction. *)
+  admit.
+Admitted.
+
+End StringMatchComplete.
+
 Section FSAKATerm.
 
 Context `{!MonoidGen G T, !EqDecision G, !Finite G, !IsOne T}.
