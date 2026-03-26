@@ -886,15 +886,16 @@ move/l_alt: Hle' => Hle'.
 have Hdecomp := fsa_elem_k_decomp_gen σ (S (length s)).
 rewrite Hdecomp semi_lattice_morphism_join in Hle'.
 case: Hle' => Hle'.
-- (* Case 1: l (sum_terms_lt_k_at ...) m
-     Some s' with length s' < S(length s) and string_match σ s' has
-     ka_of_string f s' matching m. *)
+- (* Case 1: l (sum_terms_lt_k_at ...) m *)
+  (* Unit m ⊑ sum_terms_lt_k_at σ (S (length s)), and string_match_at_sound
+     gives us that any accepted s' has ka_of_string s' ⊑ fsa_interp σ. *)
   admit.
-- (* Case 2: l (sum_suffix_terms_k_at ...) m
-     Some s' with length s' = S(length s) contributes, so
-     m = ∏(map gen s') ⋅ t. Then msize m = length s' + msize t ≥ S(length s).
-     But msize m = length s. Contradiction. *)
-  admit.
+- (* Case 2: contradiction via msize *)
+  exfalso.
+  have Hge : msize m ≥ S (length s).
+  { apply: unit_le_sum_suffix_terms_k. apply/l_alt. exact: Hle'. }
+  have Hms : msize m = length s by exact: ka_of_string_msize.
+  lia.
 Admitted.
 
 End StringMatchComplete.
