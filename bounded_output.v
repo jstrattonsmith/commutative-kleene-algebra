@@ -218,15 +218,55 @@ Definition prefix_free (L : ka_term (list T)) : Prop :=
 (** Lemma 33 (normal form): If two lists diverge (share a common prefix
     then have different next characters), their pairing factors through diff. *)
 
+Lemma diag_unit_absorb (x : T) :
+  Unit ([x], [x]) ⋅ ka_term_diag pseudo_top ⊑ ka_term_diag pseudo_top.
+Proof.
+(* Unit([x],[x]) = ka_term_diag(Unit [x]) and
+   ka_term_diag(Unit [x]) ⋅ ka_term_diag pseudo_top ⊑ ka_term_diag(Unit [x] ⋅ pseudo_top)
+   ⊑ ka_term_diag pseudo_top by pseudo_top_absorb *)
+Admitted.
+
+Lemma diff_unit (x x' : T) :
+  x ≠ x' → Unit ([x], [x']) ⊑ ka_term_diag pseudo_top ⋅ @diff T _ _.
+Proof.
+(* Unit([x],[x']) = ka_term_diag(1) ⋅ Unit([x],[x'])
+   ⊑ ka_term_diag pseudo_top ⋅ diff since Unit([x],[x']) ⊑ diff when x ≠ x' *)
+Admitted.
+
 Lemma list_diverge (s s' : list T) :
   ¬ (∃ t, s' = s ++ t) →
   ¬ (∃ t, s = s' ++ t) →
   Unit (s, s') ⊑ ka_term_diag pseudo_top ⋅ @diff T _ _ ⋅ pseudo_top.
 Proof.
-(* Proof by induction on s. Base cases: one list is a prefix of the other,
-   contradiction. Inductive case: if heads match, recurse; if heads differ,
-   this is the divergence point. *)
-Admitted.
+elim: s s' => [|x s IH] [|x' s'] Hns Hns'.
+- exfalso. apply: Hns. by exists [].
+- exfalso. apply: Hns. by exists (x' :: s').
+- exfalso. apply: Hns'. by exists (x :: s).
+- case: (decide (x = x')) => [->|Hne].
+  + (* Same head: recurse *)
+    have Hns1 : ¬ (∃ t, s' = s ++ t).
+    { move=> [t Ht]; apply: Hns; exists t; rewrite /= Ht //. }
+    have Hns1' : ¬ (∃ t, s = s' ++ t).
+    { move=> [t Ht]; apply: Hns'; exists t; rewrite /= Ht //. }
+    (* Unit(x::s, x::s') = Unit([x],[x]) ⋅ Unit(s, s') *)
+    etransitivity.
+    { rewrite sqsubseteq_iff {1}monoid_morphism_mul semi_lattice_idemp //. }
+    (* Unit([x],[x]) ⋅ Unit(s, s') ⊑ Unit([x],[x]) ⋅ (diag pt ⋅ diff ⋅ pt) *)
+    etransitivity.
+    { apply: pre_ka_mul_mono; [reflexivity | exact: IH _ Hns1 Hns1']. }
+    (* Unit([x],[x]) ⋅ diag pt ⋅ diff ⋅ pt ⊑ diag pt ⋅ diff ⋅ pt *)
+    rewrite -!assoc.
+    apply: pre_ka_mul_mono; last reflexivity.
+    apply: pre_ka_mul_mono; last reflexivity.
+    exact: diag_unit_absorb.
+  + (* Different heads: divergence *)
+    etransitivity.
+    { rewrite sqsubseteq_iff {1}monoid_morphism_mul semi_lattice_idemp //. }
+    rewrite -assoc.
+    apply: pre_ka_mul_mono.
+    * exact: diff_unit Hne.
+    * exact: unit_le_pseudo_top.
+Qed.
 
 (** Construction of the next function for finite-state terms.
 
