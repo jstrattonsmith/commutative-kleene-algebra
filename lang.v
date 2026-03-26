@@ -229,7 +229,7 @@ Qed.
 
 (* Corollary 8 *)
 
-Lemma either_empty_or_nonzero e : e ≡ ⊥ ∨ ∃ s, l e s.
+Lemma either_empty_or_nonzero e : (e ≡ ⊥) + {s | l e s}.
 Proof.
 elim: e => /=; try by eauto.
 - rewrite -[@ka_term_join T]/(@join _ _) -[ka_term_elim lang_sing]/(l).
