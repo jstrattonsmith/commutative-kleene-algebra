@@ -317,6 +317,85 @@ rewrite /= !length_app.
 nia.
 Qed.
 
+(** Lemma 31 (full): For each state σ of A, pick a witness if
+    fsa_interp σ ≢ ⊥, compute the max left-projection size m,
+    and set the adjusted fanout k = (m + 1) * k₀. *)
+
+Section Lemma31.
+
+Variable A : fsa (T + T) (ka_term (list T * list T)) (Unit ∘ generator_interp).
+Variable k0 : nat.
+Variable Hbo : bounded_output_with k0 (fsa_elem A).
+
+(** For each state, get a witness or a proof of emptiness. *)
+Definition state_witness (σ : fsa_state A) :
+  (fsa_interp σ ≡ ⊥) + {w : list T * list T | l (fsa_interp σ) w} :=
+  either_empty_or_nonzero (fsa_interp σ).
+
+(** Extract the left-projection size of the witness, or 0 if empty. *)
+Definition witness_lsize (σ : fsa_state A) : nat :=
+  match state_witness σ with
+  | inl _ => 0
+  | inr (exist _ (wl, _) _) => length wl
+  end.
+
+(** Maximum left-projection size across all states. *)
+Definition max_witness_lsize : nat :=
+  list_max (map witness_lsize (enum (fsa_state A))).
+
+(** Adjusted fanout. *)
+Definition adjusted_fanout : nat :=
+  (max_witness_lsize + 1) * k0.
+
+(** Lemma 31: In the decomposition, any prefix s with nonzero suffix
+    satisfies the bounded-output constraint with adjusted_fanout. *)
+
+Lemma lemma_31_bound (σ : fsa_state A) (s : list (T + T)) :
+  fsa_interp (fsa_initial A) ≡ fsa_elem A →
+  fsa_interp (fsa_trans_s s (fsa_initial A)) ≢ ⊥ →
+  let p := ∏ (map generator_interp s) in
+  length (snd p) ≤ (length (fst p) + 1) * adjusted_fanout.
+Proof.
+move=> Hinit Hne /=.
+set σ' := fsa_trans_s s (fsa_initial A).
+(* Get the witness and its properties *)
+destruct (state_witness σ') as [Hbot | [[wl wr] Hw]] eqn:Hsw.
+{ by exfalso; apply: Hne. }
+set p := ∏ (map generator_interp s).
+(* string_suffix_term_at is ka_of_string s ⋅ fsa_interp (fsa_trans_s s σ).
+   By fsa_elem_k_decomp_gen, this ⊑ fsa_interp (fsa_initial A) = fsa_elem A. *)
+have Hle : Unit p ⋅ fsa_interp σ' ⊑ fsa_elem A.
+{ rewrite -Hinit.
+  have Hdecomp := fsa_elem_k_decomp_gen (fsa_initial A) (length s).
+  etransitivity; last (rewrite Hdecomp; exact: sqsubseteq_join_right).
+  rewrite /sum_suffix_terms_k_at /string_suffix_term_at.
+  etransitivity; last (apply: sqsubseteq_join_list; apply/elem_of_list_fmap;
+    exists s; split => //; apply/elem_of_enum_list_eq => //).
+  rewrite {1}(ka_of_string_Unit s) /p.
+  rewrite sqsubseteq_iff semi_lattice_idemp //. }
+have Hle' : Unit (fst p, snd p) ⋅ fsa_interp σ' ⊑ fsa_elem A.
+{ by rewrite -surjective_pairing. }
+have Hpf := bounded_output_prefix (sl := fst p) (sr := snd p) Hbo Hle' Hw.
+(* Hpf : length (snd p) ≤ (length (fst p) + length wl + 1) * k0 *)
+(* Need: length (snd p) ≤ (length (fst p) + 1) * adjusted_fanout *)
+rewrite /adjusted_fanout.
+have Hwl_bound : length wl ≤ max_witness_lsize.
+{ rewrite /max_witness_lsize.
+  have Hin : witness_lsize σ' ∈ map witness_lsize (enum (fsa_state A)).
+  { apply/elem_of_list_fmap. exists σ'. split => //. exact: elem_of_enum. }
+  have Hall : Forall (λ k, k ≤ max_witness_lsize)
+                     (map witness_lsize (enum (fsa_state A))).
+  { apply/list_max_le. done. }
+  have Hwlb := proj1 (Forall_forall _ _) Hall _ Hin.
+  rewrite /witness_lsize Hsw /= in Hwlb. exact Hwlb. }
+(* Hpf : length p.2 ≤ (length p.1 + length wl + 1) * k0
+   Hwl_bound : length wl ≤ max_witness_lsize
+   Goal : length p.2 ≤ (length p.1 + 1) * adjusted_fanout *)
+admit.
+Admitted.
+
+End Lemma31.
+
 (** Lemma 34 (from paper): A finite-state, bounded-output term whose
     domain and codomain lie in a prefix-free language is representable. *)
 
