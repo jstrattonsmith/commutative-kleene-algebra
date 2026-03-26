@@ -224,12 +224,9 @@ Section FSANext.
 Variable A : fsa (T + T) (ka_term (list T * list T)) (Unit ∘ generator_interp).
 Variable bo : bounded_output (fsa_elem A).
 
-(** Extract left and right projections from a string over T + T. *)
-Definition sum_lefts_str (w : list (T + T)) : list T :=
-  omap (λ x, match x with inl g => Some g | inr _ => None end) w.
-
-Definition sum_rights_str (w : list (T + T)) : list T :=
-  omap (λ x, match x with inl _ => None | inr g => Some g end) w.
+(** Interpret a string over T + T as a pair via generator_interp. *)
+Definition interp_str (w : list (T + T)) : list T * list T :=
+  ∏ (map generator_interp w).
 
 (** The next function: enumerate all strings over T + T up to a bound,
     filter those accepted by A whose left projection equals sl,
@@ -237,8 +234,8 @@ Definition sum_rights_str (w : list (T + T)) : list T :=
 Definition fsa_next (sl : list T) : list (list T) :=
   let k := proj1_sig bo in
   let bound := (length sl + 1) * k + length sl in
-  map sum_rights_str
-    (filter (λ w, string_match A w && bool_decide (sum_lefts_str w = sl))
+  map (λ w, snd (interp_str w))
+    (filter (λ w, string_match A w && bool_decide (fst (interp_str w) = sl))
             (@enum_list_lt (T + T) _ _ (S bound))).
 
 Lemma fsa_next_spec (sl sr : list T) :
