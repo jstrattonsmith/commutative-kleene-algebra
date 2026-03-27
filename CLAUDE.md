@@ -1,66 +1,117 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code)
+when working with code in this repository.
 
 ## Project Overview
 
-Rocq (formerly Coq) formalization proving undecidability results for Kleene algebras with partial commutativity of concatenation. The entire proof lives in a single file: `kacc_undec.v` (~4200 lines).
+Rocq (formerly Coq) formalization proving undecidability
+results for Kleene algebras with partial commutativity of
+concatenation. The proof is split across seven `.v` files
+(~4100 lines total).
 
 ## Build Commands
 
-This project uses Nix flakes. Enter the dev environment first:
+This project uses Nix flakes:
 
 ```bash
-nix develop          # enter dev shell (provides coq-lsp, vsrocq-language-server)
-nix build            # build/typecheck the full project
+nix develop   # enter dev shell (coq-lsp, vsrocq)
+nix build     # build/typecheck the full project
 ```
 
-The Nix build invokes `coqc` on `kacc_undec.v`. There are no separate test or lint commands — the type checker is the test suite.
+Individual files can be compiled via:
+
+```bash
+nix develop -c bash -c 'coqc -Q . kacc <file>.v'
+```
+
+The build processes all files listed in `_CoqProject`.
+There are no separate test or lint commands -- the type
+checker is the test suite.
 
 ## Dependencies
 
 Declared in `flake.nix` via Nix overlay:
 - **Rocq/Coq** (from nixpkgs)
-- **stdpp** — provides `base`, `list`, `finite`, `gmap`, `mapset`
-- **coq-library-undecidability** (branch `rocq-9.0`) — provides `Undecidability.MinskyMachines.MM2` for Minsky machine definitions
+- **stdpp** -- provides `base`, `list`, `finite`, `gmap`,
+  `mapset`
+- **coq-library-undecidability** (branch `rocq-9.0`) --
+  provides `Undecidability.MinskyMachines.MM2` for Minsky
+  machine definitions
 - **MetaRocq** (transitive via coq-library-undecidability)
 
-## Architecture of `kacc_undec.v`
+## File Structure
 
-The file builds up algebraic infrastructure from scratch, then uses it to encode Minsky machine computations:
+Files are listed in dependency order (`_CoqProject`):
 
-1. **Utility sections** (lines 1–260): Finite enumeration of gmaps, gsets, list pairs, and lists of bounded length.
+1. **`utils.v`** (~256 lines): Finite enumeration of
+   gmaps, gsets, list pairs, and lists of bounded length.
 
-2. **Setoids & algebraic hierarchy** (lines 265–880): Custom algebraic hierarchy built on stdpp's `Equiv`/`SqSubsetEq` typeclasses:
-   - `setoid` → `monoid` (with `MonoidMixin`) → `semi_lattice` (with `SemiLatticeMixin`) → `pre_ka` (pre-Kleene algebra, with `PreKAMixin` adding star/distribution/idempotency)
-   - Each structure is a record with a `_Mixin` bundling the laws. Morphism classes (`MonoidMorphism`, `SemiLatticeMorphism`, `PreKAMorphism`) are defined at each level.
-   - Concrete instances: `bool`, `count`, `lang` (formal languages), product monoids.
+2. **`algebra.v`** (~811 lines): Custom algebraic hierarchy
+   built on stdpp's `Equiv`/`SqSubsetEq` typeclasses:
+   `setoid` -> `monoid` (with `MonoidMixin`) ->
+   `semi_lattice` (with `SemiLatticeMixin`).
+   Morphism classes (`MonoidMorphism`,
+   `SemiLatticeMorphism`) at each level.
+   Concrete instances: `bool`, product monoids.
+   `MonoidGen`/`SizedMonoid` typeclasses for generator
+   structures.
 
-3. **KA terms** (lines 1106–1620): `ka_term T` is a free KA term AST (`Unit`, `⊥`, `⊔`, `⋅`, `star`). Key operations:
-   - `ka_term_elim`: fold/elimination into any `pre_ka`
-   - `count_term`: counts whether a term is empty/finite/infinite
-   - `has_one`, `finite_state`: boolean predicates on terms
-   - `pseudo_top`: absorbing element for finite alphabets
+3. **`pre_ka.v`** (~778 lines): Pre-Kleene algebra
+   (`PreKAMixin` adding star/distribution/idempotency).
+   `PreKAMorphism` class. `ka_term T` free KA term AST
+   (`Unit`, `ka_term_bottom`, `ka_term_join`,
+   `ka_term_mul`, `ka_term_star`). Key operations:
+   `ka_term_elim`, `count_term`, `has_one`,
+   `pseudo_top`. Concrete instances: `count`, `lang`.
 
-4. **Language semantics** (lines 1623–1887): `lang` record (formal languages over word monoids) with `l : ka_term T → lang` interpreting terms as languages. Includes injectivity results (`l_inj_finite`).
+4. **`lang.v`** (~346 lines): `lang` record (formal
+   languages over word monoids) with
+   `l : ka_term T -> lang` interpreting terms as
+   languages. Includes `l_alt` (Theorem 5: string
+   membership <-> term ordering), `l_inj_finite`
+   (Corollary 7), `either_empty_or_nonzero`
+   (Corollary 8).
 
-5. **Automata** (lines 1889–2605): FSA/NFA definitions with:
-   - `fsa_elem`: interpretation of an automaton as a KA term
-   - `fsa_mul'`, `fsa_star'`: product and Kleene star constructions on automata
-   - `finite_state` predicate characterizing terms representable by finite automata
+5. **`automata.v`** (~927 lines): FSA/NFA definitions:
+   `fsa` record with `fsa_elem`, `fsa_state`,
+   `fsa_interp`, `fsa_initial`, `fsa_trans`,
+   `fsa_trans_s`. Product (`fsa_mul'`) and star
+   (`fsa_star'`) constructions. `finite_state` predicate.
+   Expansion lemma `fsa_elem_k_decomp_gen` (Lemma 27).
+   `ka_term_proj1`, `ka_term_proj2`, `ka_term_diag`.
+   `string_match` / `string_match_complete_sized`.
 
-6. **Derivatives & representable relations** (lines 2608–2690): Brzozowski-style derivatives on `ka_term (list T)`, plus `repr_rel` for representable relations.
+6. **`repr_rel.v`** (~332 lines): Representable relations
+   (`repr_rel` record with `next`, `residue`,
+   `expand_rel`). `diff` term. Iteration lemmas
+   (`repr_rel_iter`, Lemma 21; `repr_rel_iter_empty`,
+   Theorem 22).
 
-7. **MM2 encoding & undecidability** (lines 2696–end): The core reduction:
-   - Alphabet `Σ_M` with constructors `Q_M n`, `a`, `b`, `c_0`, `c_1`
-   - `interp` / `interp_single`: encode MM2 instructions as KA terms
-   - `R_M`: the full encoding of an MM2 program
-   - `C_M`, `c_m_form_list`: configuration terms
-   - Canonicalization pass (`canonicalize`) for term normalization
-   - Projection functions `π_l`, `π_r` separating left/right components, with `proj_com` proving they commute
+7. **`bounded_output.v`** (~676 lines): Bounded-output
+   terms (Definition 28). Closure under join, mul, star
+   (Lemma 30). `bounded_outputb` boolean check.
+   Prefix-free terms (Definition 32). `list_diverge`
+   (Lemma 33). Lemma 31 (paper version):
+   `lemma_31_paper` restricts the expansion to
+   output-bounded suffix terms. Lemma 34
+   (`bounded_output_repr_rel`) partially proved
+   (3 admits, 1 Admitted).
+
+   **Not yet implemented:** MM2 encoding and the full
+   undecidability reduction (Definitions 11-13,
+   Theorems 15-16, 18).
 
 ## Proof Style
 
-- Uses **ssreflect** tactics (`move=>`, `rewrite`, `apply/`, `case/`, `elim:`, `/=`) extensively
-- Custom scope `ka_scope` with notations: `⋅` for mul, `⊔`/`+` for join, `✶` for star, `⊑`/`≤` for ordering, `⊥`/`0` for bottom, `1` for one
-- `↑s` lifts a string to a KA term; `##ls` sums a list of string terms; `s ∈ t` means string membership in a term's language
+- Uses **ssreflect** tactics (`move=>`, `rewrite`,
+  `apply/`, `case/`, `elim:`, `/=`) extensively
+- `Set Implicit Arguments` is active -- beware that
+  arguments inferable from later ones become implicit.
+  Use `@lemma_name` to pass all arguments explicitly.
+- Custom scope `ka_scope` with notations:
+  `⋅` for mul, `1` for one, `∏` for mul_list,
+  `⨆` for join_list, `x ^ n` for power.
+  Join (`⊔`), star, ordering (`⊑`), and bottom (`⊥`)
+  use stdpp typeclasses (`Join`, `Star`, `SqSubsetEq`,
+  `Bottom`) rather than custom notations.
