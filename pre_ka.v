@@ -760,6 +760,13 @@ have /sqsubseteq_join_list g_gen: f g ∈ map f (enum G).
 rewrite /f in g_gen; rewrite g_gen; exact: pre_ka_mul_star.
 Qed.
 
+Lemma unit_le_pseudo_top x : Unit x ⊑ pseudo_top.
+Proof.
+etransitivity; last exact: pseudo_top_absorb x.
+rewrite -{1}[Unit x](right_id 1); apply: pre_ka_mul_mono => //.
+exact: pre_ka_one_star.
+Qed.
+
 (* Theorem 9 *)
 
 Lemma pseudo_top_finite e :
@@ -771,7 +778,6 @@ rewrite join_list_left_dist map_map.
 apply/join_list_sqsubseteq=> _ /elem_of_list_fmap [x [] -> x_xs].
 exact: pseudo_top_absorb.
 Qed.
-
 
 End PseudoTop.
 
