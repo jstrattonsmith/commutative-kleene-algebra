@@ -31,6 +31,8 @@ test or lint commands -- the type checker is the test suite. To check if the
 code is building correctly, make sure to check the exit status -- don't just
 grep for errors.
 
+After building, make sure you always report what lemmas were left admitted.
+
 ## Dependencies
 
 Declared in `flake.nix` via Nix overlay:
