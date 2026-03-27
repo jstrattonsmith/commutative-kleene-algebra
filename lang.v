@@ -176,6 +176,15 @@ Proof. rewrite /l. apply _. Qed.
 Global Instance l_semi_lattice_morphism : SemiLatticeMorphism l.
 Proof. apply _. Qed.
 
+Program Definition lang_top : lang :=
+  {| lang_car := λ x, True |}.
+
+Lemma lang_topP L : L ⊑ lang_top.
+Proof. by []. Qed.
+
+Lemma lang_top_sqsubseteq L : lang_top ⊑ L → L ≡ lang_top.
+Proof. Admitted.
+
 (* Theorem 5 *)
 
 Lemma l_alt e x : l e x ↔ Unit x ⊑ e.
@@ -343,6 +352,15 @@ by move=> x y /=; split; eauto; case=> _ [-> ->].
 Qed.
 
 End LangNaturality.
+
+Section LangTop.
+
+Context `{!MonoidGen G T, !EqDecision G, !Finite G}.
+
+Lemma l_pseudo_top : l pseudo_top ≡ @lang_top T.
+Proof. Admitted.
+
+End LangTop.
 
 Section KATermDiagSpec.
 
