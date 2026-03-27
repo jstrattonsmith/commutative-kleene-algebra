@@ -53,6 +53,9 @@ Global Instance mm_sym_leibniz_equiv :
   LeibnizEquiv (mm_sym Q).
 Proof. by move=> ?? ->. Qed.
 
+Canonical Structure mm_sym_setoid :=
+  @Setoid (mm_sym Q) _ _.
+
 End MMSymInstances.
 
 Section MMSymFinite.
@@ -124,35 +127,23 @@ Arguments mm_halt {Q} _.
 Section MMEncoding.
 
 Context {Q : Type} `{!EqDecision Q, !Finite Q}.
-
-Let T := mm_sym Q.
-Let S := eq_setoid T.
-Let W := list_monoid S.
-Let WW := prod_monoid W W.
-
-Local Instance mm_sym_leibniz_equiv' :
-    LeibnizEquiv S := mm_sym_leibniz_equiv.
-Local Instance mm_sym_monoid_gen :
-    MonoidGen T W := @list_fin_gen S.
-Local Instance mm_sym_sized_monoid :
-    SizedMonoid T W :=
-  @list_sized_monoid S mm_sym_leibniz_equiv'.
+Implicit Types (x : mm_sym Q).
 
 (** Helper terms for left/right/diagonal embeddings
     (Definition 12). *)
 
-Definition sym_l (x : T) : ka_term WW :=
-  Unit ([x], ([] : list T)).
+Definition sym_l x :=
+  Unit ([x], [] : list (mm_sym Q)).
 
-Definition sym_r (x : T) : ka_term WW :=
-  Unit (([] : list T), [x]).
+Definition sym_r x :=
+  Unit ([] : list (mm_sym Q), [x]).
 
-Definition star_d (x : T) : ka_term WW :=
-  ka_term_diag (star (Unit [x] : ka_term W)).
+Definition star_d x :=
+  ka_term_diag (star (Unit [x])).
 
 (** Instruction encoding (Definition 13). *)
 
-Definition encode_instr (i : mm_instr Q) : ka_term WW :=
+Definition encode_instr (i : mm_instr Q) :=
   match i with
   | mm_inc_a q =>
       sym_r mm_a ⋅ star_d mm_a ⋅ star_d mm_b
@@ -175,55 +166,31 @@ Definition encode_instr (i : mm_instr Q) : ka_term WW :=
 
     R_M = ⨆_{q ∈ states} encode_instr(prog q) ⋅ sym_l(q) *)
 
-Definition transition_rel
-    (prog : Q → mm_instr Q) (states : list Q) :
-    ka_term WW :=
-  ⨆ (map (λ q, encode_instr (prog q) ⋅ sym_l (mm_q q))
-         states).
+Definition transition_rel (prog : Q → mm_instr Q) (states : list Q)
+    : ka_term _ :=
+  ⨆ (map (λ q, encode_instr (prog q) ⋅ sym_l (mm_q q)) states).
 
 (** ** Configurations (Definition 11) *)
 
 (** Encode a machine configuration (q, (a, b)) as a word
     a^a_count ⋅ b^b_count ⋅ q *)
 
-Definition config_word (ac bc : nat) (q : Q) : list T :=
+Definition config_word (ac bc : nat) (q : Q) :=
   repeat mm_a ac ++ repeat mm_b bc ++ [mm_q q].
 
 (** Configuration set C_M as a KA term:
     C_M = (mm_a)* ⋅ (mm_b)* ⋅ ⨆_{q ∈ states} Unit [mm_q q] *)
 
-Definition config_set (states : list Q) : ka_term W :=
-  star (Unit [mm_a] : ka_term W)
-    ⋅ star (Unit [mm_b] : ka_term W)
-    ⋅ ⨆ (map (λ q, Unit [mm_q q] : ka_term W) states).
+Definition config_set (states : list Q) :=
+  star (Unit [mm_a])
+    ⋅ star (Unit [mm_b])
+    ⋅ ⨆ (map (λ q, Unit [mm_q q]) states).
 
 (** Total configuration set T_M = C_M ⊔ {c0, c1} *)
 
-Definition total_config_set (states : list Q) :
-    ka_term W :=
+Definition total_config_set (states : list Q) :=
   config_set states
     ⊔ Unit [mm_c false] ⊔ Unit [mm_c true].
-
-(** The "pseudo-top" over the full alphabet Σ_M,
-    lifted to the diagonal of the product. *)
-
-Definition mm_dpseudo_top : ka_term WW :=
-  ka_term_diag (@pseudo_top T W _ _ _).
-
-(** Mismatch term: ⨆ { Unit([x],[y]) | x ≠ y }. *)
-
-Definition mm_mismatch : ka_term WW :=
-  let diffs :=
-    filter (λ '(x, y), bool_decide (x ≠ y))
-           (enum (T * T)) in
-  ⨆ (map (λ '(x, y),
-    Unit (([x], [y]) : WW)) diffs).
-
-(** Error term: Σ*_d ⋅ mismatch ⋅ Σ* *)
-
-Definition error_term : ka_term WW :=
-  mm_dpseudo_top ⋅ mm_mismatch
-    ⋅ @pseudo_top _ WW _ _ _.
 
 End MMEncoding.
 
@@ -277,8 +244,7 @@ Definition active_states : list (fin (S n)) :=
 
 (** The transition relation for a concrete MM2 program. *)
 
-Definition mm2_R :=
-  transition_rel mm2_prog active_states.
+Definition mm2_R := transition_rel mm2_prog active_states.
 
 (** Encode an MM2 state as a configuration word. *)
 
@@ -296,17 +262,15 @@ Section Functional.
 Context {Q : Type} `{!EqDecision Q, !Finite Q}.
 Variable prog : Q → mm_instr Q.
 Variable states : list Q.
-
-Let T := mm_sym Q.
-Let W := list_monoid (eq_setoid T).
-Let WW := prod_monoid W W.
+Implicit Types (w : list (mm_sym Q)).
 Let R := transition_rel prog states.
+
 
 (** The step function computes the unique successor
     configuration, if any. *)
 
 Definition step_config (ac bc : nat) (q : Q) :
-    option (list T) :=
+    option (list (mm_sym Q)) :=
   match prog q with
   | mm_inc_a q' =>
       Some (config_word (S ac) bc q')
@@ -331,17 +295,17 @@ Definition step_config (ac bc : nat) (q : Q) :
     Unit(config_word ac bc q, w) ⊑ R  iff
     q ∈ states and w = step_config ac bc q. *)
 
-Lemma config_in_encode_instr ac bc q (w : W) :
+Lemma config_in_encode_instr ac bc q w :
   q ∈ states →
-  Unit ((config_word ac bc q : W, w) : WW) ⊑ R →
+  Unit (config_word ac bc q, w) ⊑ R →
   step_config ac bc q = Some w.
 Proof.
 Admitted.
 
 Lemma encode_instr_config ac bc q :
   q ∈ states →
-  ∀ w : W, step_config ac bc q = Some w →
-  Unit ((config_word ac bc q : W, w) : WW) ⊑ R.
+  ∀ w, step_config ac bc q = Some w →
+  Unit (config_word ac bc q, w) ⊑ R.
 Proof.
 Admitted.
 
@@ -357,17 +321,7 @@ Section MainTheorems.
 
 Variable P : list mm2_instr.
 Let n := length P.
-Let T := mm_sym (fin (S n)).
-Let S := eq_setoid T.
-Let W := list_monoid S.
-Let WW := prod_monoid W W.
-
-Local Instance main_leibniz : LeibnizEquiv S :=
-  mm_sym_leibniz_equiv.
-Local Instance main_gen : MonoidGen T W :=
-  @list_fin_gen S.
-Local Instance main_sized : SizedMonoid T W :=
-  @list_sized_monoid S main_leibniz.
+Let Q := fin (S n).
 
 (** Theorem 15 (Soundness):
 
@@ -378,10 +332,9 @@ Local Instance main_sized : SizedMonoid T W :=
 Theorem soundness s :
   let R := mm2_R P in
   let C := config_set (active_states P) in
-  Unit (([] : W, mm2_config P s : W) : WW) ⋅ star R
-    ⊑ mm_dpseudo_top
-        ⋅ @ka_term_inj2 W W (C ⊔ Unit [mm_c true])
-      ⊔ error_term →
+  l (Unit ([], mm2_config P s) ⋅ star R)
+    ⊑ l (dpseudo_top ⋅ ka_term_inj2 (C ⊔ Unit [mm_c true])
+         ⊔ dpseudo_top ⋅ mismatch ⋅ pseudo_top) →
   ∀ s', P // s ↠ s' →
     mm2_stop P s' →
     mm2_config P s' = [mm_c true].
@@ -399,13 +352,10 @@ Theorem completeness s :
   let C := config_set (active_states P) in
   (∃ s', P // s ↠ s' ∧ mm2_stop P s' ∧
          mm2_config P s' = [mm_c true]) →
-  ∃ rho : ka_term WW,
-    Unit (([] : W, mm2_config P s : W) : WW)
-      ⋅ star R
-    ⊑ mm_dpseudo_top
-        ⋅ @ka_term_inj2 W W
-            (C ⊔ Unit [mm_c true])
-      ⊔ mm_dpseudo_top ⋅ mm_mismatch ⋅ rho.
+  ∃ rho,
+    Unit ([] : list (mm_sym Q), mm2_config P s) ⋅ star R
+    ⊑ dpseudo_top ⋅ ka_term_inj2 (C ⊔ Unit [mm_c true])
+      ⊔ dpseudo_top ⋅ mismatch ⋅ rho.
 Proof.
 Admitted.
 
