@@ -616,9 +616,8 @@ have Hbo' : bounded_output (fsa_elem A).
 { destruct Hbo as [k Hk]. exists k. move=> sl sr Hin. apply: Hk.
   by rewrite EA. }
 (* ρ_e: join of all state interpretations *)
-set rho_e :=
-  ⨆ (map (λ σ : fsa_state A, fsa_interp σ)
-         (enum (fsa_state A))).
+set rho_e := ⨆ (map (λ σ : fsa_state A, fsa_interp σ)
+                     (enum (fsa_state A))).
 (* Residue per paper: Σ̈* · ρ_e *)
 refine {|
   repr_rel_dom := Hdom;
@@ -636,38 +635,27 @@ refine {|
   have Hone_rho : 1 ⊑ rho_e.
   { admit. }
   (* e_{s'} ⊑ ρ_e for suffix states *)
-  have Hstate_rho : ∀ σ : fsa_state A,
-    fsa_interp σ ⊑ rho_e.
-  { move=> σ. apply: sqsubseteq_join_list.
-    apply/elem_of_list_fmap.
-    exists σ; split => //.
-    exact: elem_of_enum. }
+  have Hstate_rho : ∀ σ : fsa_state A, fsa_interp σ ⊑ rho_e.
+  { move=> σ. apply: sqsubseteq_join_list. apply/elem_of_list_fmap.
+    exists σ; split => //. exact: elem_of_enum. }
   (* Choose k, p as in paper *)
   destruct Hbo' as [k0 Hk0].
   set n := length xs.
   set p := (k0 + 1) * (n + 1).
   (* Decompose fsa_elem A at level p+1.
-     By paper: e = Σ{|s'|≤p} s'
-                 + Σ{s'∈Λ̈} s' · e_{s'} *)
-  rewrite {1}(fsa_elem_k_decomp_gen
-    (fsa_initial A) (S p)).
+     By paper: e = Σ{|s'|≤p} s' + Σ{s'∈Λ̈} s' · e_{s'} *)
+  rewrite {1}(fsa_elem_k_decomp_gen (fsa_initial A) (S p)).
   rewrite pre_ka_right_dist join_sqsubseteq.
   split.
   + (* Matched strings (4)+(5) *)
     admit.
-  + (* Suffix terms (6):
-       For each s' ∈ Λ̈, show
-       s_r · s' · e_{s'} ≤ Σ* · Σ≠ · ρ.
-       If e_{s'} = 0, done.
-       Otherwise find witness s'' ≤ e_{s'},
-       show |πl(s')| > n, factor through
-       dpt · diff · pt, multiply by e_{s'}
-       ≤ ρ_e. *)
-    (* Paper eq (6): for each suffix s',
-       either e_{s'} = 0 (done) or find
-       witness, show |πl(s')| > n by
-       bounded output contradiction,
-       factor s_r·s' through dpt·diff·pt,
+  + (* Suffix terms (6): For each s' ∈ Λ̈, show
+       s_r · s' · e_{s'} ≤ Σ* · Σ≠ · ρ. If e_{s'} = 0, done.
+       Otherwise find witness s'' ≤ e_{s'}, show |πl(s')| > n,
+       factor through dpt · diff · pt, multiply by e_{s'} ≤ ρ_e.
+       Paper eq (6): for each suffix s', either e_{s'} = 0 (done)
+       or find witness, show |πl(s')| > n by bounded output
+       contradiction, factor s_r·s' through dpt·diff·pt,
        multiply by e_{s'} ≤ ρ_e. *)
     admit.
 Admitted.
