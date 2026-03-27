@@ -215,6 +215,16 @@ Definition prefix_free (L : ka_term (list T)) : Prop :=
   ∀ s1 s2, Unit s1 ⊑ L → Unit s2 ⊑ L →
     (∃ t, s2 = s1 ++ t) → s1 = s2.
 
+Lemma prefix_free_not_prefix (L : ka_term (list T)) s1 s2 :
+  prefix_free L → Unit s1 ⊑ L → Unit s2 ⊑ L →
+  s1 ≠ s2 →
+  ¬ (∃ t, s2 = s1 ++ t) ∧ ¬ (∃ t, s1 = s2 ++ t).
+Proof.
+move=> Hpf H1 H2 Hne; split => Hpfx.
+- apply: Hne. exact: Hpf H1 H2 Hpfx.
+- apply: Hne. symmetry. exact: Hpf H2 H1 Hpfx.
+Qed.
+
 (** Lemma 33 (normal form): If two lists diverge (share a common prefix
     then have different next characters), their pairing factors through diff. *)
 
@@ -577,52 +587,212 @@ Proof.
 move=> Hfs Hbo Hdom Hcod Hpf.
 have [A EA] := finite_stateP Hfs.
 have Hbo' : bounded_output (fsa_elem A).
-{ destruct Hbo as [k Hk]. exists k. move=> sl sr Hin. apply: Hk.
-  by rewrite EA. }
-(* ρ_e: join of all state interpretations *)
+{ case: Hbo => [k Hk]. exists k. move=> sl sr Hin.
+  apply: Hk. by rewrite EA. }
 set rho_e := ⨆ (map (λ σ : fsa_state A, fsa_interp σ)
                      (enum (fsa_state A))).
-(* Residue per paper: Σ̈* · ρ_e *)
-refine {|
-  repr_rel_dom := Hdom;
-  repr_rel_cod := Hcod;
+refine {| repr_rel_dom := Hdom; repr_rel_cod := Hcod;
   next := fsa_next Hbo';
-  residue := pseudo_top ⋅ rho_e;
-|}.
-- (* next_spec *)
-  move=> sl sr.
-  rewrite fsa_next_spec. by rewrite EA.
-- (* expand_rel *)
-  move=> xs Hxs.
-  rewrite {1}EA -(fsa_interp_initial A).
-  (* ρ_e ≥ 1: the automaton has a final state *)
-  have Hone_rho : 1 ⊑ rho_e.
-  { admit. }
-  (* e_{s'} ⊑ ρ_e for suffix states *)
-  have Hstate_rho : ∀ σ : fsa_state A, fsa_interp σ ⊑ rho_e.
-  { move=> σ. apply: sqsubseteq_join_list. apply/elem_of_list_fmap.
+  residue := pseudo_top ⋅ (1 ⊔ rho_e) |}.
+- move=> sl sr. rewrite fsa_next_spec. by rewrite EA.
+- move=> xs Hxs. rewrite {1}EA.
+  have Hone_res : 1 ⊑ (1 ⊔ rho_e) by exact: sqsubseteq_join_left.
+  have Hstate_res : ∀ σ : fsa_state A, fsa_interp σ ⊑ 1 ⊔ rho_e.
+  { move=> σ. etransitivity; last exact: sqsubseteq_join_right.
+    apply: sqsubseteq_join_list. apply/elem_of_list_fmap.
     exists σ; split => //. exact: elem_of_enum. }
-  (* Choose k, p as in paper *)
-  destruct Hbo' as [k0 Hk0].
-  set n := length xs.
-  set p := (k0 + 1) * (n + 1).
-  (* Decompose fsa_elem A at level p+1.
-     By paper: e = Σ{|s'|≤p} s' + Σ{s'∈Λ̈} s' · e_{s'} *)
-  rewrite {1}(fsa_elem_k_decomp_gen (fsa_initial A) (S p)).
-  rewrite pre_ka_right_dist join_sqsubseteq.
+  set k0 := proj1_sig Hbo'. set Hk0 := proj2_sig Hbo'.
+  set af := adjusted_fanout A k0.
+  set n := length xs. set p := (af + 1) * (n + 1).
+  rewrite {1}(lemma_31_paper Hk0 (S p)) pre_ka_right_dist join_sqsubseteq.
   split.
-  + (* Matched strings (4)+(5) *)
-    admit.
-  + (* Suffix terms (6): For each s' ∈ Λ̈, show
-       s_r · s' · e_{s'} ≤ Σ* · Σ≠ · ρ. If e_{s'} = 0, done.
-       Otherwise find witness s'' ≤ e_{s'}, show |πl(s')| > n,
-       factor through dpt · diff · pt, multiply by e_{s'} ≤ ρ_e.
-       Paper eq (6): for each suffix s', either e_{s'} = 0 (done)
-       or find witness, show |πl(s')| > n by bounded output
-       contradiction, factor s_r·s' through dpt·diff·pt,
-       multiply by e_{s'} ≤ ρ_e. *)
-    admit.
-Admitted.
+  + (* Matched strings: equations (4)+(5) *)
+    rewrite /sum_terms_lt_k_at join_list_right_dist map_map.
+    apply/join_list_sqsubseteq => _ /elem_of_list_fmap [s' [-> Hs']].
+    apply elem_of_list_filter in Hs' as [Hmatch Hlen].
+    apply Is_true_eq_true in Hmatch.
+    set sl' := fst (∏ (map generator_interp s')).
+    set sr' := snd (∏ (map generator_interp s')).
+    (* ka_of_string s' ⊑ fsa_elem A *)
+    have Hsound := string_match_at_sound Hmatch.
+    (* Rewrite: Unit(1, xs) ⋅ ka_of_string s'
+       ≡ Unit(1, xs) ⋅ Unit(sl', sr')
+       = Unit(sl', xs ++ sr') *)
+    have Hgoal : Unit (sl', xs ++ sr') ⊑
+      Unit (xs, xs) ⋅ ⨆ (map (λ ys, Unit ([], ys)) (fsa_next Hbo' xs))
+      ⊔ ka_term_diag pseudo_top ⋅ @diff T _ _ ⋅ (pseudo_top ⋅ (1 ⊔ rho_e)).
+    { have Hin_e : Unit (sl', sr') ⊑ fsa_elem A.
+      { move: Hsound. rewrite ka_of_string_Unit fsa_interp_initial.
+        by rewrite /sl' /sr' -surjective_pairing. }
+      case: (decide (sl' = xs)) => [Heq|Hne].
+      - (* (4): πl(s') = xs — lands in next *)
+        apply: sqsubseteq_join; left. rewrite Heq.
+        have Hsplit : Unit (xs, xs ++ sr') ≡
+          Unit (xs, xs) ⋅ Unit ([] : list T, sr').
+        { rewrite -monoid_morphism_mul. f_equiv.
+          split => /=; [by rewrite right_id | reflexivity]. }
+        rewrite Hsplit.
+        apply: pre_ka_mul_mono; first reflexivity.
+        apply: sqsubseteq_join_list. apply/elem_of_list_fmap.
+        exists sr'; split => //. apply/fsa_next_spec.
+        by rewrite Heq in Hin_e.
+      - (* (5): πl(s') ≠ xs — lands in error via list_diverge *)
+        apply: sqsubseteq_join; right.
+        have Hdom' : ka_term_proj1 (fsa_elem A) ⊑ L.
+        { by rewrite -EA. }
+        have Hsl_L : Unit sl' ⊑ L.
+        { etransitivity; last exact: Hdom'.
+          exact: semi_lattice_morphism_sqsubseteq_proper Hin_e. }
+        have [Hn1 Hn2] := prefix_free_not_prefix Hpf Hxs Hsl_L
+          (fun H => Hne (eq_sym H)).
+        have Hn1' : ¬ (∃ t, sl' = (xs ++ sr') ++ t).
+        { move=> [t Ht]. apply: Hn1.
+          exists (sr' ++ t). by rewrite app_assoc. }
+        have Hn2' : ¬ (∃ t, xs ++ sr' = sl' ++ t).
+        { move=> [t Ht].
+          have Hpfx : ∃ u, xs = sl' ++ u ∨ sl' = xs ++ u.
+          { have := f_equal length Ht. rewrite !length_app.
+            case: (decide (length sl' ≤ length xs)) => Hle.
+            - exists (drop (length sl') xs). left.
+              have := f_equal (take (length sl')) Ht.
+              rewrite (@take_app_le _ xs sr' _ Hle)
+                (@take_app_le _ sl' t _ (Nat.le_refl _))
+                (@take_ge _ sl' _ (Nat.le_refl _)) => Htake.
+              have H1 := take_drop (length sl') xs.
+              rewrite Htake in H1. exact (eq_sym H1).
+            - exists (drop (length xs) sl'). right.
+              have Hle' : length xs ≤ length sl' by lia.
+              have := f_equal (take (length xs)) Ht.
+              rewrite (@take_app_le _ xs sr' _ (Nat.le_refl _))
+                (@take_app_le _ sl' t _ Hle')
+                (@take_ge _ xs _ (Nat.le_refl _)) => Htake.
+              have H2 := take_drop (length xs) sl'.
+              rewrite -Htake in H2. exact (eq_sym H2). }
+          case: Hpfx => [u [Hxs_eq | Hsl_eq]].
+          - apply: Hn2. by exists u.
+          - apply: Hn1. by exists u. }
+        etransitivity; first exact: list_diverge Hn2' Hn1'.
+        rewrite !assoc -{1}(right_id 1 (⋅) (_ ⋅ _ ⋅ _)).
+        apply: pre_ka_mul_mono; [reflexivity | exact: Hone_res]. }
+    etransitivity; last exact: Hgoal.
+    rewrite ka_of_string_Unit
+      (surjective_pairing (∏ (map generator_interp s')))
+      -monoid_morphism_mul /=.
+    rewrite sqsubseteq_iff semi_lattice_idemp //.
+  + (* Suffix terms: equation (6) *)
+    rewrite /bounded_suffix_sum_at /string_suffix_term_at
+      join_list_right_dist map_map.
+    apply/join_list_sqsubseteq => _ /elem_of_list_fmap [s' [-> Hs']].
+    apply elem_of_list_filter in Hs' as [Hob Hlen].
+    set sl' := fst (∏ (map generator_interp s')).
+    set sr' := snd (∏ (map generator_interp s')).
+    set σ' := fsa_trans_s s' (fsa_initial A).
+    (* Rewrite to Unit(sl', xs ++ sr') ⋅ fsa_interp σ' *)
+    have Hgoal2 : Unit (sl', xs ++ sr') ⋅ fsa_interp σ' ⊑
+      ka_term_diag pseudo_top ⋅ @diff T _ _
+        ⋅ (pseudo_top ⋅ (1 ⊔ rho_e)).
+    { case: (either_empty_or_nonzero (fsa_interp σ'))
+        => [Hbot|[[wl wr] Hw]].
+      * rewrite Hbot right_absorb. exact: bottom_sqsubseteq.
+      * (* Nonempty: witness in e, length contradiction *)
+        have Hin_e : Unit (sl' ++ wl, sr' ++ wr) ⊑ fsa_elem A.
+        { have /l_alt Hw' := Hw.
+          have Hle :
+            string_suffix_term_at (fsa_initial A) s'
+              ⊑ fsa_elem A.
+          { rewrite -(fsa_interp_initial A)
+              (fsa_elem_k_decomp_gen (fsa_initial A)
+                (length s')).
+            etransitivity; last exact: sqsubseteq_join_right.
+            rewrite /sum_suffix_terms_k_at.
+            apply: sqsubseteq_join_list.
+            apply/elem_of_list_fmap. exists s'; split => //.
+            apply/elem_of_enum_list_eq. done. }
+          etransitivity; last exact: Hle.
+          rewrite /string_suffix_term_at.
+          have Hpair : (sl' ++ wl, sr' ++ wr) =
+            (sl', sr') ⋅ ((wl, wr) : list T * list T).
+          { rewrite /mul /prod_mul //. }
+          rewrite Hpair monoid_morphism_mul
+            ka_of_string_Unit
+            (surjective_pairing
+              (∏ (map generator_interp s'))).
+          apply: pre_ka_mul_mono; last exact: Hw'.
+          rewrite sqsubseteq_iff semi_lattice_idemp //. }
+        have Hdom' : ka_term_proj1 (fsa_elem A) ⊑ L
+          by rewrite -EA.
+        have Hext_L : Unit (sl' ++ wl) ⊑ L.
+        { etransitivity; last exact: Hdom'.
+          exact:
+            semi_lattice_morphism_sqsubseteq_proper Hin_e. }
+        have Hlen_s' : length s' = S p
+          by apply elem_of_enum_list_eq in Hlen.
+        have Hsum : length sl' + length sr' = S p.
+        { have Hl : sl' = sum_lefts s'.
+          { transitivity
+              (∏ (map generator_interp (sum_lefts s'))).
+            - apply leibniz_equiv. exact (prod_gen_proj1 s').
+            - exact: list_gen_length. }
+          have Hr : sr' = sum_rights s'.
+          { transitivity
+              (∏ (map generator_interp (sum_rights s'))).
+            - apply leibniz_equiv. exact (prod_gen_proj2 s').
+            - exact: list_gen_length. }
+          rewrite Hl Hr -sum_lefts_rights_length Hlen_s' //. }
+        have Hob' : length sr' ≤ (length sl' + 1) * af.
+        { apply Is_true_eq_true in Hob.
+          move: Hob. rewrite /output_bounded /=.
+          by move/Nat.leb_le. }
+        have Hsl_gt : length sl' > n
+          by rewrite /p in Hsum; nia.
+        have Hne : sl' ≠ xs.
+        { move=> Heq. rewrite Heq /n in Hsl_gt. lia. }
+        have Hne' : sl' ++ wl ≠ xs.
+        { move=> Heq. have := f_equal length Heq.
+          rewrite length_app /n. lia. }
+        have [Hn1 Hn2] :=
+          prefix_free_not_prefix Hpf Hxs Hext_L
+            (fun H => Hne' (eq_sym H)).
+        have Hxs_npfx : ¬ (∃ t, sl' = xs ++ t).
+        { move=> [t Ht]. apply: Hn1.
+          exists (t ++ wl). by rewrite assoc_L Ht. }
+        have Hsl_npfx : ¬ (∃ t, xs = sl' ++ t).
+        { move=> [t Ht]. have := f_equal length Ht.
+          rewrite length_app /n. lia. }
+        have Hn1' : ¬ (∃ t, sl' = (xs ++ sr') ++ t).
+        { move=> [t Ht]. apply: Hxs_npfx.
+          exists (sr' ++ t). by rewrite app_assoc. }
+        have Hn2' : ¬ (∃ t, xs ++ sr' = sl' ++ t).
+        { move=> [t Ht]. apply: Hxs_npfx.
+          have Hle : length xs ≤ length sl' by lia.
+          have := f_equal (take (length xs)) Ht.
+          rewrite (@take_app_le _ xs sr' _ (Nat.le_refl _))
+            (@take_app_le _ sl' t _ Hle)
+            (@take_ge _ xs _ (Nat.le_refl _)) => Htake.
+          exists (drop (length xs) sl').
+          have H := take_drop (length xs) sl'.
+          rewrite -Htake in H. exact (eq_sym H). }
+        etransitivity.
+        { apply: pre_ka_mul_mono;
+            [exact: list_diverge Hn2' Hn1'
+            | exact: Hstate_res σ']. }
+        by rewrite !assoc. }
+    etransitivity; last (apply: sqsubseteq_join; right;
+      exact Hgoal2).
+    rewrite ka_of_string_Unit
+      (surjective_pairing (∏ (map generator_interp s'))).
+    have Hassoc : Unit (1, xs) ⋅ (Unit (sl', sr') ⋅ fsa_interp σ')
+      ≡ (Unit (1, xs) ⋅ Unit (sl', sr')) ⋅ fsa_interp σ'
+      by rewrite assoc.
+    rewrite Hassoc.
+    apply: pre_ka_mul_mono; last reflexivity.
+    have Hpair : (1 : list T, xs) ⋅ ((sl', sr') : list T * list T) =
+      (sl', xs ++ sr').
+    { change (([] ++ sl', xs ++ sr') = (sl', xs ++ sr')).
+      done. }
+    rewrite -monoid_morphism_mul Hpair.
+    reflexivity.
+Qed.
 
 
 End BoundedOutput.
