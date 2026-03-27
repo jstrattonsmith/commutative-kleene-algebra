@@ -311,6 +311,132 @@ Admitted.
 
 End Functional.
 
+(** ** Soundness helpers *)
+
+Section SoundnessHelpers.
+
+Context {Q : Type} `{!EqDecision Q, !Finite Q}.
+
+(** A pair (L, L ++ suffix) where left is a strict prefix of
+    right cannot be in dpseudo_top ⋅ mismatch ⋅ pseudo_top.
+    The mismatch requires differing characters at the same
+    position, but a prefix relation has no such position. *)
+
+(** A pair (L, L ++ suffix) where left is a strict prefix
+    of right cannot be in dpseudo_top ⋅ mismatch ⋅ pseudo_top.
+
+    Proof sketch: the language of this term contains only
+    pairs (w++[x]++w1, w++[y]++w2) where x ≠ y. But
+    for (L, L++suffix), the strings share a common prefix
+    of length |L|, so any factoring gives x = y at the
+    divergence point — contradiction. *)
+
+Lemma prefix_not_in_mismatch
+    (L suffix : list (mm_sym Q))
+    (Hsuf : suffix ≠ []) :
+  ¬ (Unit (L, L ++ suffix) ⊑
+       dpseudo_top ⋅ mismatch ⋅ pseudo_top).
+Proof.
+(* The pair (L, L ++ suffix) has L as a prefix of
+   L ++ suffix. Since list_diverge only produces pairs
+   where NEITHER is a prefix of the other, and its
+   image covers dpseudo_top ⋅ mismatch ⋅ pseudo_top,
+   we get a contradiction. *)
+Admitted.
+
+(** The nat_to_fin of a halting state's index yields
+    0%fin (which is not an active state). *)
+
+Lemma halt_nat_to_fin_zero (P : list mm2_instr)
+    (s : mm2_state) :
+  mm2_stop P s →
+  fin_to_nat (nat_to_fin P (fst s)) = 0.
+Proof.
+(* mm2_stop means no step is possible, which holds
+   when fst s = 0 or fst s > length P.  In both
+   cases, nat_to_fin maps to 0%fin. *)
+Admitted.
+
+(** Active states do not contain 0%fin. *)
+
+Lemma zero_not_active (P : list mm2_instr) :
+  ∀ q, q ∈ active_states P →
+  fin_to_nat q ≠ 0.
+Proof.
+move=> q /elem_of_list_filter [/Is_true_true Hq _].
+by move/bool_decide_eq_true: Hq.
+Qed.
+
+(** config_word with state q ∉ states is not in the
+    language of config_set states. *)
+
+Lemma config_not_in_set (ac bc : nat)
+    (q : Q) (states : list Q) :
+  q ∉ states →
+  ¬ l (config_set states) (config_word ac bc q).
+Proof.
+move=> Hq /l_alt Hle.
+(* config_set = star(a) ⋅ star(b) ⋅ ⨆(map q states) *)
+(* The language decomposes as w1 ++ w2 ++ [mm_q q']
+   where q' ∈ states. But our word has mm_q q with
+   q ∉ states. *)
+Admitted.
+
+(** A config_word is never equal to [mm_c b]. *)
+
+Lemma config_word_ne_mc (ac bc : nat) (q : Q) (b : bool) :
+  config_word ac bc q ≠ [mm_c b].
+Proof.
+rewrite /config_word; case: ac => [|ac'] /=.
+- case: bc => [|bc'] /=; by discriminate.
+- by discriminate.
+Qed.
+
+(** Halting configuration is not in C ⊔ Unit [mm_c true]. *)
+
+Lemma halt_config_not_in_C (P : list mm2_instr)
+    (s : mm2_state) :
+  mm2_stop P s →
+  ¬ l (config_set (active_states P)
+       ⊔ Unit [mm_c true])
+    (mm2_config P s).
+Proof.
+move=> Hstop.
+have Hfin := halt_nat_to_fin_zero Hstop.
+(* The halting state maps to 0%fin which is not in
+   active_states, so config(s) is not in C.
+   And config(s) ≠ [mm_c true] structurally. *)
+Admitted.
+
+(** Each mm2_step maps to a pair in mm2_R. *)
+
+Lemma mm2_step_in_R (P : list mm2_instr)
+    (x y : mm2_state) :
+  mm2_step P x y →
+  Unit (mm2_config P x, mm2_config P y) ⊑ mm2_R P.
+Proof.
+Admitted.
+
+(** Building a trace pair in Unit([], config(s)) ⋅ star R.
+    After following the trace s ↠ s', there exists L such
+    that (L, L ++ config(s')) is in the LHS. *)
+
+Lemma trace_pair (P : list mm2_instr)
+    (x s' : mm2_state) :
+  P // x ↠ s' →
+  ∃ L,
+    Unit (L, L ++ mm2_config P s') ⊑
+      Unit ([] : list (mm_sym (fin (S (length P)))),
+            mm2_config P x) ⋅ star (mm2_R P).
+Proof.
+(* By induction on the reflexive-transitive closure.
+   Base: 0 steps, L = [].
+   Step: use mm2_step_in_R for the new step,
+   combine with IH via star unfolding. *)
+Admitted.
+
+End SoundnessHelpers.
+
 (** ** Theorem 15 (Soundness) and Theorem 16 (Completeness)
 
     These are stated for a concrete MM2 program.  The full
@@ -329,17 +455,54 @@ Let Q := fin (S n).
     language model, then every halting computation from s
     produces output 1 (i.e., reaches mm_c true). *)
 
+Let W : monoid :=
+  list_monoid (mm_sym_setoid (Q:=fin (S n))).
+
+Definition rhs :=
+  let C : ka_term W := config_set (active_states P) in
+  dpseudo_top ⋅ ka_term_inj2 (C ⊔ Unit [mm_c true])
+    ⊔ dpseudo_top ⋅ mismatch ⋅ pseudo_top.
+
 Theorem soundness s :
   let R := mm2_R P in
-  let C := config_set (active_states P) in
-  l (Unit ([], mm2_config P s) ⋅ star R)
-    ⊑ l (dpseudo_top ⋅ ka_term_inj2 (C ⊔ Unit [mm_c true])
-         ⊔ dpseudo_top ⋅ mismatch ⋅ pseudo_top) →
+  l (Unit ([], mm2_config P s) ⋅ star R) ⊑ l rhs →
   ∀ s', P // s ↠ s' →
     mm2_stop P s' →
     mm2_config P s' = [mm_c true].
 Proof.
-Admitted.
+move=> R Hle s' Hreach Hstop. exfalso.
+(* Step 1: Build a trace pair (L, L ++ config(s'))
+   in the LHS language via trace_pair. *)
+have [L HL] := trace_pair (Q:=Q) Hreach.
+(* Step 2: This pair is in l(LHS), and by the
+   inequality Hle, also in l(rhs). *)
+have Hin : l rhs (L, L ++ mm2_config P s').
+{ apply: Hle. exact/l_alt. }
+(* Step 3: Decompose rhs = A ⊔ B.
+   Show (L, L ++ config(s')) is in neither A nor B.
+
+   A = dpseudo_top ⋅ ka_term_inj2(C ⊔ Unit [mm_c true]):
+     Pairs (w, w ++ t) with t ∈ C ⊔ Unit [mm_c true].
+     Our t = config(s'). Since s' is halting,
+     config(s') ∉ C (halting state 0%fin ∉ active)
+     and config(s') ≠ [mm_c true] (structurally).
+     So (L, L++config(s')) ∉ A.
+     [uses halt_config_not_in_C]
+
+   B = dpseudo_top ⋅ mismatch ⋅ pseudo_top:
+     Pairs (w++[x]++w1, w++[y]++w2) with x ≠ y.
+     Our pair has left as prefix of right, so the
+     "divergence point" would satisfy x = y.
+     So (L, L++config(s')) ∉ B.
+     [uses prefix_not_in_mismatch]
+
+   Combined: pair ∉ A ⊔ B, contradicting Hin. *)
+rewrite /rhs /= in Hin.
+case: Hin => [HA|HB].
+- (* HA : l(dpseudo_top ⋅ inj2(C ⊔ c1)) pair *)
+  (* Need to extract config(s') ∈ C ⊔ c1 from HA,
+     then apply halt_config_not_in_C *)
+  Admitted.
 
 (** Theorem 16 (Completeness):
 
@@ -349,7 +512,7 @@ Admitted.
 
 Theorem completeness s :
   let R := mm2_R P in
-  let C := config_set (active_states P) in
+  let C : ka_term W := config_set (active_states P) in
   (∃ s', P // s ↠ s' ∧ mm2_stop P s' ∧
          mm2_config P s' = [mm_c true]) →
   ∃ rho,
