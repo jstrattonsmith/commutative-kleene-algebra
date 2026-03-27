@@ -52,8 +52,7 @@
           coqPackages = prev.coqPackages.overrideScope (final: prev: {
             coq-ka-comm-undec = prev.mkCoqDerivation {
               pname = "coq-ka-comm-undec";
-              defaultVersion = "dev";
-              release.dev.src = ./.;
+              version = ./.;
               propagatedBuildInputs = [
                 final.coq
                 final.coq-library-undecidability
@@ -62,8 +61,7 @@
             };
             coq-library-undecidability = prev.mkCoqDerivation {
               pname = "coq-library-undecidability";
-              defaultVersion = "dev";
-              release.dev.src = coq-library-undecidability;
+              version = coq-library-undecidability.outPath;
               propagatedBuildInputs = [
                 final.coq
                 final.metarocq-template-rocq
