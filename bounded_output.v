@@ -480,9 +480,7 @@ Qed.
 Definition output_bounded
   (k : nat) (s : list (T + T)) : bool :=
   let p := ∏ (map generator_interp s) in
-  Nat.leb
-    (length (snd p))
-    ((length (fst p) + 1) * k).
+  Nat.leb (length (snd p)) ((length (fst p) + 1) * k).
 
 (** Bounded suffix sum: sums only over strings
     satisfying the output bound. *)
@@ -490,8 +488,7 @@ Definition bounded_suffix_sum_at
   (σ : fsa_state A) (n k : nat)
   : ka_term (list T * list T) :=
   ⨆ (map (string_suffix_term_at σ)
-    (filter (output_bounded k)
-      (@enum_list_eq (T + T) _ _ n))).
+      (filter (output_bounded k) (enum_list_eq n))).
 
 (** Helper: filtering out ⊥ terms from a join
     preserves the result. *)
@@ -499,75 +496,50 @@ Lemma join_list_filter_bot
   {B : Type}
   (g : B → ka_term (list T * list T))
   (P : B → bool) (xs : list B) :
-  (∀ x, x ∈ xs → P x = false →
-    g x ≡ ⊥) →
-  ⨆ (map g xs) ≡
-  ⨆ (map g (filter P xs)).
+  (∀ x, x ∈ xs → P x = false → g x ≡ ⊥) →
+  ⨆ (map g xs) ≡ ⨆ (map g (filter P xs)).
 Proof.
 move=> Hbot; apply (anti_symm (⊑)).
-- apply/join_list_sqsubseteq =>
-    _ /elem_of_list_fmap [x [-> Hx]].
+- apply/join_list_sqsubseteq => _ /elem_of_list_fmap [x [-> Hx]].
   case Px : (P x).
-  + apply: sqsubseteq_join_list.
-    apply/elem_of_list_fmap.
-    exists x; split => //.
-    apply elem_of_list_filter.
-    split; last done.
-    exact/Is_true_true.
-  + rewrite (Hbot x Hx Px).
-    exact: bottom_sqsubseteq.
-- apply/join_list_sqsubseteq =>
-    _ /elem_of_list_fmap
-      [x [-> Hx]].
-  apply elem_of_list_filter in Hx
-    as [_ Hx].
+  + apply: sqsubseteq_join_list; apply/elem_of_list_fmap.
+    exists x; split => //; apply/elem_of_list_filter.
+    split; last done; exact/Is_true_true.
+  + rewrite (Hbot x Hx Px); exact: bottom_sqsubseteq.
+- apply/join_list_sqsubseteq => _ /elem_of_list_fmap [x [-> Hx]].
+  apply elem_of_list_filter in Hx as [_ Hx].
   apply: sqsubseteq_join_list.
   by apply/elem_of_list_fmap; exists x.
 Qed.
 
 (** Suffix terms for strings violating the output
     bound are ⊥. *)
-Lemma suffix_bot_of_bound_violated
-  (s : list (T + T)) :
+Lemma suffix_bot_of_bound_violated (s : list (T + T)) :
   output_bounded adjusted_fanout s = false →
-  string_suffix_term_at
-    (fsa_initial A) s ≡ ⊥.
+  string_suffix_term_at (fsa_initial A) s ≡ ⊥.
 Proof.
-rewrite /output_bounded
-  /string_suffix_term_at
-  => /Nat.leb_gt Hgt.
-have Hbot : fsa_interp
-  (fsa_trans_s s (fsa_initial A)) ≡ ⊥.
+rewrite /output_bounded /string_suffix_term_at => /Nat.leb_gt Hgt.
+have Hbot : fsa_interp (fsa_trans_s s (fsa_initial A)) ≡ ⊥.
 { destruct (either_empty_or_nonzero
-    (fsa_interp
-      (fsa_trans_s s (fsa_initial A))))
+    (fsa_interp (fsa_trans_s s (fsa_initial A))))
     as [Hbot|[w Hw]]; first done.
   exfalso.
-  have Hne : fsa_interp
-      (fsa_trans_s s (fsa_initial A)) ≢ ⊥.
-  { move=> Hbot. move: Hw.
-    by rewrite Hbot
-      pre_ka_morphism_bottom. }
-  have /= Hle := @lemma_31_bound
-    (fsa_initial A) s
+  have Hne : fsa_interp (fsa_trans_s s (fsa_initial A)) ≢ ⊥.
+  { move=> Hbot. move: Hw. by rewrite Hbot pre_ka_morphism_bottom. }
+  have /= Hle := @lemma_31_bound (fsa_initial A) s
     (fsa_interp_initial A) Hne.
   rewrite /= in Hgt. lia. }
 by rewrite Hbot right_absorb.
 Qed.
 
 (** The adjusted fanout is a valid fanout for e. *)
-Lemma adjusted_fanout_ge :
-  k0 ≤ adjusted_fanout.
-Proof.
-rewrite /adjusted_fanout. nia.
-Qed.
+Lemma adjusted_fanout_ge : k0 ≤ adjusted_fanout.
+Proof. rewrite /adjusted_fanout; nia. Qed.
 
 Lemma adjusted_fanout_bounded_output :
-  bounded_output_with
-    adjusted_fanout (fsa_elem A).
+  bounded_output_with adjusted_fanout (fsa_elem A).
 Proof.
-exact: bounded_output_with_mono
-  adjusted_fanout_ge Hbo.
+exact: bounded_output_with_mono adjusted_fanout_ge Hbo.
 Qed.
 
 (** Lemma 31 (paper version): For a bounded-output
@@ -583,12 +555,9 @@ Lemma lemma_31_paper (n : nat) :
   fsa_elem A ≡ sum_terms_lt_k_at (fsa_initial A) n ⊔
     bounded_suffix_sum_at (fsa_initial A) n adjusted_fanout.
 Proof.
-rewrite -(fsa_interp_initial A)
-  (fsa_elem_k_decomp_gen (fsa_initial A) n).
-f_equiv.
-rewrite /sum_suffix_terms_k_at /bounded_suffix_sum_at.
-apply: join_list_filter_bot.
-move=> s _ Hfalse.
+rewrite -(fsa_interp_initial A) (fsa_elem_k_decomp_gen (fsa_initial A) n).
+f_equiv; rewrite /sum_suffix_terms_k_at /bounded_suffix_sum_at.
+apply: join_list_filter_bot; move=> s _ Hfalse.
 exact: suffix_bot_of_bound_violated Hfalse.
 Qed.
 
