@@ -571,27 +571,22 @@ exact: bounded_output_with_mono
 Qed.
 
 (** Lemma 31 (paper version): For a bounded-output
-    finite-state term, there exists k such that e has
-    fanout k and the expansion from Lemma 27 can
-    be restricted to output-bounded suffix terms.
+    finite-state term, there exists k such that e has fanout k
+    and the expansion from Lemma 27 can be restricted to
+    output-bounded suffix terms.
 
     Concretely, for every n:
     e ≡ Σ{s | s ≤ e, |s| < n}
-      ⊔ Σ{s·e_s | |s| = n,
-            |πr(s)| ≤ (|πl(s)|+1)·k}
+      ⊔ Σ{s·e_s | |s| = n, |πr(s)| ≤ (|πl(s)|+1)·k}
     where k = adjusted_fanout. *)
 Lemma lemma_31_paper (n : nat) :
-  fsa_elem A ≡
-    sum_terms_lt_k_at (fsa_initial A) n ⊔
-    bounded_suffix_sum_at
-      (fsa_initial A) n adjusted_fanout.
+  fsa_elem A ≡ sum_terms_lt_k_at (fsa_initial A) n ⊔
+    bounded_suffix_sum_at (fsa_initial A) n adjusted_fanout.
 Proof.
 rewrite -(fsa_interp_initial A)
-  (fsa_elem_k_decomp_gen
-    (fsa_initial A) n).
+  (fsa_elem_k_decomp_gen (fsa_initial A) n).
 f_equiv.
-rewrite /sum_suffix_terms_k_at
-  /bounded_suffix_sum_at.
+rewrite /sum_suffix_terms_k_at /bounded_suffix_sum_at.
 apply: join_list_filter_bot.
 move=> s _ Hfalse.
 exact: suffix_bot_of_bound_violated Hfalse.
