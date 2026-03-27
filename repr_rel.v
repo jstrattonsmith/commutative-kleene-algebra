@@ -53,6 +53,15 @@ apply/elem_of_list_filter; split; last exact: elem_of_enum.
 by apply/Is_true_true/bool_decide_eq_true.
 Qed.
 
+Lemma le_mismatch_conv s s' :
+  Unit (s, s') ⊑ mismatch →
+  ∃ x x', x ≠ x' ∧ s = [x] ∧ s' = [x'].
+Proof. Admitted.
+
+Lemma sqsubseteq_dpseudo_top s s' :
+  Unit (s, s') ⊑ dpseudo_top ↔ s = s'.
+Proof. Admitted.
+
 Lemma mismatch_unit (x x' : T) :
   x ≠ x' → Unit ([x], [x']) ⊑ dpseudo_top ⋅ mismatch.
 Proof.
@@ -99,6 +108,38 @@ elim: s s' => [|x s IH] [|x' s'] Hns Hns'.
     * exact: mismatch_unit Hne.
     * exact: unit_le_pseudo_top.
 Qed.
+
+
+
+(** A pair (L, L ++ suffix) where left is a strict prefix of
+    right cannot be in dpseudo_top ⋅ mismatch ⋅ pseudo_top.
+    The mismatch requires differing characters at the same
+    position, but a prefix relation has no such position. *)
+
+(** A pair (L, L ++ suffix) where left is a strict prefix
+    of right cannot be in dpseudo_top ⋅ mismatch ⋅ pseudo_top.
+
+    Proof sketch: the language of this term contains only
+    pairs (w++[x]++w1, w++[y]++w2) where x ≠ y. But
+    for (L, L++suffix), the strings share a common prefix
+    of length |L|, so any factoring gives x = y at the
+    divergence point — contradiction. *)
+
+Lemma prefix_not_in_mismatch s suffix :
+  suffix ≠ [] →
+  ¬ Unit (s, s ++ suffix) ⊑ dpseudo_top ⋅ mismatch ⋅ pseudo_top.
+Proof.
+(* The pair (s, s ++ suffix) has s as a prefix of
+   s ++ suffix. Since list_diverge only produces pairs
+   where NEITHER is a prefix of the other, and its
+   image covers dpseudo_top ⋅ mismatch ⋅ pseudo_top,
+   we get a contradiction. *)
+Admitted.
+
+Lemma in_dpseudo_top_inj2 sl sr (e : ka_term (list T)) :
+  Unit (sl, sr) ⊑ dpseudo_top ⋅ ka_term_inj2 e →
+  ∃ suffix, sr = sl ++ suffix ∧ Unit suffix ⊑ e.
+Proof. Admitted.
 
 (** Lifting a finite set of strings to a KA term. *)
 

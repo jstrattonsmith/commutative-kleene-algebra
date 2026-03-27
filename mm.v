@@ -317,33 +317,6 @@ Section SoundnessHelpers.
 
 Context {Q : Type} `{!EqDecision Q, !Finite Q}.
 
-(** A pair (L, L ++ suffix) where left is a strict prefix of
-    right cannot be in dpseudo_top ⋅ mismatch ⋅ pseudo_top.
-    The mismatch requires differing characters at the same
-    position, but a prefix relation has no such position. *)
-
-(** A pair (L, L ++ suffix) where left is a strict prefix
-    of right cannot be in dpseudo_top ⋅ mismatch ⋅ pseudo_top.
-
-    Proof sketch: the language of this term contains only
-    pairs (w++[x]++w1, w++[y]++w2) where x ≠ y. But
-    for (L, L++suffix), the strings share a common prefix
-    of length |L|, so any factoring gives x = y at the
-    divergence point — contradiction. *)
-
-Lemma prefix_not_in_mismatch
-    (L suffix : list (mm_sym Q))
-    (Hsuf : suffix ≠ []) :
-  ¬ (Unit (L, L ++ suffix) ⊑
-       dpseudo_top ⋅ mismatch ⋅ pseudo_top).
-Proof.
-(* The pair (L, L ++ suffix) has L as a prefix of
-   L ++ suffix. Since list_diverge only produces pairs
-   where NEITHER is a prefix of the other, and its
-   image covers dpseudo_top ⋅ mismatch ⋅ pseudo_top,
-   we get a contradiction. *)
-Admitted.
-
 (** The nat_to_fin of a halting state's index yields
     0%fin (which is not an active state). *)
 
