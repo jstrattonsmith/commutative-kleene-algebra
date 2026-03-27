@@ -183,7 +183,7 @@ Lemma lang_topP L : L ⊑ lang_top.
 Proof. by []. Qed.
 
 Lemma lang_top_sqsubseteq L : lang_top ⊑ L → L ≡ lang_top.
-Proof. Admitted.
+Proof. move=> H x; split => // _; exact: H. Qed.
 
 (* Theorem 5 *)
 
@@ -358,7 +358,10 @@ Section LangTop.
 Context `{!MonoidGen G T, !EqDecision G, !Finite G}.
 
 Lemma l_pseudo_top : l pseudo_top ≡ @lang_top T.
-Proof. Admitted.
+Proof.
+move=> x; split=> // _.
+by apply/l_alt; exact: unit_le_pseudo_top.
+Qed.
 
 End LangTop.
 
