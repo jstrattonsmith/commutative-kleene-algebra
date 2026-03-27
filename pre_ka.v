@@ -772,6 +772,7 @@ apply/join_list_sqsubseteq=> _ /elem_of_list_fmap [x [] -> x_xs].
 exact: pseudo_top_absorb.
 Qed.
 
+
 End PseudoTop.
 
 Arguments pseudo_top {G T _ _ _}.

@@ -468,6 +468,135 @@ move: Hwl_bound. set a := length (fst p). set b := length wl. set c := max_witne
 move=> Hbc. nia.
 Qed.
 
+(** Paper version of Lemma 31: decomposition with
+    output-bounded suffix terms.
+
+    For a bounded-output finite-state term, the
+    expansion from Lemma 27 can be restricted to
+    suffix terms whose right projection is bounded
+    by [(|πl(s)| + 1) * k]. *)
+
+(** Output bound predicate for generator strings. *)
+Definition output_bounded
+  (k : nat) (s : list (T + T)) : bool :=
+  let p := ∏ (map generator_interp s) in
+  Nat.leb
+    (length (snd p))
+    ((length (fst p) + 1) * k).
+
+(** Bounded suffix sum: sums only over strings
+    satisfying the output bound. *)
+Definition bounded_suffix_sum_at
+  (σ : fsa_state A) (n k : nat)
+  : ka_term (list T * list T) :=
+  ⨆ (map (string_suffix_term_at σ)
+    (filter (output_bounded k)
+      (@enum_list_eq (T + T) _ _ n))).
+
+(** Helper: filtering out ⊥ terms from a join
+    preserves the result. *)
+Lemma join_list_filter_bot
+  {B : Type}
+  (g : B → ka_term (list T * list T))
+  (P : B → bool) (xs : list B) :
+  (∀ x, x ∈ xs → P x = false →
+    g x ≡ ⊥) →
+  ⨆ (map g xs) ≡
+  ⨆ (map g (filter P xs)).
+Proof.
+move=> Hbot; apply (anti_symm (⊑)).
+- apply/join_list_sqsubseteq =>
+    _ /elem_of_list_fmap [x [-> Hx]].
+  case Px : (P x).
+  + apply: sqsubseteq_join_list.
+    apply/elem_of_list_fmap.
+    exists x; split => //.
+    apply elem_of_list_filter.
+    split; last done.
+    exact/Is_true_true.
+  + rewrite (Hbot x Hx Px).
+    exact: bottom_sqsubseteq.
+- apply/join_list_sqsubseteq =>
+    _ /elem_of_list_fmap
+      [x [-> Hx]].
+  apply elem_of_list_filter in Hx
+    as [_ Hx].
+  apply: sqsubseteq_join_list.
+  by apply/elem_of_list_fmap; exists x.
+Qed.
+
+(** Suffix terms for strings violating the output
+    bound are ⊥. *)
+Lemma suffix_bot_of_bound_violated
+  (s : list (T + T)) :
+  output_bounded adjusted_fanout s = false →
+  string_suffix_term_at
+    (fsa_initial A) s ≡ ⊥.
+Proof.
+rewrite /output_bounded
+  /string_suffix_term_at
+  => /Nat.leb_gt Hgt.
+have Hbot : fsa_interp
+  (fsa_trans_s s (fsa_initial A)) ≡ ⊥.
+{ destruct (either_empty_or_nonzero
+    (fsa_interp
+      (fsa_trans_s s (fsa_initial A))))
+    as [Hbot|[w Hw]]; first done.
+  exfalso.
+  have Hne : fsa_interp
+      (fsa_trans_s s (fsa_initial A)) ≢ ⊥.
+  { move=> Hbot. move: Hw.
+    by rewrite Hbot
+      pre_ka_morphism_bottom. }
+  have /= Hle := @lemma_31_bound
+    (fsa_initial A) s
+    (fsa_interp_initial A) Hne.
+  rewrite /= in Hgt. lia. }
+by rewrite Hbot right_absorb.
+Qed.
+
+(** The adjusted fanout is a valid fanout for e. *)
+Lemma adjusted_fanout_ge :
+  k0 ≤ adjusted_fanout.
+Proof.
+rewrite /adjusted_fanout. nia.
+Qed.
+
+Lemma adjusted_fanout_bounded_output :
+  bounded_output_with
+    adjusted_fanout (fsa_elem A).
+Proof.
+exact: bounded_output_with_mono
+  adjusted_fanout_ge Hbo.
+Qed.
+
+(** Lemma 31 (paper version): For a bounded-output
+    finite-state term, there exists k such that e has
+    fanout k and the expansion from Lemma 27 can
+    be restricted to output-bounded suffix terms.
+
+    Concretely, for every n:
+    e ≡ Σ{s | s ≤ e, |s| < n}
+      ⊔ Σ{s·e_s | |s| = n,
+            |πr(s)| ≤ (|πl(s)|+1)·k}
+    where k = adjusted_fanout. *)
+Lemma lemma_31_paper (n : nat) :
+  fsa_elem A ≡
+    sum_terms_lt_k_at (fsa_initial A) n ⊔
+    bounded_suffix_sum_at
+      (fsa_initial A) n adjusted_fanout.
+Proof.
+rewrite -(fsa_interp_initial A)
+  (fsa_elem_k_decomp_gen
+    (fsa_initial A) n).
+f_equiv.
+rewrite /sum_suffix_terms_k_at
+  /bounded_suffix_sum_at.
+apply: join_list_filter_bot.
+move=> s _ Hfalse.
+exact: suffix_bot_of_bound_violated Hfalse.
+Qed.
+
 End Lemma31.
 
 (** Lemma 34 (from paper): A finite-state, bounded-output term whose
@@ -486,28 +615,61 @@ have [A EA] := finite_stateP Hfs.
 have Hbo' : bounded_output (fsa_elem A).
 { destruct Hbo as [k Hk]. exists k. move=> sl sr Hin. apply: Hk.
   by rewrite EA. }
-(* ρ_e: greatest element of the automaton = join of all state interpretations *)
-set rho_e := ⨆ (map (λ σ : fsa_state A, fsa_interp σ) (enum (fsa_state A))).
+(* ρ_e: join of all state interpretations *)
+set rho_e :=
+  ⨆ (map (λ σ : fsa_state A, fsa_interp σ)
+         (enum (fsa_state A))).
+(* Residue per paper: Σ̈* · ρ_e *)
 refine {|
   repr_rel_dom := Hdom;
   repr_rel_cod := Hcod;
   next := fsa_next Hbo';
-  residue := rho_e;
+  residue := pseudo_top ⋅ rho_e;
 |}.
 - (* next_spec *)
-  move=> sl sr. rewrite fsa_next_spec. by rewrite EA.
+  move=> sl sr.
+  rewrite fsa_next_spec. by rewrite EA.
 - (* expand_rel *)
-  (* Following the paper's proof of Lemma 34. *)
-  move=> xs.
-  (* Rewrite e to fsa_elem A *)
-  rewrite {1}EA.
-  (* The proof decomposes fsa_elem A via Lemma 31, distributes Unit([], xs),
-     then handles three cases:
-     (4) strings with π_l(s') = xs biject with Next_e(xs) → main term
-     (5) strings with π_l(s') ≠ xs → error via prefix-freeness (Lemma 33)
-     (6) suffix terms → error since fsa_interp σ ⊑ rho_e
-     Each case requires significant KA reasoning. *)
-  admit.
+  move=> xs Hxs.
+  rewrite {1}EA -(fsa_interp_initial A).
+  (* ρ_e ≥ 1: the automaton has a final state *)
+  have Hone_rho : 1 ⊑ rho_e.
+  { admit. }
+  (* e_{s'} ⊑ ρ_e for suffix states *)
+  have Hstate_rho : ∀ σ : fsa_state A,
+    fsa_interp σ ⊑ rho_e.
+  { move=> σ. apply: sqsubseteq_join_list.
+    apply/elem_of_list_fmap.
+    exists σ; split => //.
+    exact: elem_of_enum. }
+  (* Choose k, p as in paper *)
+  destruct Hbo' as [k0 Hk0].
+  set n := length xs.
+  set p := (k0 + 1) * (n + 1).
+  (* Decompose fsa_elem A at level p+1.
+     By paper: e = Σ{|s'|≤p} s'
+                 + Σ{s'∈Λ̈} s' · e_{s'} *)
+  rewrite {1}(fsa_elem_k_decomp_gen
+    (fsa_initial A) (S p)).
+  rewrite pre_ka_right_dist join_sqsubseteq.
+  split.
+  + (* Matched strings (4)+(5) *)
+    admit.
+  + (* Suffix terms (6):
+       For each s' ∈ Λ̈, show
+       s_r · s' · e_{s'} ≤ Σ* · Σ≠ · ρ.
+       If e_{s'} = 0, done.
+       Otherwise find witness s'' ≤ e_{s'},
+       show |πl(s')| > n, factor through
+       dpt · diff · pt, multiply by e_{s'}
+       ≤ ρ_e. *)
+    (* Paper eq (6): for each suffix s',
+       either e_{s'} = 0 (done) or find
+       witness, show |πl(s')| > n by
+       bounded output contradiction,
+       factor s_r·s' through dpt·diff·pt,
+       multiply by e_{s'} ≤ ρ_e. *)
+    admit.
 Admitted.
 
 

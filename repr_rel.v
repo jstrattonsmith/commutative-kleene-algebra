@@ -30,8 +30,10 @@ Record repr_rel e L : Type := {
   residue : ka_term (list T * list T);
   expand_rel :
     ∀ xs : list T,
+      Unit xs ⊑ L →
       Unit (1, xs) ⋅ e ⊑
-        Unit (xs, xs) ⋅ ⨆ (map (λ ys, Unit (1, ys)) (next xs))
+        Unit (xs, xs)
+          ⋅ ⨆ (map (λ ys, Unit (1, ys)) (next xs))
         ⊔ ka_term_diag pseudo_top ⋅ diff ⋅ residue;
 }.
 
@@ -74,13 +76,18 @@ Qed.
 (** Helper: expand_rel summed over a list of strings. *)
 
 Lemma expand_rel_sum (σ : list (list T)) :
+  (∀ xs, xs ∈ σ → Unit xs ⊑ L) →
   strings_r σ ⋅ e ⊑
-    ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r (next_set σ)
+    ⨆ (map (λ xs, Unit (xs, xs)) σ)
+      ⋅ strings_r (next_set σ)
     ⊔ ka_term_diag pseudo_top ⋅ diff ⋅ residue R.
 Proof.
+move=> Hσ.
 rewrite /strings_r join_list_left_dist map_map.
-apply/join_list_sqsubseteq => _ /elem_of_list_fmap [xs [-> xs_σ]] /=.
-etransitivity; first exact: expand_rel R xs.
+apply/join_list_sqsubseteq =>
+  _ /elem_of_list_fmap [xs [-> xs_σ]] /=.
+etransitivity;
+  first exact: expand_rel R xs (Hσ xs xs_σ).
 apply: join_mono; last reflexivity.
 apply: pre_ka_mul_mono.
 - apply: sqsubseteq_join_list; apply/elem_of_list_fmap; eauto.
@@ -139,13 +146,15 @@ by rewrite -monoid_morphism_mul pseudo_top_absorb.
 Qed.
 
 Lemma repr_rel_iter (n : nat) (σ : list (list T)) :
+  (∀ xs, xs ∈ σ → Unit xs ⊑ L) →
   let dpseudo_top := ka_term_diag pseudo_top in
   strings_r σ ⋅ star e ⊑
     dpseudo_top ⋅ strings_r (next_lt n σ)
-    ⊔ dpseudo_top ⋅ strings_r (next_iter n σ) ⋅ star e
+    ⊔ dpseudo_top ⋅ strings_r (next_iter n σ)
+        ⋅ star e
     ⊔ error.
 Proof.
-elim: n σ => [|n IH] σ dpseudo_top.
+elim: n σ => [|n IH] σ Hσ dpseudo_top.
 - (* Base case: x ⊑ pseudo_top ⋅ x since 1 ⊑ pseudo_top *)
   etransitivity; last (apply: sqsubseteq_join; left;
     apply: sqsubseteq_join; right; reflexivity).
@@ -155,35 +164,70 @@ elim: n σ => [|n IH] σ dpseudo_top.
   by rewrite left_id.
 - (* Inductive step: follow the paper's chain of 8 hops *)
   set σ' := next_set σ.
-  set err_base := ka_term_diag pseudo_top ⋅ diff ⋅ residue R.
+  set err_base :=
+    ka_term_diag pseudo_top ⋅ diff ⋅ residue R.
+
+  (* next_set preserves membership in L *)
+  have Hσ' : ∀ xs, xs ∈ σ' → Unit xs ⊑ L.
+  { move=> xs /elem_of_list_In /in_flat_map
+      [ys [_ /elem_of_list_In Hxs]].
+    move: Hxs =>
+      /(next_spec R ys xs) Hle.
+    etransitivity;
+      last exact: repr_rel_cod R.
+    exact:
+      semi_lattice_morphism_sqsubseteq_proper
+        Hle. }
 
   (* Hop 1: unfold star *)
   have hop1 : strings_r σ ⋅ star e ≡
     strings_r σ ⊔ strings_r σ ⋅ e ⋅ star e.
-  { by rewrite {1}pre_ka_star_unfold pre_ka_right_dist right_id assoc. }
+  { by rewrite {1}pre_ka_star_unfold
+      pre_ka_right_dist right_id assoc. }
 
   (* Hop 2: apply expand_rel_sum *)
-  have hop2 : strings_r σ ⊔ strings_r σ ⋅ e ⋅ star e ⊑
-    strings_r σ ⊔ (⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⊔ err_base) ⋅ star e.
+  have hop2 :
+    strings_r σ ⊔ strings_r σ ⋅ e ⋅ star e ⊑
+    strings_r σ
+    ⊔ (⨆ (map (λ xs, Unit (xs, xs)) σ)
+         ⋅ strings_r σ' ⊔ err_base)
+      ⋅ star e.
   { apply: join_mono; first reflexivity.
     apply: pre_ka_mul_mono; last reflexivity.
-    exact: expand_rel_sum. }
+    exact: expand_rel_sum Hσ. }
 
-  (* Hop 3: distribute · e* and simplify err_base · e* = error *)
-  have hop3 : strings_r σ ⊔ (⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⊔ err_base) ⋅ star e ≡
-    strings_r σ ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⋅ star e ⊔ error.
-  { rewrite pre_ka_left_dist /error /err_base -!assoc. by rewrite [_ ⊔ _ ⋅ _]assoc. }
+  (* Hop 3: distribute · e* *)
+  have hop3 :
+    strings_r σ
+    ⊔ (⨆ (map (λ xs, Unit (xs, xs)) σ)
+         ⋅ strings_r σ' ⊔ err_base) ⋅ star e
+    ≡
+    strings_r σ
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ)
+        ⋅ strings_r σ' ⋅ star e ⊔ error.
+  { rewrite pre_ka_left_dist /error
+      /err_base -!assoc.
+    by rewrite [_ ⊔ _ ⋅ _]assoc. }
 
   (* Hop 4: apply IH to σ' *)
-  have hop4 : strings_r σ ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⋅ star e ⊔ error ⊑
+  have hop4 :
     strings_r σ
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ (dpseudo_top ⋅ strings_r (next_lt n σ') ⊔ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e ⊔ error)
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ)
+        ⋅ strings_r σ' ⋅ star e ⊔ error
+    ⊑
+    strings_r σ
+    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ)
+        ⋅ (dpseudo_top ⋅ strings_r (next_lt n σ')
+           ⊔ dpseudo_top
+               ⋅ strings_r (next_iter n σ')
+               ⋅ star e
+           ⊔ error)
     ⊔ error.
   { apply: join_mono; last reflexivity.
     apply: join_mono; first reflexivity.
     rewrite -assoc.
     apply: pre_ka_mul_mono; first reflexivity.
-    exact: IH. }
+    exact: IH _ Hσ'. }
 
   (* Hop 5: distribute ⨆diag(σ) over the three summands *)
   have hop5 :
@@ -265,13 +309,18 @@ Qed.
 (** Theorem 22: If Next^n_e(Σ) = ∅, then
       Σ_r · e* ≤ Σ* · Next^{<n}(Σ)_r + Σ* · Σ≠ · ρ *)
 
-Lemma repr_rel_iter_empty (n : nat) (σ : list (list T)) :
+Lemma repr_rel_iter_empty
+  (n : nat) (σ : list (list T)) :
+  (∀ xs, xs ∈ σ → Unit xs ⊑ L) →
   next_iter n σ = [] →
   strings_r σ ⋅ star e ⊑
-    ka_term_diag pseudo_top ⋅ strings_r (next_lt n σ) ⊔ error.
+    ka_term_diag pseudo_top
+      ⋅ strings_r (next_lt n σ)
+    ⊔ error.
 Proof.
-move=> Hempty.
-etransitivity; first exact: repr_rel_iter n σ.
+move=> Hσ Hempty.
+etransitivity;
+  first exact: repr_rel_iter n σ Hσ.
 rewrite Hempty /strings_r /=.
 (* The middle term has ⨆ [] = ⊥, so pseudo_top ⋅ ⊥ ⋅ star e ≡ ⊥ *)
 rewrite (@right_absorb _ _ (⊥ : ka_term _) _ _) (@left_absorb _ _ (⊥ : ka_term _) _ _).
