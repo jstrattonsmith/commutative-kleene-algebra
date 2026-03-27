@@ -174,6 +174,30 @@ Qed.
 Definition strings_r (σ : list (list T)) : ka_term (list T * list T) :=
   ⨆ (map (λ xs, Unit (1, xs)) σ).
 
+Lemma strings_r_alt σ : strings_r σ ≡ ka_term_inj2 (⨆ (map Unit σ)).
+Proof. Admitted.
+
+Lemma repr_rel_soundness xs ys e σ ρ :
+  Unit (xs, xs ++ ys) ⊑
+  dpseudo_top ⋅ strings_r σ ⊔ dpseudo_top ⋅ mismatch ⋅ ρ →
+  ys ∈ σ.
+Proof.
+(* Take the language interpretation l to argument that the term must be in one
+of the disjuncts, then use prefix_not_in_mismatch and in_dpseudo_top to
+conclude. *)
+Admitted.
+
+Lemma repr_rel_rtc_soundness xs ys e σ ρ :
+  rtc (λ xs' ys', Unit (xs', ys') ⊑ e) xs ys →
+  Unit (1, xs) ⋅ star e ⊑
+  dpseudo_top ⋅ strings_r σ ⊔ dpseudo_top ⋅ mismatch ⋅ ρ →
+  ys ∈ σ.
+Proof.
+(* By induction on the sequence of steps xs → ... → ys, there exists some zs
+such that Unit (zs, zs ++ ys) ⊑ Unit (1, xs) ⋅ star e. Then, use the previous
+lemma. *)
+Admitted.
+
 Record repr_rel e L : Type := {
   repr_rel_dom : ka_term_proj1 e ⊑ L;
   repr_rel_cod : ka_term_proj2 e ⊑ L;

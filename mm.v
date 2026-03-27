@@ -399,8 +399,7 @@ Lemma trace_pair (P : list mm2_instr)
   P // x ↠ s' →
   ∃ L,
     Unit (L, L ++ mm2_config P s') ⊑
-      Unit ([] : list (mm_sym (fin (S (length P)))),
-            mm2_config P x) ⋅ star (mm2_R P).
+      Unit ([], mm2_config P x) ⋅ star (mm2_R P).
 Proof.
 (* By induction on the reflexive-transitive closure.
    Base: 0 steps, L = [].
