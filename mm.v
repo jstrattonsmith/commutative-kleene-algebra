@@ -472,10 +472,26 @@ have Hin : l rhs (L, L ++ mm2_config P s').
    Combined: pair ∉ A ⊔ B, contradicting Hin. *)
 rewrite /rhs /= in Hin.
 case: Hin => [HA|HB].
-- (* HA : l(dpseudo_top ⋅ inj2(C ⊔ c1)) pair *)
-  (* Need to extract config(s') ∈ C ⊔ c1 from HA,
-     then apply halt_config_not_in_C *)
-  Admitted.
+- change (l (dpseudo_top ⋅ ka_term_inj2
+    (config_set (active_states P)
+     ⊔ Unit [mm_c true]))
+    (L, L ++ mm2_config P s')) in HA.
+  have [suffix [Esr He]] :=
+    in_dpseudo_top_inj2 (iffLR (l_alt _ _) HA).
+  have ? : suffix = mm2_config P s'
+    by apply (app_inv_head L).
+  subst suffix.
+  exact (@halt_config_not_in_C Q _ _
+    P s' Hstop (iffRL (l_alt _ _) He)).
+- change (l (dpseudo_top ⋅ mismatch ⋅ pseudo_top)
+    (L, L ++ mm2_config P s')) in HB.
+  have Hne : mm2_config P s' ≠ [].
+  { rewrite /mm2_config /config_word.
+    by case: (fst (snd s')) => [|?];
+       case: (snd (snd s')) => [|?]. }
+  exact (prefix_not_in_mismatch Hne
+    (iffLR (l_alt _ _) HB)).
+Qed.
 
 (** Theorem 16 (Completeness):
 
