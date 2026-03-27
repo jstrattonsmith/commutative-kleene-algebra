@@ -782,3 +782,49 @@ Qed.
 End PseudoTop.
 
 Arguments pseudo_top {G T _ _ _}.
+
+Section KATermProj.
+
+Variables (T S : monoid).
+
+Definition ka_term_proj1 : ka_term (T * S) → ka_term T :=
+  ka_term_map fst.
+
+Definition ka_term_proj2 : ka_term (T * S) → ka_term S :=
+  ka_term_map snd.
+
+Definition ka_term_inj1 : ka_term T → ka_term (T * S) :=
+  ka_term_map prod_inj1.
+
+Definition ka_term_inj2 : ka_term S → ka_term (T * S) :=
+  ka_term_map prod_inj2.
+
+Definition ka_term_diag : ka_term T → ka_term (T * T) :=
+  ka_term_map (pair_mor id id).
+
+Global Instance ka_term_proj1_morphism :
+  PreKAMorphism ka_term_proj1.
+Proof. apply _. Qed.
+
+Global Instance ka_term_proj2_morphism :
+  PreKAMorphism ka_term_proj2.
+Proof. apply _. Qed.
+
+Global Instance ka_term_inj1_morphism :
+  PreKAMorphism ka_term_inj1.
+Proof. apply _. Qed.
+
+Global Instance ka_term_inj2_morphism :
+  PreKAMorphism ka_term_inj2.
+Proof. apply _. Qed.
+
+Global Instance ka_term_diag_morphism :
+  PreKAMorphism ka_term_diag.
+Proof. apply _. Qed.
+
+End KATermProj.
+
+Arguments ka_term_proj1 {T S}.
+Arguments ka_term_proj2 {T S}.
+Arguments ka_term_inj1 {T S}.
+Arguments ka_term_inj2 {T S}.

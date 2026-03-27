@@ -344,3 +344,17 @@ Qed.
 
 End LangNaturality.
 
+Section KATermDiagSpec.
+
+Variables (T : monoid).
+
+Lemma ka_term_diag_spec (e : ka_term T) (sl sr : T) :
+  Unit (sl, sr) ⊑ ka_term_diag e ↔ sl ≡ sr ∧ Unit sl ⊑ e.
+Proof.
+rewrite -!l_alt l_natural /= /pair_mor /=.
+split.
+- by case=> t [[] /= -> -> He]; split.
+- case=> eqs He; exists sl; split => //; split => /=; by [|symmetry].
+Qed.
+
+End KATermDiagSpec.

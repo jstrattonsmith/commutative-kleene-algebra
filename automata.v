@@ -12,62 +12,6 @@ Unset Printing Implicit Defensive.
 
 From kacc Require Import utils algebra pre_ka lang.
 
-Section KATermProj.
-
-Variables (T S : monoid).
-
-Definition ka_term_proj1 : ka_term (T * S) → ka_term T :=
-  ka_term_map fst.
-
-Definition ka_term_proj2 : ka_term (T * S) → ka_term S :=
-  ka_term_map snd.
-
-Definition ka_term_inj1 : ka_term T → ka_term (T * S) :=
-  ka_term_map prod_inj1.
-
-Definition ka_term_inj2 : ka_term S → ka_term (T * S) :=
-  ka_term_map prod_inj2.
-
-Definition ka_term_diag : ka_term T → ka_term (T * T) :=
-  ka_term_map (pair_mor id id).
-
-Global Instance ka_term_proj1_morphism :
-  PreKAMorphism ka_term_proj1.
-Proof. apply _. Qed.
-
-Global Instance ka_term_proj2_morphism :
-  PreKAMorphism ka_term_proj2.
-Proof. apply _. Qed.
-
-Global Instance ka_term_inj1_morphism :
-  PreKAMorphism ka_term_inj1.
-Proof. apply _. Qed.
-
-Global Instance ka_term_inj2_morphism :
-  PreKAMorphism ka_term_inj2.
-Proof. apply _. Qed.
-
-Global Instance ka_term_diag_morphism :
-  PreKAMorphism ka_term_diag.
-Proof. apply _. Qed.
-
-End KATermProj.
-
-Section KATermDiagSpec.
-
-Variables (T : monoid).
-
-Lemma ka_term_diag_spec (e : ka_term T) (sl sr : T) :
-  Unit (sl, sr) ⊑ ka_term_diag e ↔ sl ≡ sr ∧ Unit sl ⊑ e.
-Proof.
-rewrite -!l_alt l_natural /= /pair_mor /=.
-split.
-- by case=> t [[] /= -> -> He]; split.
-- case=> eqs He; exists sl; split => //; split => /=; by [|symmetry].
-Qed.
-
-End KATermDiagSpec.
-
 Section Automata.
 
 Context (Σ : Type) `{!EqDecision Σ, !Finite Σ}.
