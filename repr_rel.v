@@ -174,18 +174,99 @@ Qed.
 Definition strings_r (σ : list (list T)) : ka_term (list T * list T) :=
   ⨆ (map (λ xs, Unit (1, xs)) σ).
 
-Lemma strings_r_alt σ : strings_r σ ≡ ka_term_inj2 (⨆ (map Unit σ)).
-Proof. Admitted.
+Lemma strings_r_alt σ :
+  strings_r σ ≡ ka_term_inj2 (⨆ (map Unit σ)).
+Proof.
+by rewrite semi_lattice_morphism_join_list map_map.
+Qed.
+
+Local Lemma unit_le_join_cases
+  (x : list T * list T) e1 e2 :
+  Unit x ⊑ e1 ⊔ e2 →
+  Unit x ⊑ e1 ∨ Unit x ⊑ e2.
+Proof.
+move=> Hle.
+have /= [H|H] := proj2 (l_alt _ _) Hle;
+  [left | right]; exact: proj1 (l_alt _ _) H.
+Qed.
 
 Lemma repr_rel_soundness xs ys e σ ρ :
   Unit (xs, xs ++ ys) ⊑
   dpseudo_top ⋅ strings_r σ ⊔ dpseudo_top ⋅ mismatch ⋅ ρ →
   ys ∈ σ.
 Proof.
-(* Take the language interpretation l to argument that the term must be in one
-of the disjuncts, then use prefix_not_in_mismatch and in_dpseudo_top to
-conclude. *)
-Admitted.
+move=> /unit_le_join_cases [H|H].
+- rewrite strings_r_alt in H.
+  case/in_dpseudo_top_inj2: H =>
+    suffix [Hsr Hle].
+  have ? : ys = suffix
+    by apply (app_inv_head xs); rewrite Hsr.
+  subst suffix.
+  have /l_alt Hl := Hle.
+  rewrite semi_lattice_morphism_join_list
+    map_map in Hl.
+  apply elem_of_lang_join_list in Hl.
+  destruct Hl as [B [HB Hys]].
+  apply elem_of_list_fmap in HB.
+  destruct HB as [s [-> Hs]].
+  simpl in Hys.
+  apply leibniz_equiv in Hys; subst.
+  exact: Hs.
+- exfalso; move: H => /l_alt /=.
+  case=> [[ab1 ab2] [[c1 c2]
+    [Eabc [[[a1 a2] [[b1 b2]
+      [Eab [Ha Hb]]]] _]]]].
+  change (l dpseudo_top (a1, a2)) in Ha.
+  change (l mismatch (b1, b2)) in Hb.
+  move: Eabc =>
+    /leibniz_equiv_iff [/= Esl Esr].
+  move: Eab =>
+    /leibniz_equiv_iff [/= Eab1 Eab2].
+  move: Ha =>
+    /l_alt /sqsubseteq_dpseudo_top ?; subst a2.
+  move: Hb => /l_alt /le_mismatch_conv
+    [x [y [Hxy [? ?]]]]; subst b1 b2.
+  subst ab1 ab2; apply: Hxy.
+  rewrite !list_mul_app in Esl Esr |- *.
+  move: Esr; rewrite Esl.
+  by rewrite -!app_assoc /= app_inv_head_iff
+    => -[].
+Qed.
+
+Local Lemma rtc_prefix xs ys e :
+  rtc (λ xs' ys', Unit (xs', ys') ⊑ e) xs ys →
+  ∃ zs,
+    Unit (zs, zs ++ ys) ⊑ Unit (1, xs) ⋅ star e.
+Proof.
+elim.
+- move=> x; exists [].
+  rewrite -{1}[Unit _](right_id 1).
+  apply: pre_ka_mul_mono => //.
+  exact: pre_ka_one_star.
+- move=> z1 z2 z3 Hz12 _ [zs IH].
+  exists (z1 ++ zs).
+  have -> : (z1 ++ zs, (z1 ++ zs) ++ z3) =
+    ((z1, z1) : list T * list T) ⋅ (zs, zs ++ z3).
+  { change ((z1 ++ zs, (z1 ++ zs) ++ z3) =
+      (z1 ⋅ zs, z1 ⋅ (zs ++ z3))).
+    by rewrite !list_mul_app -app_assoc. }
+  rewrite monoid_morphism_mul.
+  etransitivity.
+  { apply: pre_ka_mul_mono;
+      [reflexivity | exact: IH]. }
+  rewrite assoc -monoid_morphism_mul.
+  have -> : (z1, z1) ⋅ (1, z2) =
+    ((1, z1) : list T * list T) ⋅ (z1, z2).
+  { change ((z1 ⋅ (1 : list T), z1 ⋅ z2) =
+      ((1 : list T) ⋅ z1, z1 ⋅ z2)).
+    by rewrite !list_mul_app app_nil_r. }
+  rewrite monoid_morphism_mul -assoc.
+  apply: pre_ka_mul_mono; first reflexivity.
+  etransitivity.
+  { apply: pre_ka_mul_mono;
+      [exact: Hz12 | reflexivity]. }
+  exact: pre_ka_mul_star.
+Qed.
 
 Lemma repr_rel_rtc_soundness xs ys e σ ρ :
   rtc (λ xs' ys', Unit (xs', ys') ⊑ e) xs ys →
@@ -193,10 +274,9 @@ Lemma repr_rel_rtc_soundness xs ys e σ ρ :
   dpseudo_top ⋅ strings_r σ ⊔ dpseudo_top ⋅ mismatch ⋅ ρ →
   ys ∈ σ.
 Proof.
-(* By induction on the sequence of steps xs → ... → ys, there exists some zs
-such that Unit (zs, zs ++ ys) ⊑ Unit (1, xs) ⋅ star e. Then, use the previous
-lemma. *)
-Admitted.
+move=> /rtc_prefix [zs Hzs] Hle.
+exact: repr_rel_soundness (transitivity Hzs Hle).
+Qed.
 
 Record repr_rel e L : Type := {
   repr_rel_dom : ka_term_proj1 e ⊑ L;
