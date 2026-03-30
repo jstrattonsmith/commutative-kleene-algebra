@@ -748,5 +748,49 @@ split.
   reflexivity.
 Qed.
 
-
 End BoundedOutput.
+
+Section EndOfString.
+
+Variables T : setoid.
+Context `{!LeibnizEquiv T, !EqDecision T, !Finite T}.
+Implicit Types (e : ka_term (list T * list T)) (L : ka_term (list T)).
+
+Definition end_of_string_to_rel e :=
+  ka_term_map (λ p, (map Some p.1, map Some p.2)) e ⋅
+  Unit ([None], [None]).
+
+Lemma sqsubseteq_end_of_string_to_rel_1 xs ys e :
+  Unit (xs, ys) ⊑ e →
+  Unit (map Some xs ++ [None], map Some ys ++ [None])
+  ⊑ end_of_string_to_rel e.
+Proof. Admitted.
+
+Lemma sqsubseteq_end_of_string_to_rel_2 xs ys e :
+  Unit (xs, ys) ⊑ end_of_string_to_rel e →
+  ∃ xs' ys',
+    xs = map Some xs' ++ [None] ∧
+    ys = map Some ys' ++ [None] ∧
+    Unit (xs', ys') ⊑ e.
+Proof. Admitted.
+
+Definition end_of_string_to_lang L :=
+  ka_term_map (map Some) L ⋅ Unit [None].
+
+(* Instructions: state and prove similar lemmas to the previous two for
+end_of_string_to_lang. *)
+
+Lemma bounded_output_repr_rel' e L :
+  finite_state e →
+  bounded_output e →
+  ka_term_proj1 e ⊑ L →
+  ka_term_proj2 e ⊑ L →
+  repr_rel (end_of_string_to_rel e) (end_of_string_to_lang L).
+Proof.
+(* Proof sketch: Apply bounded_output_repr_rel, use alphabet and algebra change
+constructions on automata.v to show that the end_of_string terms are still
+finite state, plus the above lemmas to show that the bounded_output condition
+holds. *)
+Admitted.
+
+End EndOfString.

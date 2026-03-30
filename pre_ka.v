@@ -506,6 +506,12 @@ Global Instance pre_ka_morphism_semi_lattice_morphism :
   SemiLatticeMorphism f.
 Proof. by constructor; case: (H). Qed.
 
+Lemma pre_ka_morphism_of_bool b :
+  f (pre_ka_of_bool b) ≡ pre_ka_of_bool b.
+Proof.
+by case: b; rewrite /= ?monoid_morphism_one ?semi_lattice_morphism_bottom.
+Qed.
+
 End PreKAMorphismTheory.
 
 Global Instance compose_pre_ka_morphism (T S R : pre_ka)

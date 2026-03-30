@@ -63,6 +63,15 @@ move=> f g efg xs ys; elim: xs ys / => //= x y xs ys exy _ ->.
 by rewrite (efg _ _ exy).
 Qed.
 
+Section OptionSetoid.
+
+Variable T : setoid.
+
+Canonical Structure option_setoid :=
+  @Setoid (option T) (≡) (option_equivalence _).
+
+End OptionSetoid.
+
 Section ProductSetoid.
 
 Variables T S : setoid.

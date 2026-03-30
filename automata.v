@@ -373,7 +373,7 @@ case: nfa_final => /=.
 Qed.
 
 Lemma star_derive_trans σ :
-  (⨆ a ∈ enum Σ, f a ⋅ interp (trans a σ)) ≡
+  ⨆ a ∈ enum Σ, f a ⋅ interp (trans a σ) ≡
   if nfa_final (nfa_initial A) then ⊥
   else match σ with
   | Some σA =>
@@ -560,16 +560,16 @@ Lemma ka_of_string_concat_r ys (y : Σ) :
 Proof. rewrite //=. Qed.
 
 Definition sum_terms_lt_k_at A (σ : fsa_state A) k :=
-  ⨆ s ∈ filter (string_match_at σ)
-    (@enum_list_lt Σ _ _ k), ka_of_string s.
+  ⨆ s ∈ filter (string_match_at σ) (enum_list_lt k),
+    ka_of_string s.
 
 Definition sum_terms_lt_k A k :=
   sum_terms_lt_k_at (fsa_initial A) k.
 
 
 Definition sum_terms_eq_k_at A (σ : fsa_state A) k :=
-  ⨆ s ∈ filter (string_match_at σ)
-    (@enum_list_eq Σ _ _ k), ka_of_string s.
+  ⨆ s ∈ filter (string_match_at σ) (enum_list_eq k),
+    ka_of_string s.
 
 Definition sum_terms_eq_k A k := sum_terms_eq_k_at (fsa_initial A) k.
 
@@ -583,19 +583,15 @@ Definition string_suffix_term_at A (σ : fsa_state A) s :=
   (ka_of_string s) ⋅ fsa_interp (fsa_trans_s s σ).
 
 Definition sum_suffix_terms_k_at A (σ : fsa_state A) k :=
-  ⨆ s ∈ @enum_list_eq Σ _ _ k,
-    string_suffix_term_at σ s.
+  ⨆ s ∈ enum_list_eq k, string_suffix_term_at σ s.
 
-Lemma join_map_mul_dist {B : Type}
-    (t1 t2 t3 : B -> T) (ls : list B):
-  (⨆ s ∈ ls, t1 s ⋅ (t2 s ⊔ t3 s))
-  ≡ (⨆ s ∈ ls, t1 s ⋅ t2 s)
-    ⊔ (⨆ s ∈ ls, t1 s ⋅ t3 s).
+Lemma join_map_mul_dist {B : Type} (t1 t2 t3 : B -> T) (ls : list B) :
+  ⨆ s ∈ ls, t1 s ⋅ (t2 s ⊔ t3 s)
+  ≡ (⨆ s ∈ ls, t1 s ⋅ t2 s) ⊔ (⨆ s ∈ ls, t1 s ⋅ t3 s).
 Proof.
 have G : (⨆ s ∈ ls, t1 s ⋅ (t2 s ⊔ t3 s)) ≡
   (⨆ s ∈ ls, (t1 s ⋅ t2 s) ⊔ t1 s ⋅ t3 s).
-{ apply join_list_ext => a _.
-  by rewrite pre_ka_right_dist. }
+{ apply join_list_ext => a _; by rewrite pre_ka_right_dist. }
 rewrite {}G; exact: join_list_join.
 Qed.
 
@@ -737,6 +733,76 @@ Global Arguments fsa_one {Σ _ _ _ _}.
 Global Arguments fsa_singleton {Σ _ _ _ _}.
 Global Arguments fsa Σ {_ _} T.
 Global Arguments fsa_mul' {Σ _ _ _ _}.
+Global Arguments nfa Σ {_ _} T.
+
+
+Section AlphabetChange.
+
+Context `{!EqDecision Σ, !Finite Σ, !EqDecision Σ', !Finite Σ'}.
+Context {T : pre_ka}.
+
+Variables (f : Σ → T) (f' : Σ' → T) (t : Σ → Σ') (s : Σ' → option Σ).
+
+Hypothesis f_f' : ∀ x, f' (t x) ≡ f x.
+Hypothesis tK : ∀ x, s (t x) = Some x.
+
+Program Definition nfa_alphabet_change (A : nfa Σ T f) : fsa Σ' T f' := {|
+  fsa_state := nfa_state A;
+  fsa_elem := nfa_elem A;
+  fsa_initial := nfa_initial A;
+  fsa_final σ := @nfa_final _ _ _ _ _ A σ;
+  fsa_interp σ := nfa_interp σ;
+  fsa_trans y σ :=
+    match s y return nfa_state A with
+    | Some x => nfa_trans x σ
+    | None => ⊥
+    end;
+|}.
+
+Next Obligation. move=> A; exact: nfa_interp_initial. Qed.
+
+Next Obligation. Admitted.
+
+Definition fsa_alphabet_change (A : fsa Σ T f) : fsa Σ' T f' :=
+  nfa_alphabet_change (fsa_to_nfa A).
+
+Lemma fsa_alphabet_change_elem A :
+  fsa_elem (fsa_alphabet_change A) = fsa_elem A.
+Proof. by []. Qed.
+
+End AlphabetChange.
+
+Section AlgebraChange.
+
+Context `{!EqDecision Σ, !Finite Σ}.
+Context `{T : pre_ka, T' : pre_ka, t : T → T', !PreKAMorphism t}.
+Context (f : Σ → T).
+
+Program Definition fsa_algebra_change (A : fsa Σ T f) : fsa Σ T' (t ∘ f) := {|
+  fsa_state := fsa_state A;
+  fsa_elem := t (fsa_elem A);
+  fsa_initial := fsa_initial A;
+  fsa_final σ := fsa_final σ;
+  fsa_interp σ := t (fsa_interp σ);
+  fsa_trans y σ := fsa_trans y σ;
+|}.
+
+Next Obligation.
+by move=> A; rewrite /= fsa_interp_initial.
+Qed.
+
+Next Obligation.
+move=> A σ; rewrite /= fsa_derivable semi_lattice_morphism_join.
+rewrite pre_ka_morphism_of_bool; f_equiv.
+rewrite semi_lattice_morphism_join_list; f_equiv.
+by move=> x _ <-; rewrite /= monoid_morphism_mul.
+Qed.
+
+Lemma fsa_algebra_change_elem A :
+  fsa_elem (fsa_algebra_change A) = t (fsa_elem A).
+Proof. by []. Qed.
+
+End AlgebraChange.
 
 Section StringMatchComplete.
 
