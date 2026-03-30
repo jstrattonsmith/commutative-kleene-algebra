@@ -26,8 +26,10 @@ Definition dpseudo_top : ka_term (list T * list T) :=
   ka_term_diag pseudo_top.
 
 Definition mismatch : ka_term (list T * list T) :=
-  let diffs := filter (λ '(x, y), bool_decide (x ≠ y)) (enum (T * T)) in
-  ⨆ (map (λ '(x, y), Unit ([x], [y])) diffs).
+  let diffs :=
+    filter (λ '(x, y), bool_decide (x ≠ y))
+      (enum (T * T)) in
+  join_list (λ '(x, y), Unit ([x], [y])) diffs.
 
 (** Lemma 33 (normal form): If two lists diverge (share a common prefix
     then have different next characters), their pairing factors through diff. *)
@@ -39,21 +41,26 @@ by rewrite -monoid_morphism_mul pseudo_top_absorb.
 Qed.
 
 Lemma dpseudo_top_absorb_list (σ : list (list T)) :
-  ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ dpseudo_top ⊑ dpseudo_top.
+  (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ dpseudo_top ⊑ dpseudo_top.
 Proof.
-rewrite /= join_list_left_dist map_map join_list_sqsubseteq.
-move=> _ /elem_of_list_fmap [xs [] -> ?].
-have -> : Unit (xs, xs) ≡ ka_term_diag (Unit xs) by [].
+rewrite /= join_list_left_dist join_list_sqsubseteq.
+move=> xs xs_σ.
+have -> : Unit (xs, xs) ≡ ka_term_diag (Unit xs)
+  by [].
 by rewrite -monoid_morphism_mul pseudo_top_absorb.
 Qed.
 
-Lemma unit_le_mismatch (x x' : T) : x ≠ x' → Unit ([x], [x']) ⊑ mismatch.
+Lemma unit_le_mismatch (x x' : T) :
+  x ≠ x' → Unit ([x], [x']) ⊑ mismatch.
 Proof.
 move=> Hne. rewrite /mismatch.
-apply: sqsubseteq_join_list; apply/elem_of_list_fmap.
-exists (x, x'); split => //.
-apply/elem_of_list_filter; split; last exact: elem_of_enum.
-by apply/Is_true_true/bool_decide_eq_true.
+have H : (x, x') ∈ filter
+  (λ '(x, y), bool_decide (x ≠ y))
+  (enum (T * T)).
+{ apply/elem_of_list_filter; split;
+    last exact: elem_of_enum.
+  by apply/Is_true_true/bool_decide_eq_true. }
+exact: sqsubseteq_join_list _ _ _ H.
 Qed.
 
 Lemma le_mismatch_conv s s' :
@@ -61,10 +68,10 @@ Lemma le_mismatch_conv s s' :
   ∃ x x', x ≠ x' ∧ s = [x] ∧ s' = [x'].
 Proof.
 move=> /l_alt.
-rewrite /mismatch semi_lattice_morphism_join_list map_map.
+rewrite /mismatch semi_lattice_morphism_join_list.
 rewrite elem_of_lang_join_list.
-case=> _ [/elem_of_list_fmap [[x y] [-> Hf]]
-           /= /leibniz_equiv_iff [-> ->]].
+case=> [[x y]] [Hf /= /leibniz_equiv_iff
+  [-> ->]].
 exists x, y; repeat split.
 by move: Hf => /elem_of_list_filter
   [/Is_true_true /bool_decide_eq_true].
@@ -171,13 +178,14 @@ Qed.
 
 (** Lifting a finite set of strings to a KA term. *)
 
-Definition strings_r (σ : list (list T)) : ka_term (list T * list T) :=
-  ⨆ (map (λ xs, Unit (1, xs)) σ).
+Definition strings_r (σ : list (list T))
+    : ka_term (list T * list T) :=
+  ⨆ xs ∈ σ, Unit (1, xs).
 
 Lemma strings_r_alt σ :
-  strings_r σ ≡ ka_term_inj2 (⨆ (map Unit σ)).
+  strings_r σ ≡ ka_term_inj2 (join_list Unit σ).
 Proof.
-by rewrite semi_lattice_morphism_join_list map_map.
+by rewrite semi_lattice_morphism_join_list.
 Qed.
 
 Local Lemma unit_le_join_cases
@@ -203,12 +211,9 @@ move=> /unit_le_join_cases [H|H].
     by apply (app_inv_head xs); rewrite Hsr.
   subst suffix.
   have /l_alt Hl := Hle.
-  rewrite semi_lattice_morphism_join_list
-    map_map in Hl.
+  rewrite semi_lattice_morphism_join_list in Hl.
   apply elem_of_lang_join_list in Hl.
-  destruct Hl as [B [HB Hys]].
-  apply elem_of_list_fmap in HB.
-  destruct HB as [s [-> Hs]].
+  destruct Hl as [s [Hs Hys]].
   simpl in Hys.
   apply leibniz_equiv in Hys; subst.
   exact: Hs.
@@ -318,31 +323,31 @@ Local Definition error : ka_term (list T * list T) :=
 (** Helper: strings_r distributes over append. *)
 
 Lemma strings_r_app (σ1 σ2 : list (list T)) :
-  strings_r (σ1 ++ σ2) ≡ strings_r σ1 ⊔ strings_r σ2.
-Proof.
-by rewrite /strings_r map_app join_list_app.
-Qed.
+  strings_r (σ1 ++ σ2) ≡
+    strings_r σ1 ⊔ strings_r σ2.
+Proof. by rewrite /strings_r join_list_app. Qed.
 
 (** Helper: expand_rel summed over a list of strings. *)
 
 Lemma expand_rel_sum (σ : list (list T)) :
   (∀ xs, xs ∈ σ → Unit xs ⊑ L) →
   strings_r σ ⋅ e ⊑
-    ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r (next_set σ)
+    (⨆ xs ∈ σ, Unit (xs, xs))
+      ⋅ strings_r (next_set σ)
     ⊔ dpseudo_top ⋅ mismatch ⋅ residue R.
 Proof.
 move=> Hσ.
-rewrite /strings_r join_list_left_dist map_map.
-apply/join_list_sqsubseteq =>
-  _ /elem_of_list_fmap [xs [-> xs_σ]] /=.
-etransitivity; first exact: expand_rel R xs (Hσ xs xs_σ).
+rewrite /strings_r join_list_left_dist.
+apply/join_list_sqsubseteq => xs xs_σ /=.
+etransitivity;
+  first exact: expand_rel R xs (Hσ xs xs_σ).
 apply: join_mono; last reflexivity.
 apply: pre_ka_mul_mono.
-- apply: sqsubseteq_join_list; apply/elem_of_list_fmap; eauto.
-- apply/join_list_sqsubseteq => _ /elem_of_list_fmap [ys [-> ys_next]].
-  apply: sqsubseteq_join_list; apply/elem_of_list_fmap.
-  exists ys; split => //.
-  rewrite /next_set; apply/elem_of_list_In/in_flat_map.
+- exact: sqsubseteq_join_list.
+- apply/join_list_sqsubseteq => ys ys_next.
+  apply: sqsubseteq_join_list.
+  rewrite /next_set;
+    apply/elem_of_list_In/in_flat_map.
   exists xs; split; exact/elem_of_list_In.
 Qed.
 
@@ -366,12 +371,13 @@ elim: n σ => [|n IHn] σ.
   by rewrite IHn app_assoc /next_iter Nat.iter_succ_r.
 Qed.
 
-(** Helper: ⨆(map (λ xs, Unit(xs,xs)) σ) ⊑ pseudo_top *)
+(** Helper: ⨆ xs ∈ σ, Unit(xs,xs) ⊑ pseudo_top *)
 
-Lemma diag_units_le_pseudo_top (σ : list (list T)) :
-  ⨆ (map (λ xs, Unit (xs, xs)) σ) ⊑ pseudo_top.
+Lemma diag_units_le_pseudo_top
+    (σ : list (list T)) :
+  (⨆ xs ∈ σ, Unit (xs, xs)) ⊑ pseudo_top.
 Proof.
-apply/join_list_sqsubseteq => _ /elem_of_list_fmap [xs [-> _]].
+apply/join_list_sqsubseteq => xs _.
 exact: unit_le_pseudo_top.
 Qed.
 
@@ -411,7 +417,7 @@ elim: n σ => [|n IH] σ Hσ.
   have hop2 :
     strings_r σ ⊔ strings_r σ ⋅ e ⋅ star e ⊑
     strings_r σ
-    ⊔ (⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⊔ err_base) ⋅ star e.
+    ⊔ ((⨆ xs ∈ σ, Unit (xs, xs)) ⋅ strings_r σ' ⊔ err_base) ⋅ star e.
   { apply: join_mono; first reflexivity.
     apply: pre_ka_mul_mono; last reflexivity.
     exact: expand_rel_sum Hσ. }
@@ -419,16 +425,16 @@ elim: n σ => [|n IH] σ Hσ.
   (* Hop 3: distribute · e* *)
   have hop3 :
     strings_r σ
-    ⊔ (⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⊔ err_base) ⋅ star e
+    ⊔ ((⨆ xs ∈ σ, Unit (xs, xs)) ⋅ strings_r σ' ⊔ err_base) ⋅ star e
     ≡ strings_r σ ⊔
-    ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⋅ star e ⊔ error.
+    (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ strings_r σ' ⋅ star e ⊔ error.
   { by rewrite pre_ka_left_dist /error /err_base -!assoc. }
 
   (* Hop 4: apply IH to σ' *)
   have hop4 :
     strings_r σ
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ strings_r σ' ⋅ star e ⊔ error
-    ⊑ strings_r σ ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ)
+    ⊔ (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ strings_r σ' ⋅ star e ⊔ error
+    ⊑ strings_r σ ⊔ (⨆ xs ∈ σ, Unit (xs, xs))
         ⋅ (dpseudo_top ⋅ strings_r (next_lt n σ')
            ⊔ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
            ⊔ error)
@@ -438,25 +444,36 @@ elim: n σ => [|n IH] σ Hσ.
     rewrite -assoc; apply: pre_ka_mul_mono; first reflexivity.
     exact: IH _ Hσ'. }
 
-  (* Hop 5: distribute ⨆diag(σ) over the three summands *)
+  (* Hop 5: distribute ⨆diag(σ) over the 3 summands *)
   have hop5 :
     strings_r σ
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ (dpseudo_top ⋅ strings_r (next_lt n σ') ⊔ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e ⊔ error)
+    ⊔ (⨆ xs ∈ σ, Unit (xs, xs))
+      ⋅ (dpseudo_top ⋅ strings_r (next_lt n σ')
+         ⊔ dpseudo_top
+           ⋅ strings_r (next_iter n σ')
+           ⋅ star e
+         ⊔ error)
     ⊔ error
     ≡
     strings_r σ
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ dpseudo_top ⋅ strings_r (next_lt n σ')
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ error
+    ⊔ (⨆ xs ∈ σ, Unit (xs, xs))
+      ⋅ dpseudo_top ⋅ strings_r (next_lt n σ')
+    ⊔ (⨆ xs ∈ σ, Unit (xs, xs))
+      ⋅ dpseudo_top
+      ⋅ strings_r (next_iter n σ') ⋅ star e
+    ⊔ (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ error
     ⊔ error.
   { by rewrite !pre_ka_right_dist -!assoc. }
 
-  (* Hop 6: ⨆diag(σ) ⊑ pseudo_top, so ⨆diag(σ)·pt ⊑ pt and ⨆diag(σ)·error ⊑ error *)
+  (* Hop 6: ⨆diag(σ) ⊑ pt, so ⨆diag(σ)·pt ⊑ pt *)
   have hop6 :
     strings_r σ
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ dpseudo_top ⋅ strings_r (next_lt n σ')
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
-    ⊔ ⨆ (map (λ xs, Unit (xs, xs)) σ) ⋅ error
+    ⊔ (⨆ xs ∈ σ, Unit (xs, xs))
+      ⋅ dpseudo_top ⋅ strings_r (next_lt n σ')
+    ⊔ (⨆ xs ∈ σ, Unit (xs, xs))
+      ⋅ dpseudo_top
+      ⋅ strings_r (next_iter n σ') ⋅ star e
+    ⊔ (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ error
     ⊔ error
     ⊑
     dpseudo_top ⋅ strings_r σ
@@ -503,7 +520,8 @@ elim: n σ => [|n IH] σ Hσ.
     dpseudo_top ⋅ strings_r (next_lt (S n) σ)
     ⊔ dpseudo_top ⋅ strings_r (next_iter (S n) σ) ⋅ star e
     ⊔ error.
-  { by rewrite next_lt_succ strings_r_app pre_ka_right_dist next_iter_succ -assoc. }
+  { by rewrite next_lt_succ strings_r_app
+      pre_ka_right_dist next_iter_succ -assoc. }
 
   (* Compose all hops *)
   rewrite hop1.

@@ -168,7 +168,8 @@ Definition encode_instr (i : mm_instr Q) :=
 
 Definition transition_rel (prog : Q → mm_instr Q) (states : list Q)
     : ka_term _ :=
-  ⨆ (map (λ q, encode_instr (prog q) ⋅ sym_l (mm_q q)) states).
+  ⨆ q ∈ states,
+    encode_instr (prog q) ⋅ sym_l (mm_q q).
 
 (** ** Configurations (Definition 11) *)
 
@@ -184,7 +185,7 @@ Definition config_word (ac bc : nat) (q : Q) :=
 Definition config_set (states : list Q) :=
   star (Unit [mm_a])
     ⋅ star (Unit [mm_b])
-    ⋅ ⨆ (map (λ q, Unit [mm_q q]) states).
+    ⋅ (⨆ q ∈ states, Unit [mm_q q]).
 
 (** Total configuration set T_M = C_M ⊔ {c0, c1} *)
 

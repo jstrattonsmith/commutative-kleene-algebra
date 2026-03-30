@@ -140,16 +140,21 @@ Canonical Structure lang_pre_ka :=
           lang_semi_lattice_mixin
           lang_pre_ka_mixin.
 
-Lemma elem_of_lang_join_list (Bs : list lang) x :
-  (⨆ Bs) x ↔ ∃ B, B ∈ Bs ∧ B x.
+Lemma elem_of_lang_join_list {I : Type}
+    (f : I → lang) (Bs : list I) x :
+  join_list f Bs x ↔
+  ∃ b, b ∈ Bs ∧ f b x.
 Proof.
 elim: Bs => /= [|B Bs ->].
 - by split => // - [? [] /elem_of_nil].
-- split=> [[B_x|[B' [] B'_Bs B'_x]]|[B' [] /elem_of_cons [->|]]].
+- split =>
+    [[B_x|[B' [] B'_Bs B'_x]]
+    |[B' [] /elem_of_cons [->|]]].
   + by exists B; rewrite elem_of_cons; eauto.
-  + by exists B'; rewrite elem_of_cons; eauto.
+  + exists B'; rewrite elem_of_cons; eauto.
   + by eauto.
-  + by move=> B'_Bs B'_x; right; exists B'; eauto.
+  + by move=> B'_Bs B'_x;
+      right; exists B'; eauto.
 Qed.
 
 Program Definition lang_sing (x : T) : lang :=
@@ -216,22 +221,29 @@ by move=> /= ->.
 Qed.
 
 Lemma l_reflects_order xs ys :
-  l (⨆ (map Unit xs)) ⊑ l (⨆ (map Unit ys)) →
-  ⨆ (map Unit xs) ⊑ ⨆ (map Unit ys).
+  l (⨆ x ∈ xs, Unit x) ⊑
+  l (⨆ y ∈ ys, Unit y) →
+  (⨆ x ∈ xs, Unit x) ⊑
+  (⨆ y ∈ ys, Unit y).
 Proof.
-move=> l_sub; apply/join_list_sqsubseteq => x /[dup].
-case/elem_of_list_fmap => {}x [] -> x_xs /sqsubseteq_join_list /l_alt.
-move=> /l_sub; rewrite semi_lattice_morphism_join_list elem_of_lang_join_list.
-case=> _ [] /elem_of_list_fmap [y [] -> y_ys].
-case/elem_of_list_fmap: y_ys=> {}y [] -> y_ys /= ->.
-by apply/sqsubseteq_join_list/elem_of_list_fmap; eauto.
+move=> l_sub;
+  apply/join_list_sqsubseteq => a a_xs.
+have /l_alt : Unit a ⊑ ⨆ x ∈ xs, Unit x
+  by exact: sqsubseteq_join_list.
+move=> /l_sub.
+rewrite semi_lattice_morphism_join_list
+  elem_of_lang_join_list.
+case=> b [] b_ys /= ->.
+by exact: sqsubseteq_join_list.
 Qed.
 
 (* Corollary 7 *)
 
 Lemma l_inj_finite xs ys :
-  l (⨆ (map Unit xs)) ≡ l (⨆ (map Unit ys)) →
-  ⨆ (map Unit xs) ≡ ⨆ (map Unit ys).
+  l (⨆ x ∈ xs, Unit x) ≡
+  l (⨆ y ∈ ys, Unit y) →
+  (⨆ x ∈ xs, Unit x) ≡
+  (⨆ y ∈ ys, Unit y).
 Proof.
 move=> l_eq; apply: anti_symm; by apply/l_reflects_order; rewrite l_eq.
 Qed.

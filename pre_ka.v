@@ -100,33 +100,35 @@ rewrite pre_ka_left_dist !pre_ka_right_dist -!assoc.
 exact: sqsubseteq_join_left.
 Qed.
 
-Lemma join_list_right_dist x ys : x ⋅ ⨆ ys ≡ ⨆ (map (λ y, x ⋅ y) ys).
+Lemma join_list_right_dist {A}
+    (x : T) (f : A → T) ys :
+  x ⋅ join_list f ys ≡ ⨆ a ∈ ys, x ⋅ f a.
 Proof.
-elim: ys => [|y ys IH]; rewrite /= ?right_absorb //.
+elim: ys => [|a ys IH];
+  rewrite /= ?right_absorb //.
 by rewrite pre_ka_right_dist IH.
 Qed.
 
-Lemma join_list_left_dist xs y : ⨆ xs ⋅ y ≡ ⨆ (map (λ x, x ⋅ y) xs).
+Lemma join_list_left_dist {A}
+    (f : A → T) xs (y : T) :
+  join_list f xs ⋅ y ≡ ⨆ a ∈ xs, f a ⋅ y.
 Proof.
-elim: xs => [|x xs IH]; rewrite /= ?left_absorb //.
+elim: xs => [|a xs IH];
+  rewrite /= ?left_absorb //.
 by rewrite pre_ka_left_dist IH.
 Qed.
 
-Lemma join_list_dist2 xs ys :
-  ⨆ xs ⋅ ⨆ ys ≡ ⨆ (map (λ p : T * T, p.1 ⋅ p.2) (all_pairs xs ys)).
+Lemma join_list_dist2 {A B}
+    (f : A → T) (g : B → T) xs ys :
+  join_list f xs ⋅ join_list g ys ≡
+  ⨆ p ∈ all_pairs xs ys, f p.1 ⋅ g p.2.
 Proof.
-rewrite join_list_left_dist; apply (anti_symm _).
-- rewrite join_list_sqsubseteq=> _ /elem_of_list_fmap [x [] -> x_xs].
-  rewrite join_list_right_dist join_list_sqsubseteq.
-  move=> _ /elem_of_list_fmap [y [] -> y_ys].
-  apply: sqsubseteq_join_list; apply/elem_of_list_fmap.
-  by exists (x, y); split => //; apply/elem_of_all_pairs; eauto.
-- rewrite join_list_sqsubseteq => _ /elem_of_list_fmap [[x y] [] -> p_ps].
-  case/elem_of_all_pairs: p_ps=> x_xs y_ys.
-  transitivity (x ⋅ ⨆ ys).
-  + rewrite join_list_right_dist.
-    by apply sqsubseteq_join_list; apply/elem_of_list_fmap; eauto.
-  + by apply sqsubseteq_join_list; apply/elem_of_list_fmap; eauto.
+elim: xs => [|a xs IH] /=.
+  by rewrite left_absorb.
+rewrite pre_ka_left_dist IH
+  join_list_right_dist join_list_app
+  join_list_map /=.
+done.
 Qed.
 
 Lemma pre_ka_one_star x : 1 ⊑ star x.
@@ -626,29 +628,42 @@ split => [|->] //=; elim: e=> //=.
 - by move=> e _; rewrite pre_ka_morphism_star; case: (count_term e).
 Qed.
 
-Lemma count_finiteP e : count_term e ⊑ 1 ↔ ∃ xs, e ≡ ⨆ (map Unit xs).
+Lemma count_finiteP e :
+  count_term e ⊑ 1 ↔
+  ∃ xs, e ≡ ⨆ x ∈ xs, Unit x.
 Proof.
 split=> [|[xs ->]]; last first.
-  rewrite semi_lattice_morphism_join_list map_map join_list_sqsubseteq.
-  by move=> c /elem_of_list_fmap [x [] ->].
+  rewrite semi_lattice_morphism_join_list
+    join_list_sqsubseteq /= => c c_xs.
+  by [].
 elim: e => //=.
 - by move=> x _; exists [x]; rewrite /= right_id.
 - by move=> _; exists [].
-- move=> e1 IH1 e2 IH2; rewrite semi_lattice_morphism_join.
-  rewrite join_sqsubseteq; case => /IH1 [xs1 ex1] /IH2 [xs2 ex2].
-  by exists (xs1 ++ xs2); rewrite map_app join_list_app -ex1 -ex2.
-- move=> e1 IH1 e2 IH2; rewrite monoid_morphism_mul -/(e1 ⋅ e2).
-  case/count_mul_one=> [H|[/IH1 [xs1 exs1] /IH2 [xs2 exs2]]].
+- move=> e1 IH1 e2 IH2;
+    rewrite semi_lattice_morphism_join.
+  rewrite join_sqsubseteq;
+    case => /IH1 [xs1 ex1] /IH2 [xs2 ex2].
+  by exists (xs1 ++ xs2);
+    rewrite join_list_app -ex1 -ex2.
+- move=> e1 IH1 e2 IH2;
+    rewrite monoid_morphism_mul -/(e1 ⋅ e2).
+  case/count_mul_one =>
+    [H|[/IH1 [xs1 exs1] /IH2 [xs2 exs2]]].
     exists [].
-    by case: H=> /count_emptyP ->; rewrite ?left_absorb ?right_absorb.
-  exists (map (λ p, p.1 ⋅ p.2) (all_pairs xs1 xs2)).
-  rewrite exs1 exs2 join_list_dist2 all_pairs_map !map_map /=.
-  have -> // : map (λ p, Unit p.1 ⋅ Unit p.2) (all_pairs xs1 xs2)
-               ≡ map (λ p, Unit (p.1 ⋅ p.2)) (all_pairs xs1 xs2).
-  apply: list_fmap_proper => // x y [-> ->].
-  by rewrite ka_mul_distr.
-- move=> e IH; rewrite pre_ka_morphism_star=> /count_star_one /count_emptyP eE.
-  by exists [1]; rewrite eE [X in X ≡ _]star_bottom /= right_id.
+    by case: H => /count_emptyP ->;
+      rewrite ?left_absorb ?right_absorb.
+  exists (map (λ p, p.1 ⋅ p.2)
+    (all_pairs xs1 xs2)).
+  rewrite exs1 exs2 join_list_dist2
+    join_list_map /=.
+  apply join_list_proper; last done.
+  by move=> p _ <- /=; rewrite ka_mul_distr.
+- move=> e IH;
+    rewrite pre_ka_morphism_star =>
+    /count_star_one /count_emptyP eE.
+  exists [1];
+    by rewrite eE [X in X ≡ _]star_bottom
+      /= right_id.
 Qed.
 
 End CountTerm.
@@ -746,18 +761,17 @@ Section PseudoTop.
 Context `{!MonoidGen G T, !EqDecision G, !Finite G}.
 
 Definition pseudo_top : ka_term T :=
-  star (⨆ (map (λ g, Unit (generator_interp g)) (enum G))).
+  star (⨆ g ∈ enum G, Unit (generator_interp g)).
 
 Lemma pseudo_top_absorb x : Unit x ⋅ pseudo_top ⊑ pseudo_top.
 Proof.
 rewrite (generateP x); elim: (generate x)=> [|g gs IH] //=.
   by rewrite left_id.
 rewrite monoid_morphism_mul -assoc IH /pseudo_top.
-set f := λ g', Unit (generator_interp g').
-have /sqsubseteq_join_list g_gen: f g ∈ map f (enum G).
-  apply/elem_of_list_fmap; exists g; split => //.
-  exact: elem_of_enum.
-rewrite /f in g_gen; rewrite g_gen; exact: pre_ka_mul_star.
+have g_gen : Unit (generator_interp g) ⊑
+  ⨆ g' ∈ enum G, Unit (generator_interp g').
+  apply: sqsubseteq_join_list. exact: elem_of_enum.
+rewrite g_gen; exact: pre_ka_mul_star.
 Qed.
 
 Lemma unit_le_pseudo_top x : Unit x ⊑ pseudo_top.
@@ -774,8 +788,8 @@ Lemma pseudo_top_finite e :
   e ⋅ pseudo_top ⊑ pseudo_top.
 Proof.
 case/count_finiteP=> {e} xs ->.
-rewrite join_list_left_dist map_map.
-apply/join_list_sqsubseteq=> _ /elem_of_list_fmap [x [] -> x_xs].
+rewrite join_list_left_dist.
+apply/join_list_sqsubseteq=> x x_xs.
 exact: pseudo_top_absorb.
 Qed.
 

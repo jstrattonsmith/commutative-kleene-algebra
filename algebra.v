@@ -162,34 +162,40 @@ Qed.
 Lemma power_one x : x ^ 1 ≡ x.
 Proof. by rewrite /= right_id. Qed.
 
-Definition mul_list : list T → T := foldr (⋅) 1.
+Definition mul_list {A} (f : A → T) (xs : list A) : T :=
+  foldr (λ a acc, f a ⋅ acc) 1 xs.
 
-Notation "∏" := mul_list.
-
-(* Arguments mul_list {_}. *)
-
-Lemma mul_list_one xs :
-  (∀ x, x ∈ xs → x ≡ 1) →
-  ∏ xs ≡ 1.
+Lemma mul_list_one {A} (f : A → T) xs :
+  (∀ a, a ∈ xs → f a ≡ 1) →
+  mul_list f xs ≡ 1.
 Proof.
-elim: xs => //= x xs IH xs_1.
-rewrite (xs_1 x) ?elem_of_cons ?left_id; eauto.
-rewrite IH // => x' x'_xs; apply: xs_1.
+elim: xs => //= a xs IH xs_1.
+rewrite (xs_1 a) ?elem_of_cons ?left_id; eauto.
+rewrite IH // => a' a'_xs; apply: xs_1.
 by rewrite elem_of_cons; eauto.
 Qed.
 
-Lemma mul_list_app ls ls' :
-  ∏ (ls ++ ls') ≡ (∏ ls) ⋅ (∏ ls').
+Lemma mul_list_app {A} (f : A → T) ls ls' :
+  mul_list f (ls ++ ls') ≡
+  mul_list f ls ⋅ mul_list f ls'.
 Proof.
-elim: ls => [|l ls IHls]; first by rewrite //= ?left_id.
+elim: ls => [|l ls IHls];
+  first by rewrite //= ?left_id.
 by rewrite //= {}IHls assoc.
 Qed.
+
+Lemma mul_list_map {A B} (f : A → T)
+    (g : B → A) xs :
+  mul_list f (map g xs) = mul_list (f ∘ g) xs.
+Proof. by elim: xs => //= x xs ->. Qed.
 
 End MonoidTheory.
 
 Notation "x ^ n" := (power x n) : ka_scope.
-Arguments mul_list {_}.
-Notation "∏" := mul_list : ka_scope.
+Arguments mul_list {_ _}.
+Notation "'∏' x ∈ xs , e" := (mul_list (λ x, e) xs)
+  (at level 36, x binder, xs at level 99,
+   e at level 60, right associativity) : ka_scope.
 
 Class MonoidMorphism (T S : monoid) (f : T → S) := {
   monoid_morphism_proper :: Proper ((≡) ==> (≡)) f;
@@ -197,8 +203,9 @@ Class MonoidMorphism (T S : monoid) (f : T → S) := {
   monoid_morphism_mul : ∀ x y, f (x ⋅ y) ≡ f x ⋅ f y;
 }.
 
-Lemma monoid_morphism_mul_list `{MonoidMorphism T1 T2 f} (xs : list T1) :
-  f (∏ xs) ≡ ∏ (map f xs).
+Lemma monoid_morphism_mul_list `{MonoidMorphism T1 T2 f}
+    {A} (g : A → T1) (xs : list A) :
+  f (mul_list g xs) ≡ mul_list (f ∘ g) xs.
 Proof.
 elim: xs => //= [|x xs IH].
 - by rewrite monoid_morphism_one.
@@ -238,7 +245,8 @@ Qed.
 Class MonoidGen (G : Type) (T : monoid) := {
   generator_interp : G → T;
   generate : T → list G;
-  generateP : ∀ x, x ≡ ∏ (map generator_interp (generate x));
+  generateP :
+    ∀ x, x ≡ ∏ g ∈ generate x, generator_interp g;
 }.
 
 Global Hint Mode MonoidGen - ! : typeclasses.
@@ -246,7 +254,7 @@ Global Hint Mode MonoidGen - ! : typeclasses.
 Class SizedMonoid (G : Type) (T : monoid) `{!MonoidGen G T} := {
   sized_monoid :
     ∀ (gs : list G) (x : T),
-      x ≡ ∏ (map generator_interp gs) →
+      x ≡ (∏ g ∈ gs, generator_interp g) →
       length gs = length (generate x);
 }.
 
@@ -260,7 +268,7 @@ Definition msize (x : T) : nat :=
   length (generate ( x)).
 
 Lemma msize_gen (gs : list G) :
-  msize (∏ (map generator_interp gs)) = length gs.
+  msize (∏ g ∈ gs, generator_interp g) = length gs.
 Proof. symmetry. exact: sized_monoid. Qed.
 
 Lemma msize_one : msize 1 = 0.
@@ -269,8 +277,9 @@ Proof. exact: (msize_gen []). Qed.
 Lemma msize_mul (x y : T) : msize (x ⋅ y) = msize x + msize y.
 Proof.
 rewrite /msize.
-have Hcat : x ⋅ y ≡ ∏ (map generator_interp (generate x ++ generate y)).
-{ rewrite map_app mul_list_app -(generateP x) -(generateP y) //. }
+have Hcat :
+  x ⋅ y ≡ ∏ g ∈ generate x ++ generate y, generator_interp g.
+{ rewrite mul_list_app -(generateP x) -(generateP y) //. }
 have := @sized_monoid _ _ _ _ (generate x ++ generate y) _ Hcat.
 rewrite length_app => <-. lia.
 Qed.
@@ -286,7 +295,8 @@ Qed.
 Lemma msize_generator (g : G) : msize (generator_interp g) = 1%nat.
 Proof.
 rewrite /msize.
-have Hgen : generator_interp g ≡ ∏ (map generator_interp [g]).
+have Hgen :
+  generator_interp g ≡ ∏ g' ∈ [g], generator_interp g'.
 { simpl. by rewrite right_id. }
 have H := @sized_monoid _ _ _ _ [g] _ Hgen.
 simpl in H. rewrite H //.
@@ -330,7 +340,8 @@ move=> xs; symmetry. by elim: xs => //= x xs' ->.
 Qed.
 
 Lemma list_gen_length (gs : list T) :
-  ∏ (map (generator_interp (T := list_monoid T)) gs) = gs.
+  (∏ g ∈ gs,
+     generator_interp (T := list_monoid T) g) = gs.
 Proof. by elim: gs => //= g gs' ->. Qed.
 
 Global Instance list_sized_monoid : SizedMonoid T (list_monoid T).
@@ -342,10 +353,11 @@ Qed.
 End ListFinGen.
 
 Global Instance mul_list_monoid_morphism (T : monoid) :
-  MonoidMorphism (@mul_list T).
+  MonoidMorphism (@mul_list T T id).
 Proof.
 split => //.
-- by move=> l1 l2; elim: l1 l2 / => //= x1 x2 l1 l2 -> _ ->.
+- by move=> l1 l2; elim: l1 l2 / =>
+    //= x1 x2 l1 l2 -> _ ->.
 - move=> l1 l2; elim: l1=> //= [|x l1 IH].
   + by rewrite [1 ⋅ _]left_id.
   + by rewrite IH assoc.
@@ -452,13 +464,16 @@ Global Program Instance prod_fin_gen : MonoidGen (G1 + G2) (T1 * T2)%type := {|
 |}.
 Next Obligation.
 case=> x y /=.
-rewrite map_app !map_map monoid_morphism_mul; split.
-- rewrite monoid_morphism_mul !monoid_morphism_mul_list !map_map /=
-          -(generateP x).
-  by rewrite mul_list_one ?right_id // => ? /elem_of_list_fmap [? [] -> _].
-- rewrite monoid_morphism_mul !monoid_morphism_mul_list !map_map /=
-          -(generateP y).
-  by rewrite mul_list_one ?left_id // => ? /elem_of_list_fmap [? [] -> _].
+rewrite mul_list_app; split; rewrite /=;
+  rewrite -?/(fst _) -?/(snd _);
+  rewrite ?(monoid_morphism_mul_list)
+          !mul_list_map /=.
+- rewrite -(generateP x).
+  by rewrite mul_list_one ?right_id //
+    => ? /elem_of_list_fmap [? [] -> _].
+- rewrite -(generateP y).
+  by rewrite mul_list_one ?left_id //
+    => ? /elem_of_list_fmap [? [] -> _].
 Qed.
 
 Context {Hsz1 : SizedMonoid G1 T1} {Hsz2 : SizedMonoid G2 T2}.
@@ -474,18 +489,20 @@ Lemma sum_lefts_rights_length (gs : list (G1 + G2)) :
 Proof. elim: gs => [|[g|g] gs IH] //=; lia. Qed.
 
 Lemma prod_gen_proj1 (gs : list (G1 + G2)) :
-  fst (∏ (map generator_interp gs)) ≡ ∏ (map generator_interp (sum_lefts gs)).
+  fst (∏ g ∈ gs, generator_interp g) ≡
+  ∏ g ∈ sum_lefts gs, generator_interp g.
 Proof.
-rewrite (monoid_morphism_mul_list (f := fst)) map_map.
+rewrite (monoid_morphism_mul_list (f := fst)).
 elim: gs => [|[g|g] gs IH] //=.
 - by rewrite IH.
 - by rewrite IH left_id.
 Qed.
 
 Lemma prod_gen_proj2 (gs : list (G1 + G2)) :
-  snd (∏ (map generator_interp gs)) ≡ ∏ (map generator_interp (sum_rights gs)).
+  snd (∏ g ∈ gs, generator_interp g) ≡
+  ∏ g ∈ sum_rights gs, generator_interp g.
 Proof.
-rewrite (monoid_morphism_mul_list (f := snd)) map_map.
+rewrite (monoid_morphism_mul_list (f := snd)).
 elim: gs => [|[g|g] gs IH] //=.
 - by rewrite IH left_id.
 - by rewrite IH.
@@ -494,9 +511,11 @@ Qed.
 Global Instance prod_sized_monoid : SizedMonoid (G1 + G2) (prod_monoid T1 T2).
 Proof.
 constructor => gs [x y] [/= Hx Hy].
-have Hxe : x ≡ ∏ (map generator_interp (sum_lefts gs)).
+have Hxe :
+  x ≡ ∏ g ∈ sum_lefts gs, generator_interp g.
 { rewrite -prod_gen_proj1 Hx //. }
-have Hye : y ≡ ∏ (map generator_interp (sum_rights gs)).
+have Hye :
+  y ≡ ∏ g ∈ sum_rights gs, generator_interp g.
 { rewrite -prod_gen_proj2 Hy //. }
 rewrite sum_lefts_rights_length.
 rewrite (@sized_monoid _ _ _ Hsz1 (sum_lefts gs) x Hxe).
@@ -653,67 +672,94 @@ Qed.
 Lemma bottom_sqsubseteq x : ⊥ ⊑ x.
 Proof. by rewrite sqsubseteq_iff semi_lattice_left_id. Qed.
 
-Definition join_list : list T → T := foldr join ⊥.
+Definition join_list {A} (f : A → T) (xs : list A) : T :=
+  foldr (λ a acc, f a ⊔ acc) ⊥ xs.
 
-Global Instance join_list_proper : Proper ((≡) ==> (≡)) join_list.
+Global Instance join_list_proper {A} :
+  Proper (((=) ==> (≡)) ==> (=) ==> (≡))
+    (@join_list A).
 Proof.
-by move=> xs ys; elim: xs ys / => //= x y xs ys -> _ ->.
+move=> f g Hfg xs _ <-.
+elim: xs => //= x xs IH.
+by rewrite (Hfg _ _ eq_refl) IH.
 Qed.
 
-Notation "⨆" := join_list.
-Lemma join_list_app xs ys : ⨆ (xs ++ ys) ≡ ⨆ xs ⊔ ⨆ ys.
+Lemma join_list_ext {A} (f g : A → T) xs :
+  (∀ a, a ∈ xs → f a ≡ g a) →
+  join_list f xs ≡ join_list g xs.
+Proof.
+elim: xs => [|x xs IH] //= H.
+rewrite (H x (elem_of_list_here _ _)); f_equiv.
+apply: IH => a Ha.
+apply H. exact: elem_of_list_further.
+Qed.
+
+Lemma join_list_app {A} (f : A → T) xs ys :
+  join_list f (xs ++ ys) ≡
+  join_list f xs ⊔ join_list f ys.
 Proof.
 elim: xs => [|x xs IH] //=.
 - by rewrite left_id.
 - by rewrite IH assoc.
 Qed.
 
-Lemma join_list_sqsubseteq (xs : list T) y :
-  ⨆ xs ⊑ y ↔ ∀ x, x ∈ xs → x ⊑ y.
+Lemma join_list_sqsubseteq {A} (f : A → T)
+    (xs : list A) y :
+  join_list f xs ⊑ y ↔
+  ∀ a, a ∈ xs → f a ⊑ y.
 Proof.
-elim: xs => [|x xs IH] /=; split.
+elim: xs => [|a xs IH] /=; split.
 - by move=> _ ?; rewrite elem_of_nil.
 - move=> _; exact: bottom_sqsubseteq.
-- rewrite join_sqsubseteq; case=> xy /IH xsy x'.
+- rewrite join_sqsubseteq;
+    case=> ay /IH asy a'.
   by rewrite elem_of_cons; case=> [->|]; eauto.
-- rewrite join_sqsubseteq IH => xsy; split.
-  + by apply xsy; rewrite elem_of_cons; eauto.
-  + by move=> x' x'_xs; apply xsy; rewrite elem_of_cons; eauto.
+- rewrite join_sqsubseteq IH => asy; split.
+  + by apply asy; rewrite elem_of_cons; eauto.
+  + by move=> a' a'_xs; apply asy;
+      rewrite elem_of_cons; eauto.
 Qed.
 
-Lemma sqsubseteq_join_list (xs : list T) x : x ∈ xs → x ⊑ ⨆ xs.
-Proof. by move: x; apply/join_list_sqsubseteq. Qed.
+Lemma sqsubseteq_join_list {A} (f : A → T)
+    (xs : list A) a :
+  a ∈ xs → f a ⊑ join_list f xs.
+Proof.
+move: a; apply/join_list_sqsubseteq. done.
+Qed.
 
-Lemma sqsubseteq_join_list' (xs : list T) x x' : x' ∈ xs -> x ⊑ x' -> x ⊑ ⨆ xs.
+Lemma sqsubseteq_join_list' {A} (f : A → T)
+    (xs : list A) a a' :
+  a' ∈ xs → f a ⊑ f a' →
+  f a ⊑ join_list f xs.
 Proof.
 move=> Helem ->; by apply sqsubseteq_join_list.
 Qed.
 
-Lemma list_subseteq_join_list (xs ys : list T) :
-  xs ⊆ ys → ⨆ xs ⊑ ⨆ ys.
+Lemma list_subseteq_join_list {A} (f : A → T)
+    (xs ys : list A) :
+  xs ⊆ ys → join_list f xs ⊑ join_list f ys.
 Proof.
-move=> xs_ys; apply/join_list_sqsubseteq => x /xs_ys x_ys.
+move=> xs_ys; apply/join_list_sqsubseteq =>
+  a /xs_ys a_ys.
 exact: sqsubseteq_join_list.
 Qed.
 
-Lemma join_list_assoc (xss : list (list T)) :
-  ⨆ (map (λ xs, ⨆ xs) xss) ≡ ⨆ (concat xss).
+Lemma join_list_assoc {A} (f : A → T)
+    (xss : list (list A)) :
+  join_list (λ xs, join_list f xs) xss ≡
+  join_list f (concat xss).
 Proof.
-apply (anti_symm _).
-- rewrite join_list_sqsubseteq=> _ /elem_of_list_fmap [xs [] -> xs_xss].
-  rewrite join_list_sqsubseteq=> x x_xs; apply: sqsubseteq_join_list.
-  by rewrite elem_of_concat; eauto.
-- rewrite join_list_sqsubseteq=> x /elem_of_concat [xs [] xs_xss x_xs].
-  transitivity (⨆ xs); first exact: sqsubseteq_join_list.
-  by apply: sqsubseteq_join_list; apply/elem_of_list_fmap; eauto.
+elim: xss => [|xs xss IH] //=.
+by rewrite join_list_app IH.
 Qed.
 
-Lemma join_list_bottom xs :
-  (∀ x, x ∈ xs → x ≡ ⊥) →
-  ⨆ xs ≡ ⊥.
+Lemma join_list_bottom {A} (f : A → T) xs :
+  (∀ a, a ∈ xs → f a ≡ ⊥) →
+  join_list f xs ≡ ⊥.
 Proof.
-move=> const_x; apply: (anti_symm _).
-- by rewrite join_list_sqsubseteq => x x_xs; rewrite (const_x _ x_xs).
+move=> const_a; apply: (anti_symm _).
+- by rewrite join_list_sqsubseteq =>
+    a a_xs; rewrite (const_a _ a_xs).
 - exact: bottom_sqsubseteq.
 Qed.
 
@@ -744,16 +790,26 @@ Qed.
 
 End DecidableSemiLattice.
 
-Notation "⨆" := join_list : ka_scope.
+Arguments join_list {_ _}.
+Notation "'⨆' x ∈ xs , e" := (join_list (λ x, e) xs)
+  (at level 36, x binder, xs at level 99,
+   e at level 60, right associativity) : ka_scope.
+
+Lemma join_list_map {T : semi_lattice} {A B}
+    (f : A → T) (g : B → A) xs :
+  join_list f (map g xs) = join_list (f ∘ g) xs.
+Proof. by elim: xs => //= x xs ->. Qed.
 
 Lemma join_list_join {T : Type} {S : semi_lattice}
     (f1 : T → S) (f2 : T → S) (xs : list T) :
-  ⨆ (map (λ x, f1 x ⊔ f2 x) xs) ≡
-  ⨆ (map f1 xs) ⊔ ⨆ (map f2 xs).
+  (⨆ x ∈ xs, f1 x ⊔ f2 x) ≡
+  (⨆ x ∈ xs, f1 x) ⊔ (⨆ x ∈ xs, f2 x).
 Proof.
-elim: xs => //= [|x xs IH]; first by rewrite right_id.
-rewrite IH [in X in _ ≡ X]assoc -[(f1 x ⊔ _) ⊔ f2 x]assoc.
-by rewrite [⨆ _ ⊔ f2 x]comm !assoc.
+elim: xs => //= [|x xs IH];
+  first by rewrite right_id.
+rewrite IH [in X in _ ≡ X]assoc
+  -[(f1 x ⊔ _) ⊔ f2 x]assoc.
+by rewrite [join_list _ _ ⊔ f2 x]comm !assoc.
 Qed.
 
 Section GSetSemiLattice.
@@ -800,10 +856,12 @@ move=> x y; rewrite !sqsubseteq_iff => {2}<-.
 by rewrite semi_lattice_morphism_join.
 Qed.
 
-Lemma semi_lattice_morphism_join_list (xs : list T) :
-  f (⨆ xs) ≡ ⨆ (map f xs).
+Lemma semi_lattice_morphism_join_list {A}
+    (g : A → T) (xs : list A) :
+  f (join_list g xs) ≡ join_list (f ∘ g) xs.
 Proof.
-elim: xs => /= [|x xs IH]; rewrite ?semi_lattice_morphism_bottom //.
+elim: xs => /= [|x xs IH];
+  rewrite ?semi_lattice_morphism_bottom //.
 by rewrite semi_lattice_morphism_join IH.
 Qed.
 
