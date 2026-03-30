@@ -745,6 +745,7 @@ Variables (f : Σ → T) (f' : Σ' → T) (t : Σ → Σ') (s : Σ' → option �
 
 Hypothesis f_f' : ∀ x, f' (t x) ≡ f x.
 Hypothesis tK : ∀ x, s (t x) = Some x.
+Hypothesis sK : ∀ a' a, s a' = Some a → a' = t a.
 
 Program Definition nfa_alphabet_change (A : nfa Σ T f) : fsa Σ' T f' := {|
   fsa_state := nfa_state A;
@@ -761,7 +762,28 @@ Program Definition nfa_alphabet_change (A : nfa Σ T f) : fsa Σ' T f' := {|
 
 Next Obligation. move=> A; exact: nfa_interp_initial. Qed.
 
-Next Obligation. Admitted.
+Next Obligation.
+move=> A σ /=.
+rewrite (nfa_derivable σ); f_equiv.
+apply (anti_symm _).
+- apply/join_list_sqsubseteq => a _ /=.
+  transitivity (f' (t a) ⋅ nfa_interp
+    (nfa_trans a σ)); first by rewrite f_f'.
+  transitivity (f' (t a) ⋅ nfa_interp
+    (match s (t a) return nfa_state A with
+     | Some x => nfa_trans x σ
+     | None => ⊥ end)).
+    by rewrite tK.
+  exact: sqsubseteq_join_list _ _
+    (t a) (elem_of_enum _).
+- apply/join_list_sqsubseteq => a' _ /=.
+  case E : (s a') => [a|].
+  + have -> := sK E; rewrite f_f'.
+    exact: sqsubseteq_join_list _ _
+      a (elem_of_enum _).
+  + rewrite nfa_interp_bottom right_absorb.
+    exact: bottom_sqsubseteq.
+Qed.
 
 Definition fsa_alphabet_change (A : fsa Σ T f) : fsa Σ' T f' :=
   nfa_alphabet_change (fsa_to_nfa A).
@@ -792,8 +814,10 @@ by move=> A; rewrite /= fsa_interp_initial.
 Qed.
 
 Next Obligation.
-move=> A σ; rewrite /= fsa_derivable semi_lattice_morphism_join.
-rewrite pre_ka_morphism_of_bool; f_equiv.
+move=> A σ; rewrite /= fsa_derivable
+  semi_lattice_morphism_join
+  (pre_ka_morphism_of_bool (f := t));
+  f_equiv.
 rewrite semi_lattice_morphism_join_list; f_equiv.
 by move=> x _ <-; rewrite /= monoid_morphism_mul.
 Qed.

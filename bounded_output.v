@@ -756,15 +756,54 @@ Variables T : setoid.
 Context `{!LeibnizEquiv T, !EqDecision T, !Finite T}.
 Implicit Types (e : ka_term (list T * list T)) (L : ka_term (list T)).
 
+Local Instance map_some_monoid_morphism :
+  MonoidMorphism (map Some : list T → list (option T)).
+Proof.
+split.
+- solve_proper.
+- done.
+- move=> x y. by rewrite map_app.
+Qed.
+
+Local Instance eos_rel_mor :
+  MonoidMorphism
+    (λ p : list T * list T,
+       (map Some p.1, map Some p.2)
+       : list (option T) * list (option T)).
+Proof.
+split.
+- move=> [??] [??] [/= -> ->]; done.
+- by split.
+- move=> [x1 x2] [y1 y2].
+  by rewrite /= !map_app.
+Qed.
+
 Definition end_of_string_to_rel e :=
   ka_term_map (λ p, (map Some p.1, map Some p.2)) e ⋅
   Unit ([None], [None]).
 
 Lemma sqsubseteq_end_of_string_to_rel_1 xs ys e :
   Unit (xs, ys) ⊑ e →
-  Unit (map Some xs ++ [None], map Some ys ++ [None])
+  Unit (map Some xs ++ [None],
+        map Some ys ++ [None])
   ⊑ end_of_string_to_rel e.
-Proof. Admitted.
+Proof.
+move=> /l_alt Hle; apply/l_alt.
+rewrite /end_of_string_to_rel.
+change ((l
+  (ka_term_map
+     (λ p : list T * list T,
+        (map Some p.1, map Some p.2)) e)
+  ⋅ l (Unit ([None], [None])))
+  (map Some xs ++ [None],
+   map Some ys ++ [None])).
+rewrite l_natural.
+simpl lang_mul. simpl lang_car.
+exists (map Some xs, map Some ys),
+  ([None], [None] : list (option T)).
+split; first done. split; last done.
+simpl. exists (xs, ys); done.
+Qed.
 
 Lemma sqsubseteq_end_of_string_to_rel_2 xs ys e :
   Unit (xs, ys) ⊑ end_of_string_to_rel e →
@@ -772,13 +811,62 @@ Lemma sqsubseteq_end_of_string_to_rel_2 xs ys e :
     xs = map Some xs' ++ [None] ∧
     ys = map Some ys' ++ [None] ∧
     Unit (xs', ys') ⊑ e.
-Proof. Admitted.
+Proof.
+rewrite /end_of_string_to_rel => /l_alt Hle.
+have Hle' : (lang_map
+  (λ p : list T * list T,
+     (map Some p.1, map Some p.2))
+  (l e) ⋅ l (Unit ([None], [None])))
+  (xs, ys).
+{ rewrite -l_natural. exact Hle. }
+simpl in Hle'.
+move: Hle' => [[a1 a2] [[b1 b2]
+  [/leibniz_equiv_iff [/= Exs Eys]
+   [[t [/leibniz_equiv_iff [/= Ha1 Ha2]
+     /l_alt He]]
+    /leibniz_equiv_iff [/= Hb1 Hb2]]]]].
+subst b1 b2 a1 a2.
+by exists t.1, t.2; destruct t.
+Qed.
 
 Definition end_of_string_to_lang L :=
   ka_term_map (map Some) L ⋅ Unit [None].
 
-(* Instructions: state and prove similar lemmas to the previous two for
-end_of_string_to_lang. *)
+Lemma sqsubseteq_end_of_string_to_lang_1 xs L :
+  Unit xs ⊑ L →
+  Unit (map Some xs ++ [None])
+  ⊑ end_of_string_to_lang L.
+Proof.
+move=> /l_alt Hle; apply/l_alt.
+rewrite /end_of_string_to_lang.
+change ((l (ka_term_map (map Some (A := T)) L)
+  ⋅ l (Unit (@nil (option T) ++ [None])))
+  (map Some xs ++ [None])).
+rewrite l_natural.
+simpl lang_mul. simpl lang_car.
+exists (map Some xs),
+  ([None] : list (option T)).
+split; first done.
+split; last done.
+simpl. exists xs; done.
+Qed.
+
+Lemma sqsubseteq_end_of_string_to_lang_2 xs L :
+  Unit xs ⊑ end_of_string_to_lang L →
+  ∃ xs', xs = map Some xs' ++ [None] ∧
+         Unit xs' ⊑ L.
+Proof.
+rewrite /end_of_string_to_lang => /l_alt Hle.
+have Hle' : (lang_map (map Some (A := T)) (l L)
+  ⋅ l (Unit [None])) xs.
+{ rewrite -l_natural. exact Hle. }
+simpl in Hle'.
+move: Hle' => [a [b [/leibniz_equiv_iff /= Exs
+  [[t [/leibniz_equiv_iff /= Ha /l_alt He]]
+   /leibniz_equiv_iff /= Hb]]]].
+subst b a.
+by exists t; subst xs.
+Qed.
 
 Lemma bounded_output_repr_rel' e L :
   finite_state e →
