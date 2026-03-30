@@ -174,6 +174,12 @@ Proof. by rewrite /= right_id. Qed.
 Definition mul_list {A} (f : A → T) (xs : list A) : T :=
   foldr (λ a acc, f a ⋅ acc) 1 xs.
 
+Global Instance mul_list_proper {A} :
+  Proper (pointwise_relation A (≡) ==> (=) ==> (≡)) mul_list.
+Proof.
+by move=> f g fg xs _ <-; elim: xs => //= x xs <-; rewrite -fg.
+Qed.
+
 Lemma mul_list_one {A} (f : A → T) xs :
   (∀ a, a ∈ xs → f a ≡ 1) →
   mul_list f xs ≡ 1.
@@ -335,6 +341,15 @@ Canonical Structure list_monoid :=
            list_monoid_mixin.
 
 End ListMonoid.
+
+Global Instance map_monoid_morphism
+    {T S : setoid} (f : T → S) `{!Proper ((≡) ==> (≡)) f} :
+  MonoidMorphism (map f).
+Proof.
+split => //.
+- solve_proper.
+- by move=> x y; rewrite map_app.
+Qed.
 
 Section ListFinGen.
 
@@ -685,12 +700,11 @@ Definition join_list {A} (f : A → T) (xs : list A) : T :=
   foldr (λ a acc, f a ⊔ acc) ⊥ xs.
 
 Global Instance join_list_proper {A} :
-  Proper (((=) ==> (≡)) ==> (=) ==> (≡))
+  Proper (pointwise_relation A (≡) ==> (=) ==> (≡))
     (@join_list A).
 Proof.
 move=> f g Hfg xs _ <-.
-elim: xs => //= x xs IH.
-by rewrite (Hfg _ _ eq_refl) IH.
+by elim: xs => //= x xs <-; rewrite -Hfg.
 Qed.
 
 Lemma join_list_ext {A} (f g : A → T) xs :

@@ -519,15 +519,14 @@ End Lemma31.
     domain and codomain lie in a prefix-free language is representable. *)
 
 Lemma bounded_output_repr_rel e L :
-  finite_state e →
+  finite_state (T + T) (Unit ∘ generator_interp) e →
   bounded_output e →
   ka_term_proj1 e ⊑ L →
   ka_term_proj2 e ⊑ L →
   prefix_free L →
   repr_rel e L.
 Proof.
-move=> Hfs Hbo Hdom Hcod Hpf.
-have [A EA] := finite_stateP Hfs.
+move=> [A EA] Hbo Hdom Hcod Hpf.
 have Hbo' : bounded_output (fsa_elem A).
 { case: Hbo => [k Hk]. exists k. move=> sl sr Hin.
   apply: Hk. by rewrite EA. }
@@ -750,135 +749,38 @@ Qed.
 
 End BoundedOutput.
 
-Section EndOfString.
+Section Padding.
 
 Variables T : setoid.
 Context `{!LeibnizEquiv T, !EqDecision T, !Finite T}.
 Implicit Types (e : ka_term (list T * list T)) (L : ka_term (list T)).
+Implicit Types (ρ : ka_term (list (option T) * list (option T))).
 
-Local Instance map_some_monoid_morphism :
-  MonoidMorphism (map Some : list T → list (option T)).
+Lemma bounded_output_pad_rel e :
+  bounded_output e →
+  bounded_output (pad_rel e).
 Proof.
-split.
-- solve_proper.
-- done.
-- move=> x y. by rewrite map_app.
+move=> [k bo_e]; apply: bounded_output_mul; last exact: bounded_output_unit.
+exists k => sl sr; rewrite -l_alt l_natural /=.
+case=> [[{}sl {}sr] /= [] /leibniz_equiv_iff [-> ->] /l_alt /bo_e].
+by rewrite !length_map.
 Qed.
 
-Local Instance eos_rel_mor :
-  MonoidMorphism
-    (λ p : list T * list T,
-       (map Some p.1, map Some p.2)
-       : list (option T) * list (option T)).
-Proof.
-split.
-- move=> [??] [??] [/= -> ->]; done.
-- by split.
-- move=> [x1 x2] [y1 y2].
-  by rewrite /= !map_app.
-Qed.
-
-Definition end_of_string_to_rel e :=
-  ka_term_map (λ p, (map Some p.1, map Some p.2)) e ⋅
-  Unit ([None], [None]).
-
-Lemma sqsubseteq_end_of_string_to_rel_1 xs ys e :
-  Unit (xs, ys) ⊑ e →
-  Unit (map Some xs ++ [None],
-        map Some ys ++ [None])
-  ⊑ end_of_string_to_rel e.
-Proof.
-move=> /l_alt Hle; apply/l_alt.
-rewrite /end_of_string_to_rel.
-change ((l
-  (ka_term_map
-     (λ p : list T * list T,
-        (map Some p.1, map Some p.2)) e)
-  ⋅ l (Unit ([None], [None])))
-  (map Some xs ++ [None],
-   map Some ys ++ [None])).
-rewrite l_natural.
-simpl lang_mul. simpl lang_car.
-exists (map Some xs, map Some ys),
-  ([None], [None] : list (option T)).
-split; first done. split; last done.
-simpl. exists (xs, ys); done.
-Qed.
-
-Lemma sqsubseteq_end_of_string_to_rel_2 xs ys e :
-  Unit (xs, ys) ⊑ end_of_string_to_rel e →
-  ∃ xs' ys',
-    xs = map Some xs' ++ [None] ∧
-    ys = map Some ys' ++ [None] ∧
-    Unit (xs', ys') ⊑ e.
-Proof.
-rewrite /end_of_string_to_rel => /l_alt Hle.
-have Hle' : (lang_map
-  (λ p : list T * list T,
-     (map Some p.1, map Some p.2))
-  (l e) ⋅ l (Unit ([None], [None])))
-  (xs, ys).
-{ rewrite -l_natural. exact Hle. }
-simpl in Hle'.
-move: Hle' => [[a1 a2] [[b1 b2]
-  [/leibniz_equiv_iff [/= Exs Eys]
-   [[t [/leibniz_equiv_iff [/= Ha1 Ha2]
-     /l_alt He]]
-    /leibniz_equiv_iff [/= Hb1 Hb2]]]]].
-subst b1 b2 a1 a2.
-by exists t.1, t.2; destruct t.
-Qed.
-
-Definition end_of_string_to_lang L :=
-  ka_term_map (map Some) L ⋅ Unit [None].
-
-Lemma sqsubseteq_end_of_string_to_lang_1 xs L :
-  Unit xs ⊑ L →
-  Unit (map Some xs ++ [None])
-  ⊑ end_of_string_to_lang L.
-Proof.
-move=> /l_alt Hle; apply/l_alt.
-rewrite /end_of_string_to_lang.
-change ((l (ka_term_map (map Some (A := T)) L)
-  ⋅ l (Unit (@nil (option T) ++ [None])))
-  (map Some xs ++ [None])).
-rewrite l_natural.
-simpl lang_mul. simpl lang_car.
-exists (map Some xs),
-  ([None] : list (option T)).
-split; first done.
-split; last done.
-simpl. exists xs; done.
-Qed.
-
-Lemma sqsubseteq_end_of_string_to_lang_2 xs L :
-  Unit xs ⊑ end_of_string_to_lang L →
-  ∃ xs', xs = map Some xs' ++ [None] ∧
-         Unit xs' ⊑ L.
-Proof.
-rewrite /end_of_string_to_lang => /l_alt Hle.
-have Hle' : (lang_map (map Some (A := T)) (l L)
-  ⋅ l (Unit [None])) xs.
-{ rewrite -l_natural. exact Hle. }
-simpl in Hle'.
-move: Hle' => [a [b [/leibniz_equiv_iff /= Exs
-  [[t [/leibniz_equiv_iff /= Ha /l_alt He]]
-   /leibniz_equiv_iff /= Hb]]]].
-subst b a.
-by exists t; subst xs.
-Qed.
+Lemma prefix_free_pad_lang L : prefix_free (pad_lang L).
+Proof. Admitted.
 
 Lemma bounded_output_repr_rel' e L :
-  finite_state e →
+  finite_state (T + T) (Unit ∘ generator_interp) e →
   bounded_output e →
   ka_term_proj1 e ⊑ L →
   ka_term_proj2 e ⊑ L →
-  repr_rel (end_of_string_to_rel e) (end_of_string_to_lang L).
+  repr_rel (pad_rel e) (pad_lang L).
 Proof.
-(* Proof sketch: Apply bounded_output_repr_rel, use alphabet and algebra change
-constructions on automata.v to show that the end_of_string terms are still
-finite state, plus the above lemmas to show that the bounded_output condition
-holds. *)
-Admitted.
+move=> /finite_state_pad_rel fin_e /bounded_output_pad_rel bo_e e1L e2L.
+apply: bounded_output_repr_rel fin_e bo_e _ _ _.
+- exact: pad_rel_pad_lang_1.
+- exact: pad_rel_pad_lang_2.
+- exact: prefix_free_pad_lang.
+Qed.
 
-End EndOfString.
+End Padding.

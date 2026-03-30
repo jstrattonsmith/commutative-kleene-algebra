@@ -98,9 +98,8 @@ as possible, **especially by Claude**. Many coding conventions come from
 we're using stdpp, which follows different conventions, in particular regarding
 naming.
 
-- Lines are capped at 80 characters, including in Markdown files.  In proofs,
-  you should aim to fully utilize the 80 character limit -- avoid unnecessarily
-  short lines.
+- Lines are capped at 80 characters, including in Markdown files.  You should
+  aim to fully utilize the 80 character limit. Avoid short lines if possible.
 - Use **ssreflect** tactics (`move=>`, `rewrite`, `apply/`, `case/`, `elim:`,
   `/=`) extensively.  Avoid `destruct`, `induction`, `exfalso`, etc.
 - The `congruence` tactic is allowed.

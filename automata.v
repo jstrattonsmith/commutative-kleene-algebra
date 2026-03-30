@@ -727,6 +727,41 @@ etransitivity; first exact: H.
 rewrite sqsubseteq_iff fsa_interp_initial semi_lattice_idemp //.
 Qed.
 
+Definition finite_state e := {A : fsa | e ≡ fsa_elem A}.
+
+Lemma finite_state_bottom : finite_state ⊥.
+Proof. by exists fsa_bottom. Qed.
+
+Lemma finite_state_join e1 e2 :
+  finite_state e1 →
+  finite_state e2 →
+  finite_state (e1 ⊔ e2).
+Proof.
+case=> [A1 Ae1] [A2 Ae2].
+by exists (fsa_join A1 A2); rewrite Ae1 Ae2.
+Qed.
+
+Lemma finite_state_mul e1 e2 :
+  finite_state e1 →
+  finite_state e2 →
+  finite_state (e1 ⋅ e2).
+Proof.
+case=> [A1 Ae1] [A2 Ae2].
+by exists (fsa_mul' A1 A2); rewrite Ae1 Ae2.
+Qed.
+
+Lemma finite_state_star e :
+  finite_state e →
+  ¬ 1 ⊑ e →
+  finite_state (star e).
+Proof.
+case=> [A Ae] e1; exists (fsa_star' A).
+rewrite fsa_elem_star' -?Ae //; case E: fsa_final => //.
+have ?: 1 ⊑ e; last by congruence.
+rewrite Ae -fsa_interp_initial fsa_derivable E /=.
+exact: sqsubseteq_join_left.
+Qed.
+
 End Automata.
 
 Global Arguments fsa_one {Σ _ _ _ _}.
@@ -734,7 +769,7 @@ Global Arguments fsa_singleton {Σ _ _ _ _}.
 Global Arguments fsa Σ {_ _} T.
 Global Arguments fsa_mul' {Σ _ _ _ _}.
 Global Arguments nfa Σ {_ _} T.
-
+Global Arguments finite_state Σ {_ _ T} f e.
 
 Section AlphabetChange.
 
@@ -792,15 +827,23 @@ Lemma fsa_alphabet_change_elem A :
   fsa_elem (fsa_alphabet_change A) = fsa_elem A.
 Proof. by []. Qed.
 
+Lemma finite_state_alphabet_change (e : T) :
+  finite_state Σ f e → finite_state Σ' f' e.
+Proof. by case=> A Ae; exists (fsa_alphabet_change A). Qed.
+
 End AlphabetChange.
+
+Arguments finite_state_alphabet_change {Σ _ _ Σ' _ _ T f f'} t s.
 
 Section AlgebraChange.
 
 Context `{!EqDecision Σ, !Finite Σ}.
 Context `{T : pre_ka, T' : pre_ka, t : T → T', !PreKAMorphism t}.
-Context (f : Σ → T).
+Context (f : Σ → T) (f' : Σ → T').
 
-Program Definition fsa_algebra_change (A : fsa Σ T f) : fsa Σ T' (t ∘ f) := {|
+Hypothesis f_f' : ∀ x, t (f x) ≡ f' x.
+
+Program Definition fsa_algebra_change (A : fsa Σ T f) : fsa Σ T' f' := {|
   fsa_state := fsa_state A;
   fsa_elem := t (fsa_elem A);
   fsa_initial := fsa_initial A;
@@ -819,12 +862,18 @@ move=> A σ; rewrite /= fsa_derivable
   (pre_ka_morphism_of_bool (f := t));
   f_equiv.
 rewrite semi_lattice_morphism_join_list; f_equiv.
-by move=> x _ <-; rewrite /= monoid_morphism_mul.
+by move=> x; rewrite /= monoid_morphism_mul -f_f'.
 Qed.
 
 Lemma fsa_algebra_change_elem A :
   fsa_elem (fsa_algebra_change A) = t (fsa_elem A).
 Proof. by []. Qed.
+
+Lemma finite_state_algebra_change e :
+  finite_state Σ f e → finite_state Σ f' (t e).
+Proof.
+by case=> A Ae; exists (fsa_algebra_change A); rewrite /= Ae.
+Qed.
 
 End AlgebraChange.
 
@@ -969,45 +1018,36 @@ End StringMatchComplete.
 
 Section FSAKATerm.
 
-Context `{!MonoidGen G T, !EqDecision G, !Finite G, !IsOne T}.
+Context `{!MonoidGen G T, !EqDecision G, !Finite G}.
 
-Fixpoint finite_state (e : ka_term T) : bool :=
+Fixpoint finite_stateb `{!IsOne T} (e : ka_term T) : bool :=
   match e with
   | Unit _ => true
-  | ka_term_join e1 e2 => finite_state e1 && finite_state e2
+  | ka_term_join e1 e2 => finite_stateb e1 && finite_stateb e2
   | ka_term_bottom => true
-  | ka_term_mul e1 e2 => finite_state e1 && finite_state e2
-  | ka_term_star e => negb (has_one e) && finite_state e
+  | ka_term_mul e1 e2 => finite_stateb e1 && finite_stateb e2
+  | ka_term_star e => negb (has_one e) && finite_stateb e
   end.
 
-Lemma finite_stateP e :
-  finite_state e →
-  {A : fsa G (ka_term T) (λ x, Unit (generator_interp x)) |
-    e ≡ fsa_elem A}.
+Variable f : G → ka_term T.
+Hypothesis fE : ∀ x, f x ≡ Unit (generator_interp x).
+
+Lemma finite_state_Unit (s : T) : finite_state G f (Unit s).
+Proof.
+exists (fsa_mul_list (map fsa_singleton (generate s))).
+rewrite fsa_elem_mul_list mul_list_map /= {1}(generateP s).
+by rewrite monoid_morphism_mul_list; f_equiv => ?; rewrite /= fE.
+Qed.
+
+Lemma finite_stateP `{!IsOne T} e : finite_stateb e → finite_state G f e.
 Proof.
 elim: e => /=.
-- move=> s _.
-  exists (fsa_mul_list
-    (map fsa_singleton (generate s))).
-  rewrite fsa_elem_mul_list mul_list_map /=
-    {1}(generateP s).
-  by rewrite monoid_morphism_mul_list.
-- move=> _. by exists (fsa_bottom _) => /=.
-- move=> e1 IH1 e2 IH2 /andb_True [H1 H2].
-  have [A1 E1] := IH1 H1.
-  have [A2 E2] := IH2 H2.
-  exists (fsa_join A1 A2). by rewrite /= -E1 -E2.
-- move=> e1 IH1 e2 IH2 /andb_True [H1 H2].
-  have [A1 E1] := IH1 H1.
-  have [A2 E2] := IH2 H2.
-  exists (fsa_mul A1 (fsa_to_nfa A2)).
-  by rewrite /= -E1 -E2.
-- move=> e1 IH1 /andb_True [/negb_True /Is_true_false H1 H2].
-  have {IH1 H2} [A1 E1] := IH1 H2; exists (fsa_star' A1).
-  rewrite fsa_elem_star' -?E1 //; case E: fsa_final => //.
-  have ?: has_one e1 = true; last by congruence.
-  apply/has_oneP; rewrite E1 -fsa_interp_initial.
-  rewrite fsa_derivable E /=; exact: sqsubseteq_join_left.
+- move=> s _; exact: finite_state_Unit.
+- move=> _; exact: finite_state_bottom.
+- move=> e1 IH1 e2 IH2 /andb_True [/IH1 H1 /IH2 H2]; exact: finite_state_join.
+- move=> e1 IH1 e2 IH2 /andb_True [/IH1 H1 /IH2 H2]; exact: finite_state_mul.
+- move=> e1 IH1 /andb_True [/negb_True /Is_true_false H1 /IH1 H2].
+  by apply: finite_state_star => //; apply/has_oneP; congruence.
 Qed.
 
 End FSAKATerm.

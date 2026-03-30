@@ -602,6 +602,16 @@ Proof. apply _. Qed.
 
 End KATermMap.
 
+Lemma ka_term_map_comp {T S R : monoid}
+    (f : T → S) (g : S → R) (e : ka_term T) :
+  MonoidMorphism f → MonoidMorphism g →
+  ka_term_map g (ka_term_map f e) ≡ ka_term_map (g ∘ f) e.
+Proof.
+move=> f_mor g_mor.
+rewrite -/((ka_term_map g ∘ ka_term_map f) e).
+exact: ka_term_ext.
+Qed.
+
 Section CountTerm.
 
 Context {T : monoid}.
@@ -658,12 +668,10 @@ elim: e => //=.
     exists [].
     by case: H => /count_emptyP ->;
       rewrite ?left_absorb ?right_absorb.
-  exists (map (λ p, p.1 ⋅ p.2)
-    (all_pairs xs1 xs2)).
-  rewrite exs1 exs2 join_list_dist2
-    join_list_map /=.
+  exists (map (λ p, p.1 ⋅ p.2) (all_pairs xs1 xs2)).
+  rewrite exs1 exs2 join_list_dist2 join_list_map /=.
   apply join_list_proper; last done.
-  by move=> p _ <- /=; rewrite ka_mul_distr.
+  by move=> p /=; rewrite ka_mul_distr.
 - move=> e IH;
     rewrite pre_ka_morphism_star =>
     /count_star_one /count_emptyP eE.

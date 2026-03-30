@@ -198,25 +198,15 @@ have /= [H|H] := proj2 (l_alt _ _) Hle;
   [left | right]; exact: proj1 (l_alt _ _) H.
 Qed.
 
-Lemma repr_rel_soundness xs ys e σ ρ :
+Lemma repr_rel_soundness xs ys L ρ :
   Unit (xs, xs ++ ys) ⊑
-  dpseudo_top ⋅ strings_r σ ⊔ dpseudo_top ⋅ mismatch ⋅ ρ →
-  ys ∈ σ.
+  dpseudo_top ⋅ ka_term_inj2 L ⊔ dpseudo_top ⋅ mismatch ⋅ ρ →
+  Unit ys ⊑ L.
 Proof.
 move=> /unit_le_join_cases [H|H].
-- rewrite strings_r_alt in H.
-  case/in_dpseudo_top_inj2: H =>
-    suffix [Hsr Hle].
-  have ? : ys = suffix
-    by apply (app_inv_head xs); rewrite Hsr.
-  subst suffix.
-  have /l_alt Hl := Hle.
-  rewrite semi_lattice_morphism_join_list in Hl.
-  apply elem_of_lang_join_list in Hl.
-  destruct Hl as [s [Hs Hys]].
-  simpl in Hys.
-  apply leibniz_equiv in Hys; subst.
-  exact: Hs.
+- case/in_dpseudo_top_inj2: H => suffix [Hsr Hle].
+  have ? : ys = suffix by apply (app_inv_head xs); rewrite Hsr.
+  by subst suffix.
 - exfalso; move: H => /l_alt /=.
   case=> [[ab1 ab2] [[c1 c2]
     [Eabc [[[a1 a2] [[b1 b2]
@@ -240,8 +230,7 @@ Qed.
 
 Local Lemma rtc_prefix xs ys e :
   rtc (λ xs' ys', Unit (xs', ys') ⊑ e) xs ys →
-  ∃ zs,
-    Unit (zs, zs ++ ys) ⊑ Unit (1, xs) ⋅ star e.
+  ∃ zs, Unit (zs, zs ++ ys) ⊑ Unit (1, xs) ⋅ star e.
 Proof.
 elim.
 - move=> x; exists [].
@@ -276,8 +265,8 @@ Qed.
 Lemma repr_rel_rtc_soundness xs ys e σ ρ :
   rtc (λ xs' ys', Unit (xs', ys') ⊑ e) xs ys →
   Unit (1, xs) ⋅ star e ⊑
-  dpseudo_top ⋅ strings_r σ ⊔ dpseudo_top ⋅ mismatch ⋅ ρ →
-  ys ∈ σ.
+  dpseudo_top ⋅ ka_term_inj2 σ ⊔ dpseudo_top ⋅ mismatch ⋅ ρ →
+  Unit ys ⊑ σ.
 Proof.
 move=> /rtc_prefix [zs Hzs] Hle.
 exact: repr_rel_soundness (transitivity Hzs Hle).
@@ -554,3 +543,140 @@ End RepresentableRelations.
 
 Arguments dpseudo_top {_ _ _}.
 Arguments mismatch {_ _ _}.
+
+Section Padding.
+
+Variables T : setoid.
+Context `{!LeibnizEquiv T, !EqDecision T, !Finite T}.
+Implicit Types (e : ka_term (list T * list T)) (L : ka_term (list T)).
+Implicit Types (ρ : ka_term (list (option T) * list (option T))).
+
+Local Definition lift : list T → list (option T) := map Some.
+Local Definition lift2 : list T * list T → list (option T) * list (option T) :=
+  pair_mor (lift ∘ fst) (lift ∘ snd).
+
+Definition pad_lang L := ka_term_map lift L ⋅ Unit [None].
+Definition pad_rel e := ka_term_map lift2 e ⋅ Unit ([None], [None]).
+
+Lemma sqsubseteq_pad_rel_1 p e :
+  Unit p ⊑ e →
+  Unit (lift2 p ⋅ ([None], [None])) ⊑ pad_rel e.
+Proof.
+rewrite monoid_morphism_mul /pad_rel => pe; apply: pre_ka_mul_mono => //.
+by rewrite -l_alt l_natural; exists p; rewrite l_alt.
+Qed.
+
+Lemma sqsubseteq_pad_rel_2 p e :
+  Unit p ⊑ pad_rel e →
+  ∃ p', p = lift2 p' ⋅ ([None], [None]) ∧ Unit p' ⊑ e.
+Proof.
+rewrite /pad_rel -l_alt monoid_morphism_mul l_natural.
+case=> /= p' [] _ [] /leibniz_equiv_iff -> [pP /leibniz_equiv_iff ->].
+by case: pP => {}p' [] /leibniz_equiv_iff -> /l_alt ?; eauto.
+Qed.
+
+Lemma sqsubseteq_pad_lang_1 xs L :
+  Unit xs ⊑ L →
+  Unit (lift xs ⋅ [None]) ⊑ pad_lang L.
+Proof.
+move=> /l_alt Hle; apply/l_alt.
+rewrite /pad_lang.
+change ((l (ka_term_map (map Some (A := T)) L)
+  ⋅ l (Unit (@nil (option T) ++ [None])))
+  (map Some xs ++ [None])).
+rewrite l_natural.
+simpl lang_mul. simpl lang_car.
+exists (map Some xs),
+  ([None] : list (option T)).
+split; first done.
+split; last done.
+simpl. exists xs; done.
+Qed.
+
+Lemma sqsubseteq_pad_lang_2 xs L :
+  Unit xs ⊑ pad_lang L →
+  ∃ xs', xs = lift xs' ⋅ [None] ∧ Unit xs' ⊑ L.
+Proof.
+rewrite /pad_lang => /l_alt Hle.
+have Hle' : (lang_map (map Some (A := T)) (l L)
+  ⋅ l (Unit [None])) xs.
+{ rewrite -l_natural. exact Hle. }
+simpl in Hle'.
+move: Hle' => [a [b [/leibniz_equiv_iff /= Exs
+  [[t [/leibniz_equiv_iff /= Ha /l_alt He]]
+   /leibniz_equiv_iff /= Hb]]]].
+subst b a.
+by exists t; subst xs.
+Qed.
+
+Lemma pad_rel_pad_lang_1 e L :
+  ka_term_proj1 e ⊑ L →
+  ka_term_proj1 (pad_rel e) ⊑ pad_lang L.
+Proof.
+move=> e_L.
+rewrite /pad_rel monoid_morphism_mul /=.
+apply: pre_ka_mul_mono => //=.
+rewrite /ka_term_proj1 ka_term_map_comp.
+have ->: ka_term_map (fst ∘ lift2) e ≡ ka_term_map lift (ka_term_proj1 e).
+  by rewrite ka_term_map_comp; apply: ka_term_ext; case.
+by apply: semi_lattice_morphism_sqsubseteq_proper.
+Qed.
+
+Lemma pad_rel_pad_lang_2 e L :
+  ka_term_proj2 e ⊑ L →
+  ka_term_proj2 (pad_rel e) ⊑ pad_lang L.
+Proof.
+move=> e_L.
+rewrite /pad_rel monoid_morphism_mul /=.
+apply: pre_ka_mul_mono => //=.
+rewrite /ka_term_proj2 ka_term_map_comp.
+have ->: ka_term_map (snd ∘ lift2) e ≡ ka_term_map lift (ka_term_proj2 e).
+  by rewrite ka_term_map_comp; apply: ka_term_ext; case.
+by apply: semi_lattice_morphism_sqsubseteq_proper.
+Qed.
+
+Lemma repr_rel_rtc_soundness' e L ρ (xs ys : list T) :
+  rtc (λ xs' ys', Unit (xs', ys') ⊑ e) xs ys →
+  Unit (1, lift xs ⋅ [None]) ⋅ star (pad_rel e) ⊑
+  dpseudo_top ⋅ ka_term_inj2 (pad_lang L) ⊔ dpseudo_top ⋅ mismatch ⋅ ρ →
+  Unit ys ⊑ L.
+Proof.
+move=> xs_ys xs_L.
+have {}xs_ys:
+  rtc (λ xs' ys', Unit (xs', ys') ⊑ pad_rel e)
+      (lift xs ⋅ [None]) (lift ys ⋅ [None]).
+{ elim: xs ys / xs_ys {xs_L} => // xs ys zs xs_ys _ IH.
+  move/sqsubseteq_pad_rel_1: xs_ys.
+  by etransitivity; last exact: IH; apply: rtc_once. }
+have : Unit (lift ys ⋅ [None]) ⊑ pad_lang L.
+  exact: repr_rel_rtc_soundness xs_ys xs_L.
+case/sqsubseteq_pad_lang_2 => ys' [] e_ys' {xs_ys xs_L}.
+suff -> : ys = ys' by [].
+Admitted.
+
+Lemma finite_state_pad_rel e :
+  finite_state (T + T) (Unit ∘ generator_interp) e →
+  finite_state (option T + option T) (Unit ∘ generator_interp) (pad_rel e).
+Proof.
+move=> fin_e; apply: finite_state_mul; last exact: finite_state_Unit.
+set t := ka_term_map _.
+have {}fin_e: finite_state (T + T) (t ∘ Unit ∘ generator_interp) (t e).
+  by apply: finite_state_algebra_change fin_e => //.
+pose t' (x : T + T) :=
+  match x with
+  | inl x => inl (Some x)
+  | inr x => inr (Some x)
+  end.
+pose s' (x : option T + option T) :=
+  match x with
+  | inl (Some x) => Some (inl x)
+  | inr (Some x) => Some (inr x)
+  | _ => None
+  end.
+apply: (finite_state_alphabet_change t' s') fin_e.
+- by case.
+- by case.
+- by case=> [[?|]|[?|]] ? //= [<-].
+Qed.
+
+End Padding.
