@@ -766,8 +766,25 @@ case=> [[{}sl {}sr] /= [] /leibniz_equiv_iff [-> ->] /l_alt /bo_e].
 by rewrite !length_map.
 Qed.
 
+Lemma map_Some_app_None_inj (w1 w2 : list T) t :
+  map Some w2 ++ [None] =
+    (map Some w1 ++ [None]) ++ t →
+  w1 = w2 ∧ t = [].
+Proof.
+move: w2 t;
+  elim: w1 => [|a w1 IH] [|b w2] //= t.
+- by move=> [= <-].
+- by move=> [= -> /(IH _ _) [-> ->]].
+Qed.
+
 Lemma prefix_free_pad_lang L : prefix_free (pad_lang L).
-Proof. Admitted.
+Proof.
+move=> _ _ /sqsubseteq_pad_lang_2 [w1 [-> _]]
+  /sqsubseteq_pad_lang_2 [w2 [-> _]] [t Ht].
+have [-> _] : w1 = w2 ∧ t = [].
+{ exact: map_Some_app_None_inj Ht. }
+done.
+Qed.
 
 Lemma bounded_output_repr_rel' e L :
   finite_state (T + T) (Unit ∘ generator_interp) e →

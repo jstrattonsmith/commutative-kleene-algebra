@@ -652,7 +652,10 @@ have : Unit (lift ys ⋅ [None]) ⊑ pad_lang L.
   exact: repr_rel_rtc_soundness xs_ys xs_L.
 case/sqsubseteq_pad_lang_2 => ys' [] e_ys' {xs_ys xs_L}.
 suff -> : ys = ys' by [].
-Admitted.
+move: e_ys'; rewrite /lift /mul /list_mul.
+move/app_inv_tail; move: ys ys'.
+by elim=> [|y ys IH] [|y' ys'] //= [= -> /IH ->].
+Qed.
 
 Lemma finite_state_pad_rel e :
   finite_state (T + T) (Unit ∘ generator_interp) e →
