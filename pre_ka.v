@@ -100,6 +100,10 @@ rewrite pre_ka_left_dist !pre_ka_right_dist -!assoc.
 exact: sqsubseteq_join_left.
 Qed.
 
+Global Instance pre_ka_mul_flip_mono :
+  Proper (flip (⊑@{T}) ==> flip (⊑) ==> flip (⊑)) (⋅).
+Proof. by move=> ??????; f_equiv. Qed.
+
 Lemma join_list_right_dist {A}
     (x : T) (f : A → T) ys :
   x ⋅ join_list f ys ≡ ⨆ a ∈ ys, x ⋅ f a.

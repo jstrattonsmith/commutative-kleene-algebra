@@ -629,6 +629,9 @@ rewrite /lift; move: ys;
     [= -> /IH ->].
 Qed.
 
+Local Lemma lift_pad_inj xs ys : lift xs ⋅ [None] = lift ys ⋅ [None] → xs = ys.
+Proof. Admitted.
+
 Lemma pad_rel_rtc_2 xs ys e :
   rtc (λ xs ys, Unit (xs, ys) ⊑ pad_rel e)
     (lift xs ⋅ [None]) ys →
@@ -665,6 +668,26 @@ exists ys'. split; first done.
 suff -> : xs = xs' by [].
 apply: lift_inj. exact: app_inv_tail Hxs.
 Qed.
+
+Lemma nsteps_0_inv {A} {R : relation A} {a b} : nsteps R 0 a b → a = b.
+Proof. by move=> H; inversion H. Qed.
+
+Lemma pad_rel_nsteps_2 e m xs ys :
+  nsteps (λ xs ys, Unit (xs, ys) ⊑ pad_rel e) m (lift xs ⋅ [None]) ys →
+  ∃ ys', ys = lift ys' ⋅ [None] ∧ nsteps (λ xs ys, Unit (xs, ys) ⊑ e) m xs ys'.
+Proof.
+elim: m => [|m IH] in ys *.
+- move=> /nsteps_0_inv <-; exists xs; split => //; constructor.
+- case/(nsteps_inv_r _ _ _)=> zs [] /IH [zs' [] -> xs_zs'].
+  case/sqsubseteq_pad_rel_2=> [[_ ys'] [] [/lift_pad_inj <- ->] zs'_ys'].
+  exists ys'; split => //.
+  by apply: nsteps_r.
+Qed.
+
+Lemma pad_rel_nsteps_2' e m xs ys :
+  nsteps (λ xs ys, Unit (xs, ys) ⊑ pad_rel e) m (lift xs ⋅ [None]) (lift ys ⋅ [None]) →
+  nsteps (λ xs ys, Unit (xs, ys) ⊑ e) m xs ys.
+Proof. by case/pad_rel_nsteps_2 => ys' [] /lift_pad_inj <-. Qed.
 
 Lemma sqsubseteq_pad_lang_1 xs L :
   Unit xs ⊑ L →

@@ -786,15 +786,16 @@ move=> const_a; apply: (anti_symm _).
 - exact: bottom_sqsubseteq.
 Qed.
 
-Lemma join_mono x1 x2 y1 y2 :
-  x1 ⊑ x2 →
-  y1 ⊑ y2 →
-  x1 ⊔ y1 ⊑ x2 ⊔ y2.
+Global Instance join_mono : Proper ((⊑@{T}) ==> (⊑) ==> (⊑)) (⊔).
 Proof.
-move=> x12 y12; rewrite join_sqsubseteq; split.
+move=> x1 x2 x12 y1 y2 y12; rewrite join_sqsubseteq; split.
 - by etransitivity; last exact: sqsubseteq_join_left.
 - by etransitivity; last exact: sqsubseteq_join_right.
 Qed.
+
+Global Instance join_flip_mono :
+  Proper (flip (⊑@{T}) ==> flip (⊑) ==> flip (⊑)) (⊔).
+Proof. by move=> x1 x2 x12 y1 y2 y12; f_equiv. Qed.
 
 End SemiLatticeTheory.
 
@@ -878,6 +879,9 @@ Proof.
 move=> x y; rewrite !sqsubseteq_iff => {2}<-.
 by rewrite semi_lattice_morphism_join.
 Qed.
+
+Global Instance semi_lattice_morphism_flip_mono : Proper (flip (⊑) ==> flip (⊑)) f.
+Proof. move=> ???; exact: semi_lattice_morphism_sqsubseteq_proper. Qed.
 
 Lemma semi_lattice_morphism_join_list {A}
     (g : A → T) (xs : list A) :
