@@ -1227,16 +1227,6 @@ case: s Ha Hb {Hq} Hpc => [i [a b]]
 by move=> _.
 Qed.
 
-Lemma encoding_rtc_sound' s1 s2 :
-  fst s2 ≤ n →
-  rtc (λ xs ys, Unit (xs, ys) ⊑ mm2_R) (mm2_config s1) (mm2_config s2) →
-  rtc (mm2_step P) s1 s2.
-Proof.
-move=> Hle /encoding_rtc_sound
-  [s [Heq Hrtc]].
-by rewrite -(mm2_config_inj Hle (eq_sym Heq)).
-Qed.
-
 Local Lemma proj_elem q : Unit [mm_q q] ⊑ ⨆ q ∈ enum Q, Unit [mm_q q].
 Proof. exact: sqsubseteq_join_list (elem_of_enum _). Qed.
 
