@@ -633,17 +633,56 @@ have [//|] := mm2_R_soundness_aux s1_s2 red_leq.
 congruence.
 Qed.
 
+Lemma mm2_step_det s s1 s2 :
+  mm2_step P s s1 → mm2_step P s s2 → s1 = s2.
+Proof.
+move/mm2_step_fun_spec => H1 /mm2_step_fun_spec.
+by rewrite H1; case.
+Qed.
+
+Lemma nsteps_pad_det m xs ys1 ys2 :
+  nsteps (λ xs ys, Unit (xs, ys) ⊑ pad_rel mm2_R)
+    m xs ys1 →
+  nsteps (λ xs ys, Unit (xs, ys) ⊑ pad_rel mm2_R)
+    m xs ys2 →
+  ys1 = ys2.
+Proof.
+elim: m xs => [|m IH] xs H1 H2.
+- by inversion H1; inversion H2; subst.
+- inversion H1 as [|? ? y1 ? Hy1 Hn1]; subst.
+  inversion H2 as [|? ? y2 ? Hy2 Hn2]; subst.
+  suff Ey : y1 = y2 by subst y2; exact: IH Hn1 Hn2.
+  case/sqsubseteq_pad_rel_2: Hy1
+    => [p1 [/= H1' Hs1]].
+  case/sqsubseteq_pad_rel_2: Hy2
+    => [p2 [/= H2' Hs2]].
+  admit.
+Admitted.
+
+Lemma no_step_from_halt w :
+  ¬ Unit (mm2_config (0,(0,0)), w) ⊑ mm2_R.
+Proof.
+move=> /encoding_sound [s2 [_ Hstep]].
+move/mm2_step_fun_spec: Hstep.
+by rewrite /mm2_step_fun /=.
+Qed.
+
 Lemma mm2_R_completeness s1 :
   rtc (mm2_step P) s1 (0,(0,0)) →
   red_lb s1 ⊑ red_ub.
 Proof.
-move=> /encoding_rtc_complete /pad_rel_rtc_1 /rtc_nsteps [m xs_ys].
-have s1_T: Unit (mm2_config s1) ⊑ T by exact: elem_of_T.
-have term: next_iter repr_rel_mm2_R (S m) [map Some (mm2_config s1) ⋅ [None]] = [].
+move=> /encoding_rtc_complete /pad_rel_rtc_1
+  /rtc_nsteps [m xs_ys].
+have s1_T: Unit (mm2_config s1) ⊑ T
+  by exact: elem_of_T.
+have term: next_iter repr_rel_mm2_R (S m)
+  [map Some (mm2_config s1) ⋅ [None]] = [].
 { admit. }
 have := repr_rel_iter_empty' s1_T term.
-rewrite strings_r_alt; set X := next_lt _ _ _ => red_leq.
-apply: transitivity red_leq _; apply: join_mono => //.
+rewrite strings_r_alt;
+  set X := next_lt _ _ _ => red_leq.
+apply: transitivity red_leq _;
+  apply: join_mono => //.
 apply: pre_ka_mul_mono => //.
 apply: semi_lattice_morphism_sqsubseteq_proper.
 admit.
