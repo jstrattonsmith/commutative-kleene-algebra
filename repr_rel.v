@@ -629,8 +629,11 @@ rewrite /lift; move: ys;
     [= -> /IH ->].
 Qed.
 
-Local Lemma lift_pad_inj xs ys : lift xs ⋅ [None] = lift ys ⋅ [None] → xs = ys.
-Proof. Admitted.
+Local Lemma lift_pad_inj xs ys :
+  lift xs ⋅ [None] = lift ys ⋅ [None] → xs = ys.
+Proof.
+move=> /app_inv_tail /lift_inj //.
+Qed.
 
 Lemma pad_rel_rtc_2 xs ys e :
   rtc (λ xs ys, Unit (xs, ys) ⊑ pad_rel e)

@@ -55,6 +55,18 @@ Proof. by move=> ?? ->. Qed.
 Canonical Structure mm_sym_setoid :=
   @Setoid (mm_sym Q) _ _.
 
+Lemma mm_list_equiv_eq
+    (x y : list (mm_sym Q)) :
+  @equiv _ (@monoid_equiv
+    (list_monoid mm_sym_setoid)) x y →
+  x = y.
+Proof.
+rewrite /equiv /monoid_equiv /=
+  /setoid_equiv /=.
+move=> H. elim: H => // a b l1 l2 Hab _ ->.
+by rewrite Hab.
+Qed.
+
 End MMSymInstances.
 
 Section MMSymFinite.
@@ -224,6 +236,14 @@ Section MM2Adapter.
 Variable P : list mm2_instr.
 Let n := length P.
 Let Q := fin (S (S n)).
+
+Local Ltac equivs_to_eq :=
+  repeat match goal with
+  | H : @equiv _ (@monoid_equiv
+      (list_monoid mm_sym_setoid)) _ _
+    |- _ =>
+    apply mm_list_equiv_eq in H
+  end; subst.
 
 (** Convert a library mm2_instr at PC index i (1-indexed)
     to our mm_instr type.  Jump targets outside 1..n cause
@@ -473,15 +493,265 @@ Qed.
 (** ** The encoding faithfully represents the transitions of a Minsky machine (~
 Lemma 14). *)
 
+Lemma repeat_le_star_d (x : mm_sym Q) a :
+  Unit (repeat x a, repeat x a) ⊑
+  star_d x.
+Proof.
+rewrite /star_d; elim: a => [|a IH].
+- exact: pre_ka_one_star.
+- have -> : (x :: repeat x a,
+    x :: repeat x a)
+    = ([x], [x])
+      ⋅ (repeat x a, repeat x a) by [].
+  rewrite monoid_morphism_mul.
+  apply: transitivity (pre_ka_mul_star _).
+  by apply: pre_ka_mul_mono.
+Qed.
+
+Local Lemma config_word_inj a1 b1 (q1 : Q)
+    a2 b2 (q2 : Q) :
+  config_word a1 b1 q1 =
+  config_word a2 b2 q2 →
+  a1 = a2 ∧ b1 = b2 ∧ q1 = q2.
+Proof.
+rewrite /config_word => H.
+have Ha : a1 = a2.
+{ move: a2 b2 q2 H;
+  elim: a1 => [|a1 IH] [|a2] b2 q2 //=.
+  - by case: b1 => [|?] /=; congruence.
+  - by case: b2 => [|?] /=; congruence.
+  - by move=> [= /IH ->]. }
+subst a2; have Hb : b1 = b2.
+{ move: (f_equal (@length _) H).
+  by rewrite !app_length !repeat_length /=;
+    lia. }
+subst b2; split; [done|]; split; [done|].
+have /app_inv_head H' := H.
+by have [= ->] := app_inv_head _ _ _ H'.
+Qed.
+
+Local Lemma translate_state_spec pc :
+  pc < n →
+  fin_to_nat (translate_state (S pc)) =
+  S (S pc).
+Proof.
+move=> Hpc.
+rewrite /translate_state.
+have [fi Hfi] := @nat_to_fin_lt n pc Hpc.
+by rewrite Hfi /= (nat_to_finK Hfi).
+Qed.
+
+Local Lemma mm2_prog_spec pc ρ :
+  nth_error P pc = Some ρ →
+  mm2_prog (translate_state (S pc)) =
+  mm2_to_instr ρ.
+Proof.
+move=> Hnth.
+have Hpc : pc < n
+  by apply/nth_error_Some; congruence.
+rewrite /mm2_prog /translate_state.
+have [fi Hfi] := @nat_to_fin_lt n pc Hpc.
+rewrite Hfi /=.
+have Heq := nat_to_finK Hfi.
+by rewrite Heq Nat.sub_0_r Hnth.
+Qed.
+
 Lemma encoding_complete s1 s2 :
   mm2_step P s1 s2 →
   Unit (mm2_config s1, mm2_config s2) ⊑ mm2_R.
-Proof. Admitted.
+Proof.
+move/mm2_step_fun_spec.
+case: s1 => [[|pc] [a b]] //=.
+rewrite /mm2_step_fun /=.
+case Hnth: (nth_error P pc) => [ρ|] //=
+  [<-].
+have Hpc : pc < n
+  by apply/nth_error_Some; congruence.
+set q := translate_state (S pc).
+have Hactive : q ∈ active_states
+  by apply: translate_state_active; lia.
+have Hprog := mm2_prog_spec Hnth.
+have Hnext: next_state q =
+  translate_state (S (S pc)).
+{ by rewrite /next_state /q
+    translate_state_spec. }
+etransitivity;
+  last exact:
+    sqsubseteq_join_list _ _ _ Hactive.
+rewrite Hprog.
+Local Ltac solve_config_eq :=
+  rewrite /config_word;
+  cbv [mul prod_mul list_mul fst snd
+    monoid_mul list_monoid]; simpl;
+  f_equal; rewrite ?app_nil_r -?app_assoc //.
+case: ρ Hnth Hprog => [||j|j]
+  Hnth Hprog.
+- (* mm2_inc_a *)
+  rewrite /mm2_config -/q;
+    simpl mm2_atom_fun; simpl fst;
+    simpl snd; rewrite -?Hnext.
+  have -> : (config_word a b q,
+    config_word (S a) b (next_state q))
+    = (([] : list _, [mm_a])
+      ⋅ (repeat mm_a a, repeat mm_a a)
+      ⋅ (repeat mm_b b, repeat mm_b b)
+      ⋅ ([mm_q q], [] : list _)
+      ⋅ ([] : list _,
+        [mm_q (next_state q)])).
+  { solve_config_eq. }
+  rewrite !monoid_morphism_mul
+    /encode_instr /mm2_to_instr
+    /sym_r /sym_l.
+  apply: pre_ka_mul_mono; last done.
+  apply: pre_ka_mul_mono; last done.
+  apply: pre_ka_mul_mono;
+    last exact: repeat_le_star_d.
+  apply: pre_ka_mul_mono;
+    last exact: repeat_le_star_d.
+  done.
+- (* mm2_inc_b *)
+  rewrite /mm2_config -/q;
+    simpl mm2_atom_fun; simpl fst;
+    simpl snd; rewrite -?Hnext.
+  have -> : (config_word a b q,
+    config_word a (S b) (next_state q))
+    = ((repeat mm_a a, repeat mm_a a)
+      ⋅ (([] : list _, [mm_b])
+      ⋅ (repeat mm_b b, repeat mm_b b)
+      ⋅ ([mm_q q], [] : list _)
+      ⋅ ([] : list _,
+        [mm_q (next_state q)]))).
+  { solve_config_eq. }
+  rewrite !monoid_morphism_mul
+    /encode_instr /mm2_to_instr
+    /sym_r /sym_l.
+  rewrite 3!assoc.
+  apply: pre_ka_mul_mono; last done.
+  apply: pre_ka_mul_mono; last done.
+  apply: pre_ka_mul_mono;
+    last exact: repeat_le_star_d.
+  apply: pre_ka_mul_mono; last done.
+  exact: repeat_le_star_d.
+- (* mm2_dec_a j *)
+  rewrite /mm2_config -/q.
+  case: a.
+  + (* a = 0: branch 1 *)
+    simpl mm2_atom_fun; simpl fst;
+      simpl snd; rewrite -?Hnext.
+    etransitivity;
+      last exact: sqsubseteq_join_left.
+    have -> : (config_word 0 b q,
+      config_word 0 b (next_state q))
+      = ((repeat mm_b b, repeat mm_b b)
+        ⋅ ([mm_q q], [] : list _)
+        ⋅ ([] : list _,
+          [mm_q (next_state q)])).
+    { solve_config_eq. }
+    rewrite !monoid_morphism_mul
+      /encode_instr /mm2_to_instr
+      /sym_r /sym_l.
+    apply: pre_ka_mul_mono; last done.
+    apply: pre_ka_mul_mono; last done.
+    exact: repeat_le_star_d.
+  + (* a = S a': branch 2 *)
+    move=> a'.
+    simpl mm2_atom_fun; simpl fst;
+      simpl snd.
+    etransitivity;
+      last exact: sqsubseteq_join_right.
+    have -> : (config_word (S a') b q,
+      config_word a' b (translate_state j))
+      = (([mm_a], [] : list _)
+        ⋅ (repeat mm_a a', repeat mm_a a')
+        ⋅ (repeat mm_b b, repeat mm_b b)
+        ⋅ ([mm_q q], [] : list _)
+        ⋅ ([] : list _,
+          [mm_q (translate_state j)])).
+    { solve_config_eq. }
+    rewrite !monoid_morphism_mul
+      /encode_instr /mm2_to_instr
+      /sym_r /sym_l.
+    apply: pre_ka_mul_mono; last done.
+    apply: pre_ka_mul_mono; last done.
+    apply: pre_ka_mul_mono;
+      last exact: repeat_le_star_d.
+    apply: pre_ka_mul_mono;
+      last exact: repeat_le_star_d.
+    done.
+- (* mm2_dec_b j *)
+  rewrite /mm2_config -/q.
+  case: b.
+  + (* b = 0: branch 1 *)
+    simpl mm2_atom_fun; simpl fst;
+      simpl snd; rewrite -?Hnext.
+    etransitivity;
+      last exact: sqsubseteq_join_left.
+    have -> : (config_word a 0 q,
+      config_word a 0 (next_state q))
+      = ((repeat mm_a a, repeat mm_a a)
+        ⋅ ([mm_q q], [] : list _)
+        ⋅ ([] : list _,
+          [mm_q (next_state q)])).
+    { solve_config_eq. }
+    rewrite !monoid_morphism_mul
+      /encode_instr /mm2_to_instr
+      /sym_r /sym_l.
+    apply: pre_ka_mul_mono; last done.
+    apply: pre_ka_mul_mono; last done.
+    exact: repeat_le_star_d.
+  + (* b = S b': branch 2 *)
+    move=> b'.
+    simpl mm2_atom_fun; simpl fst;
+      simpl snd.
+    etransitivity;
+      last exact: sqsubseteq_join_right.
+    have -> : (config_word a (S b') q,
+      config_word a b' (translate_state j))
+      = ((repeat mm_a a, repeat mm_a a)
+        ⋅ (([mm_b], [] : list _)
+        ⋅ (repeat mm_b b', repeat mm_b b')
+        ⋅ ([mm_q q], [] : list _)
+        ⋅ ([] : list _,
+          [mm_q (translate_state j)]))).
+    { solve_config_eq. }
+    rewrite !monoid_morphism_mul
+      /encode_instr /mm2_to_instr
+      /sym_r /sym_l 3!assoc.
+    apply: pre_ka_mul_mono; last done.
+    apply: pre_ka_mul_mono; last done.
+    apply: pre_ka_mul_mono;
+      last exact: repeat_le_star_d.
+    apply: pre_ka_mul_mono; last done.
+    exact: repeat_le_star_d.
+Qed.
+
+Local Lemma star_d_inv (x : mm_sym Q) s1 s2 :
+  Unit (s1, s2) ⊑ star_d x →
+  ∃ k, s1 = repeat x k ∧ s2 = repeat x k.
+Proof.
+rewrite /star_d -l_alt /=.
+case=> k; elim: k s1 s2 =>
+  [|k IH] s1 s2 /=.
+- by case=> /= /mm_list_equiv_eq ->
+    /mm_list_equiv_eq ->; exists 0.
+- move=> /=.
+  case=> [[a1 a2] [[b1 b2]
+    [[El Er]
+      [[El2 Er2] Hrec]]]].
+  simpl in El, Er, El2, Er2.
+  apply leibniz_equiv in El.
+  apply leibniz_equiv in Er.
+  apply leibniz_equiv in El2.
+  apply leibniz_equiv in Er2; subst.
+  have [k' [-> ->]] := IH _ _ Hrec.
+  by exists (S k').
+Qed.
 
 Lemma encoding_sound s1 w :
   Unit (mm2_config s1, w) ⊑ mm2_R →
   ∃ s2, w = mm2_config s2 ∧ mm2_step P s1 s2.
 Proof. Admitted.
+
 
 Lemma encoding_rtc_complete s1 s2 :
   rtc (mm2_step P) s1 s2 →
