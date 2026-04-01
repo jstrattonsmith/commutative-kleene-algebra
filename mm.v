@@ -789,17 +789,21 @@ Local Lemma proj_elem q : Unit [mm_q q] ⊑ ⨆ q ∈ enum Q, Unit [mm_q q].
 Proof. exact: sqsubseteq_join_list (elem_of_enum _). Qed.
 
 Lemma encode_proj1_le q :
-  ka_term_proj1 (encode_instr next_state q (mm2_prog q)) ⊑ T.
+  q ∈ active_states →
+  ka_term_proj1 (encode_instr next_state q (mm2_prog q)) ⊑ C.
 Proof.
-rewrite /T /config_set [enum]lock; case: (mm2_prog q) => [||q'|q'] /=;
+move=> active_q;
+rewrite /C /config_set; case: (mm2_prog q) => [||q'|q'] /=;
 rewrite ?(monoid_morphism_mul, semi_lattice_morphism_join,
           join_sqsubseteq, right_id, left_id) /= -1?lock; try split.
-- f_equiv; exact: proj_elem.
-- f_equiv; exact: proj_elem.
-- by rewrite -[star (Unit [mm_a])]pre_ka_one_star left_id -proj_elem.
-- by rewrite pre_ka_mul_star -proj_elem.
-- by rewrite -[star (Unit [mm_b])]pre_ka_one_star right_id -proj_elem.
-- by rewrite -assoc pre_ka_mul_star -proj_elem.
+- by rewrite -sqsubseteq_join_list.
+- by rewrite -sqsubseteq_join_list.
+- by rewrite -[star (Unit [mm_a])]pre_ka_one_star left_id
+    -sqsubseteq_join_list.
+- by rewrite pre_ka_mul_star -sqsubseteq_join_list.
+- by rewrite -[star (Unit [mm_b])]pre_ka_one_star right_id
+    -sqsubseteq_join_list.
+- by rewrite -assoc pre_ka_mul_star -sqsubseteq_join_list.
 Qed.
 
 Lemma encode_proj2_le q :
@@ -816,13 +820,19 @@ rewrite ?(monoid_morphism_mul, semi_lattice_morphism_join,
 - by rewrite -proj_elem.
 Qed.
 
-Lemma mm2_R_ub1 : ka_term_proj1 mm2_R ⊑ T.
+Lemma mm2_R_ub1 : ka_term_proj1 mm2_R ⊑ C.
 Proof.
 rewrite /mm2_R /transition_rel
   semi_lattice_morphism_join_list.
-apply/join_list_sqsubseteq => q _.
+apply/join_list_sqsubseteq => q active_q.
 exact: encode_proj1_le.
 Qed.
+
+Lemma C_T : C ⊑ T.
+Proof. Admitted.
+
+Lemma mm2_R_ub1' : ka_term_proj1 mm2_R ⊑ T.
+Proof. by rewrite -C_T; exact: mm2_R_ub1. Qed.
 
 Lemma mm2_R_ub2 : ka_term_proj2 mm2_R ⊑ T.
 Proof.
@@ -839,7 +849,7 @@ apply: bounded_output_repr_rel'.
   by case: (mm2_prog q) => //= *; apply: finite_stateP.
 - apply: bounded_output_join_list => q active_q.
   by case: (mm2_prog q) => //= *; apply: bounded_outputbP.
-- exact: mm2_R_ub1.
+- exact: mm2_R_ub1'.
 - exact: mm2_R_ub2.
 Qed.
 
@@ -899,23 +909,6 @@ move/mm2_step_fun_spec => H1 /mm2_step_fun_spec.
 by rewrite H1; case.
 Qed.
 
-Lemma nsteps_pad_det m xs ys1 ys2 :
-  nsteps (λ xs ys, Unit (xs, ys) ⊑ pad_rel mm2_R)
-    m xs ys1 →
-  nsteps (λ xs ys, Unit (xs, ys) ⊑ pad_rel mm2_R)
-    m xs ys2 →
-  ys1 = ys2.
-Proof.
-elim: m xs => [|m IH] xs H1 H2.
-- by inversion H1; inversion H2; subst.
-- inversion H1 as [|? ? y1 ? Hy1 Hn1]; subst.
-  inversion H2 as [|? ? y2 ? Hy2 Hn2]; subst. rewrite /= in IH H1.
-  suff Ey : y1 = y2 by subst y2; exact: IH Hn1 Hn2.
-  case/sqsubseteq_pad_rel_2: Hy1 => [[xs1 xs1'] [/= [??] Hs1]].
-  case/sqsubseteq_pad_rel_2: Hy2 => [[xs2 xs2'] [/= [??] Hs2]].
-  admit.
-Admitted.
-
 Lemma no_step_from_halt w :
   ¬ Unit (mm2_config (0,(0,0)), w) ⊑ mm2_R.
 Proof.
@@ -929,7 +922,7 @@ Lemma mm2_R_completeness s1 :
   red_lb s1 ⊑ red_ub.
 Proof.
 move=> /encoding_rtc_complete /pad_rel_rtc_1 /rtc_nsteps [m xs_ys].
-move/pad_rel_nsteps_2'/(rtc_nsteps_2 _ _ _) in xs_ys => {m}.
+move/pad_rel_nsteps_2'/rtc_nsteps_2 in xs_ys => {m}.
 case/encoding_rtc_sound'/rtc_nsteps: xs_ys => m xs_ys.
 have s1_T: Unit (mm2_config s1) ⊑ T
   by exact: elem_of_T.
