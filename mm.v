@@ -485,19 +485,93 @@ Proof. Admitted.
 
 Lemma encoding_rtc_complete s1 s2 :
   rtc (mm2_step P) s1 s2 →
-  rtc (λ xs ys, Unit (xs, ys) ⊑ mm2_R) (mm2_config s1) (mm2_config s2).
-Proof. Admitted.
+  rtc (λ xs ys, Unit (xs, ys) ⊑ mm2_R)
+    (mm2_config s1) (mm2_config s2).
+Proof.
+elim=> // x y z xy _ IH.
+apply: rtc_l _ IH; exact: encoding_complete xy.
+Qed.
 
 Lemma encoding_rtc_sound s1 ys :
-  rtc (λ xs ys, Unit (xs, ys) ⊑ mm2_R) (mm2_config s1) ys →
-  ∃ s2, ys = mm2_config s2 ∧ rtc (mm2_step P) s1 s2.
-Proof. Admitted.
+  rtc (λ xs ys, Unit (xs, ys) ⊑ mm2_R)
+    (mm2_config s1) ys →
+  ∃ s2, ys = mm2_config s2 ∧
+    rtc (mm2_step P) s1 s2.
+Proof.
+move=> Hrtc; apply: (rtc_ind_r
+  (λ z, ∃ s2, z = mm2_config s2 ∧
+    rtc (mm2_step P) s1 s2)
+  (mm2_config s1) _ _ _ Hrtc).
+- exists s1; done.
+- move=> y z _ Hyz [s2 [Hy Hrtc']].
+  subst y.
+  case: (encoding_sound Hyz) => s3 [-> Hstep].
+  exists s3; split; [done|].
+  exact: rtc_r Hrtc' Hstep.
+Qed.
+
+Local Lemma proj_elem q :
+  Unit [mm_q q] ⊑
+    join_list (λ q0 : Q, Unit [mm_q q0]) (enum Q).
+Proof. exact: sqsubseteq_join_list (elem_of_enum _). Qed.
+
+Local Lemma proj_elem' q :
+  Unit [mm_q q] ⊑
+    ⨆ q0 ∈ enum Q, Unit [mm_q q0].
+Proof. exact: proj_elem. Qed.
+
+Local Ltac finish_proj :=
+  rewrite ?assoc;
+  repeat (first
+    [ exact: proj_elem | reflexivity
+    | refine (pre_ka_mul_mono _ _)
+    | apply: transitivity (pre_ka_mul_star _);
+      refine (pre_ka_mul_mono _ _)
+    | apply: transitivity (pre_ka_one_star _) ]).
+
+Lemma encode_proj1_le q :
+  ka_term_proj1 (encode_instr next_state q
+    (mm2_prog q)) ⊑ T.
+Proof.
+rewrite /T /config_set.
+case: (mm2_prog q) => [||q'|q'] /=;
+  rewrite ?semi_lattice_morphism_join
+    ?join_sqsubseteq;
+  repeat split;
+  rewrite /ka_term_proj1 /sym_l /sym_r /star_d
+    /ka_term_map /= ?left_id ?right_id;
+  finish_proj. admit. admit.
+Admitted.
+
+Lemma encode_proj2_le q :
+  ka_term_proj2 (encode_instr next_state q
+    (mm2_prog q)) ⊑ T.
+Proof.
+rewrite /T /config_set.
+case: (mm2_prog q) => [||q'|q'] /=;
+  rewrite ?semi_lattice_morphism_join
+    ?join_sqsubseteq;
+  repeat split;
+  rewrite /ka_term_proj2 /sym_l /sym_r /star_d
+    /ka_term_map /= ?left_id ?right_id;
+  finish_proj. admit. admit.
+Admitted.
 
 Lemma mm2_R_ub1 : ka_term_proj1 mm2_R ⊑ T.
-Proof. Admitted.
+Proof.
+rewrite /mm2_R /transition_rel
+  semi_lattice_morphism_join_list.
+apply/join_list_sqsubseteq => q _.
+exact: encode_proj1_le.
+Qed.
 
 Lemma mm2_R_ub2 : ka_term_proj2 mm2_R ⊑ T.
-Proof. Admitted.
+Proof.
+rewrite /mm2_R /transition_rel
+  semi_lattice_morphism_join_list.
+apply/join_list_sqsubseteq => q _.
+exact: encode_proj2_le.
+Qed.
 
 Lemma repr_rel_mm2_R : repr_rel (pad_rel mm2_R) (pad_lang T).
 Proof.
