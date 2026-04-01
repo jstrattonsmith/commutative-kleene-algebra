@@ -225,7 +225,7 @@ Definition translate_state (q : nat) : Q :=
   end.
 
 Definition next_state (q : Q) : Q :=
-  translate_state (S q).
+  translate_state q.
 
 Definition mm2_atom_fun (ρ : mm2_instr) (s : mm2_state) :=
   let '(i,(a,b)) := s in
@@ -234,19 +234,26 @@ Definition mm2_atom_fun (ρ : mm2_instr) (s : mm2_state) :=
   | mm2_inc_b => (1+i,(a,S b))
   | mm2_dec_a j =>
     match a with
-    | 0 => (j,(0,b))
-    | S a => (1+i,(a,b))
+    | 0 => (1+i,(0,b))
+    | S a => (j,(a,b))
     end
   | mm2_dec_b j =>
     match b with
-    | 0 => (j,(a,0))
-    | S b => (1+i,(a,b))
+    | 0 => (1+i,(a,0))
+    | S b => (j,(a,b))
     end
   end.
 
 Lemma mm2_atom_fun_spec ρ s1 s2 :
   mm2_atom ρ s1 s2 ↔ mm2_atom_fun ρ s1 = s2.
-Proof. Admitted.
+Proof.
+split.
+- by case.
+- case: ρ => [||j|j].
+  1,2: case: s1 => [i [a b]] /= <-; constructor.
+  + case: s1 => [i [[|a] b]] /= <-; constructor.
+  + case: s1 => [i [a [|b]]] /= <-; constructor.
+Qed.
 
 Arguments mm2_atom_fun_spec {_ _ _}.
 
@@ -259,9 +266,35 @@ Definition mm2_step_fun s :=
            end
   end.
 
+Lemma mm2_instr_at_nth_error ρ i :
+  mm2_instr_at ρ (S i) P ↔ nth_error P i = Some ρ.
+Proof.
+split.
+- case=> l [r [HP Hlen]].
+  have -> : i = length l by lia.
+  by rewrite HP nth_error_app2 // Nat.sub_diag.
+- move=> Hnth.
+  have [l [r [HP Hlen]]] :=
+    nth_error_split _ _ Hnth.
+  by exists l, r; split; first done; lia.
+Qed.
+
 Lemma mm2_step_fun_spec s1 s2 :
   mm2_step P s1 s2 ↔ mm2_step_fun s1 = Some s2.
-Proof. Admitted.
+Proof.
+split.
+- case=> ρ [Hinstr /mm2_atom_fun_spec <-].
+  rewrite /mm2_step_fun /=.
+  case: s1 Hinstr => [[|i] [a b]] /= Hinstr.
+  { case: Hinstr => l [r [_ /=]]; lia. }
+  by rewrite (iffLR (mm2_instr_at_nth_error _ _) Hinstr).
+- rewrite /mm2_step_fun.
+  case: s1 => [[|i] [a b]] //=.
+  case Hnth: (nth_error P i) => [ρ|] //= [<-].
+  exists ρ; split.
+  + by apply/mm2_instr_at_nth_error.
+  + by apply/mm2_atom_fun_spec.
+Qed.
 
 Arguments mm2_step_fun_spec {_ _}.
 
@@ -310,11 +343,120 @@ Definition mm2_R := transition_rel next_state mm2_prog active_states.
 Definition mm2_config (s : mm2_state) : list (mm_sym Q) :=
   config_word (fst (snd s)) (snd (snd s)) (translate_state (fst s)).
 
-Lemma elem_of_C s : Unit (mm2_config s) ⊑ C ↔ 0 < s.1 ≤ n.
-Proof. Admitted.
+Lemma power_le_star {T' : pre_ka} (x : T') k :
+  x ^ k ⊑ star x.
+Proof.
+elim: k => [|k IH]; first exact: pre_ka_one_star.
+apply: transitivity (pre_ka_mul_star _).
+by apply: pre_ka_mul_mono IH.
+Qed.
+
+Lemma repeat_le_star (x : mm_sym Q) a :
+  @sqsubseteq (ka_term (list (mm_sym Q))) _
+    (Unit (repeat x a)) (star (Unit [x])).
+Proof.
+have -> : repeat x a = [x] ^ a.
+{ by elim: a => //= a ->. }
+rewrite monoid_morphism_power.
+exact: power_le_star.
+Qed.
+
+Lemma config_word_le q (qs : list Q) a b :
+  q ∈ qs →
+  Unit (config_word a b q) ⊑ config_set qs.
+Proof.
+move=> q_qs; rewrite /config_word /config_set
+  (monoid_morphism_mul (f := @Unit _))
+  (monoid_morphism_mul (f := @Unit _)) assoc.
+refine (pre_ka_mul_mono _ _).
+- refine (pre_ka_mul_mono _ _);
+    exact: repeat_le_star.
+- exact: sqsubseteq_join_list q_qs.
+Qed.
+
+Lemma config_set_char q (qs : list Q) a b :
+  Unit (config_word a b q) ⊑ config_set qs →
+  q ∈ qs.
+Proof.
+rewrite -l_alt /config_set
+  monoid_morphism_mul /=.
+case=> w12 [w3 [/leibniz_equiv_iff Heq
+  [_ Hw3]]].
+rewrite semi_lattice_morphism_join_list
+  elem_of_lang_join_list in Hw3.
+case: Hw3 => [q' [q'_S /=
+  /leibniz_equiv_iff Hw3]]; subst w3.
+suff: q = q' by move=> ->.
+move: Heq; rewrite /config_word /mul /list_mul
+  !app_assoc => Heq.
+by have [_ []] := app_inj_tail _ _ _ _ Heq.
+Qed.
+
+Lemma nat_to_fin_lt m i :
+  i < m → ∃ fi : fin m, @nat_to_fin m i = Some fi.
+Proof.
+elim: m i => [|m IH] i Hi /=; first lia.
+case: i Hi => [|i] Hi /=.
+- by eexists.
+- have [fi ->] := IH i ltac:(lia).
+  by eexists.
+Qed.
+
+Lemma translate_state_active i :
+  0 < i ≤ n → translate_state i ∈ active_states.
+Proof.
+case: i => [|i] [Hi1 Hi2]; first lia.
+rewrite /translate_state /active_states.
+have Hi : i < n by lia.
+have [fi Hfi] := @nat_to_fin_lt n i Hi.
+rewrite Hfi; apply/elem_of_list_fmap.
+exists (Fin.FS fi); split; first done.
+apply/elem_of_list_fmap.
+exists fi; split; first done.
+exact: elem_of_enum.
+Qed.
+
+Lemma active_translate_state q :
+  q ∈ active_states →
+  ∃ i, 0 < i ≤ n ∧ q = translate_state i.
+Proof.
+rewrite /active_states.
+move/elem_of_list_fmap => [q' [->
+  /elem_of_list_fmap [q'' [-> _]]]].
+exists (S (fin_to_nat q'')).
+split.
+- split; first lia.
+  have := fin_to_nat_lt q''; lia.
+- rewrite /translate_state /=.
+  have [fi Hfi] := @nat_to_fin_lt n
+    (fin_to_nat q'')
+    (fin_to_nat_lt q'').
+  rewrite Hfi; do 2 f_equal.
+  have H := @nat_to_finK n (fin_to_nat q'')
+    fi Hfi.
+  exact/fin_to_nat_inj.
+Qed.
+
+Lemma elem_of_C s :
+  Unit (mm2_config s) ⊑ C ↔ 0 < s.1 ≤ n.
+Proof.
+rewrite /mm2_config /C; case: s => [i [a b]] /=.
+split.
+- move/config_set_char/active_translate_state.
+  case=> j [[Hj1 Hj2] Heq].
+  rewrite /translate_state in Heq.
+  admit.
+- move=> Hi.
+  exact: config_word_le (translate_state_active Hi).
+Admitted.
 
 Lemma elem_of_T s : Unit (mm2_config s) ⊑ T.
-Proof. Admitted.
+Proof.
+rewrite /mm2_config /T.
+case: s => [i [a b]] /=.
+apply: config_word_le.
+apply: (elem_of_enum (translate_state i)).
+Qed.
 
 (** ** The encoding faithfully represents the transitions of a Minsky machine (~
 Lemma 14). *)
