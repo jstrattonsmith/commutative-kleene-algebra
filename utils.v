@@ -26,10 +26,10 @@ Proof. Admitted.
 
 End NSteps.
 
-Arguments nsteps_inv_r {_ _ _ _ _}.
-Arguments nsteps_add_inv {_ _ _ _ _ _}.
-Arguments rtc_nsteps_1 {_ _ _ _}.
-Arguments rtc_nsteps_2 {_ _ _ _ _}.
+Global Arguments nsteps_inv_r {_ _ _ _ _}.
+Global Arguments nsteps_add_inv {_ _ _ _ _ _}.
+Global Arguments rtc_nsteps_1 {_ _ _ _}.
+Global Arguments rtc_nsteps_2 {_ _ _ _ _}.
 
 Lemma elem_of_concat {T} (x : T) xss :
   x ∈ concat xss ↔ ∃ xs, xs ∈ xss ∧ x ∈ xs.

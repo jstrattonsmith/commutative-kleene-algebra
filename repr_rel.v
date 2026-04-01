@@ -809,8 +809,7 @@ Qed.
 
 Lemma repr_rel_iter_final e C L (xs ys : list T)
     (R : repr_rel (pad_rel e) (pad_lang L)) :
-  Unit xs ⊑ C →
-  C ⊑ L →
+  Unit xs ⊑ L →
   ka_term_proj1 e ⊑ C →
   (∀ xs ys1 ys2,
     Unit (xs, ys1) ⊑ e →
@@ -823,7 +822,7 @@ Lemma repr_rel_iter_final e C L (xs ys : list T)
     ka_term_inj2 (pad_lang C ⊔ Unit (lift ys ⋅ [None]))
     ⊔ repr_rel_rtc_error R.
 Proof.
-move=> xs_C C_L e_C det_e final_ys /rtc_nsteps [n xs_ys].
+move=> xs_L e_C det_e final_ys /rtc_nsteps [n xs_ys].
 set ub := pad_lang C ⊔ _.
 have <- : strings_r (next_lt R (S n) [lift xs ⋅ [None]]) ⊑ ka_term_inj2 ub.
 { rewrite strings_r_alt; f_equiv; rewrite join_list_sqsubseteq => zs.
@@ -834,11 +833,10 @@ have <- : strings_r (next_lt R (S n) [lift xs ⋅ [None]]) ⊑ ka_term_inj2 ub.
     by rewrite -l_alt; right => /=.
   rewrite m_n in xs_ys; case/nsteps_add_inv: xs_ys=> ys' [] xs_ys' ys'_ys xs_zs.
   case/nsteps_inv_r: xs_ys'=> zs' [] xs_zs' zs'_ys'.
-  have ->: zs = zs' by apply: nsteps_det xs_zs xs_zs'.
+  have {zs xs_zs} ->: zs = zs' by apply: nsteps_det xs_zs xs_zs'.
   have /l_alt ?: Unit (lift zs' ⋅ [None]) ⊑ pad_lang C; last first.
     by rewrite -l_alt; left.
   by apply: sqsubseteq_pad_lang_1; rewrite -e_C -zs'_ys'. }
-rewrite C_L in xs_C.
 apply: repr_rel_iter_empty' => //; apply: elem_of_nil_inv => zs.
 case/next_iter_nsteps=> _ [] /elem_of_list_singleton -> xs_zs.
 case/nsteps_inv_r: xs_zs=> ys' [] xs_ys' ys'_zs.
