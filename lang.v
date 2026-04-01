@@ -377,7 +377,7 @@ Qed.
 
 End LangTop.
 
-Section KATermDiagSpec.
+Section TermProperties.
 
 Variables (T : monoid).
 
@@ -390,4 +390,13 @@ split.
 - case=> eqs He; exists sl; split => //; split => /=; by [|symmetry].
 Qed.
 
-End KATermDiagSpec.
+Lemma Unit_sqsubseteq (s1 s2 : T) :
+  Unit s1 ⊑ Unit s2 ↔ s1 ≡ s2.
+Proof.
+split=> [s1_s2|->] //.
+have {}s1_s2: l (Unit s1) ⊑ l (Unit s2).
+  exact: semi_lattice_morphism_sqsubseteq_proper.
+by move/(_ s1): s1_s2; apply; rewrite /=.
+Qed.
+
+End TermProperties.

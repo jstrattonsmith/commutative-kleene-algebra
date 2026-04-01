@@ -306,7 +306,7 @@ Fixpoint next_lt (n : nat) (σ : list (list T)) : list (list T) :=
   | S n => next_lt n σ ++ next_iter n σ
   end.
 
-Local Definition error : ka_term (list T * list T) :=
+Definition repr_rel_rtc_error : ka_term (list T * list T) :=
   dpseudo_top ⋅ mismatch ⋅ residue R ⋅ star e.
 
 (** Helper: strings_r distributes over append. *)
@@ -350,6 +350,11 @@ Local Lemma next_iter_succ (n : nat) (σ : list (list T)) :
   next_iter (S n) σ = next_iter n (next_set σ).
 Proof. exact: Nat.iter_succ_r. Qed.
 
+Lemma next_iter_nsteps n σ ys :
+  ys ∈ next_iter n σ →
+  ∃ xs, xs ∈ σ ∧ nsteps (λ xs ys, Unit (xs, ys) ⊑ e) n xs ys.
+Proof. Admitted.
+
 Lemma next_lt_succ (n : nat) (σ : list (list T)) :
   next_lt (S n) σ = σ ++ next_lt n (next_set σ).
 Proof.
@@ -359,6 +364,11 @@ elim: n σ => [|n IHn] σ.
          σ ++ (next_lt n (next_set σ) ++ next_iter n (next_set σ))).
   by rewrite IHn app_assoc /next_iter Nat.iter_succ_r.
 Qed.
+
+Lemma next_lt_nsteps n σ ys :
+  ys ∈ next_lt n σ →
+  ∃ xs m, xs ∈ σ ∧ m < n ∧ nsteps (λ xs ys, Unit (xs, ys) ⊑ e) m xs ys.
+Proof. Admitted.
 
 (** Helper: ⨆ xs ∈ σ, Unit(xs,xs) ⊑ pseudo_top *)
 
@@ -375,7 +385,7 @@ Lemma repr_rel_iter (n : nat) (σ : list (list T)) :
   strings_r σ ⋅ star e ⊑
     dpseudo_top ⋅ strings_r (next_lt n σ)
     ⊔ dpseudo_top ⋅ strings_r (next_iter n σ) ⋅ star e
-    ⊔ error.
+    ⊔ repr_rel_rtc_error.
 Proof.
 elim: n σ => [|n IH] σ Hσ.
 - (* Base case: x ⊑ pseudo_top ⋅ x since 1 ⊑ pseudo_top *)
@@ -416,18 +426,18 @@ elim: n σ => [|n IH] σ Hσ.
     strings_r σ
     ⊔ ((⨆ xs ∈ σ, Unit (xs, xs)) ⋅ strings_r σ' ⊔ err_base) ⋅ star e
     ≡ strings_r σ ⊔
-    (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ strings_r σ' ⋅ star e ⊔ error.
-  { by rewrite pre_ka_left_dist /error /err_base -!assoc. }
+    (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ strings_r σ' ⋅ star e ⊔ repr_rel_rtc_error.
+  { by rewrite pre_ka_left_dist /repr_rel_rtc_error /err_base -!assoc. }
 
   (* Hop 4: apply IH to σ' *)
   have hop4 :
     strings_r σ
-    ⊔ (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ strings_r σ' ⋅ star e ⊔ error
+    ⊔ (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ strings_r σ' ⋅ star e ⊔ repr_rel_rtc_error
     ⊑ strings_r σ ⊔ (⨆ xs ∈ σ, Unit (xs, xs))
         ⋅ (dpseudo_top ⋅ strings_r (next_lt n σ')
            ⊔ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
-           ⊔ error)
-    ⊔ error.
+           ⊔ repr_rel_rtc_error)
+    ⊔ repr_rel_rtc_error.
   { apply: join_mono; last reflexivity.
     apply: join_mono; first reflexivity.
     rewrite -assoc; apply: pre_ka_mul_mono; first reflexivity.
@@ -441,8 +451,8 @@ elim: n σ => [|n IH] σ Hσ.
          ⊔ dpseudo_top
            ⋅ strings_r (next_iter n σ')
            ⋅ star e
-         ⊔ error)
-    ⊔ error
+         ⊔ repr_rel_rtc_error)
+    ⊔ repr_rel_rtc_error
     ≡
     strings_r σ
     ⊔ (⨆ xs ∈ σ, Unit (xs, xs))
@@ -450,8 +460,8 @@ elim: n σ => [|n IH] σ Hσ.
     ⊔ (⨆ xs ∈ σ, Unit (xs, xs))
       ⋅ dpseudo_top
       ⋅ strings_r (next_iter n σ') ⋅ star e
-    ⊔ (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ error
-    ⊔ error.
+    ⊔ (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ repr_rel_rtc_error
+    ⊔ repr_rel_rtc_error.
   { by rewrite !pre_ka_right_dist -!assoc. }
 
   (* Hop 6: ⨆diag(σ) ⊑ pt, so ⨆diag(σ)·pt ⊑ pt *)
@@ -462,13 +472,13 @@ elim: n σ => [|n IH] σ Hσ.
     ⊔ (⨆ xs ∈ σ, Unit (xs, xs))
       ⋅ dpseudo_top
       ⋅ strings_r (next_iter n σ') ⋅ star e
-    ⊔ (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ error
-    ⊔ error
+    ⊔ (⨆ xs ∈ σ, Unit (xs, xs)) ⋅ repr_rel_rtc_error
+    ⊔ repr_rel_rtc_error
     ⊑
     dpseudo_top ⋅ strings_r σ
     ⊔ dpseudo_top ⋅ strings_r (next_lt n σ')
     ⊔ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
-    ⊔ error.
+    ⊔ repr_rel_rtc_error.
   { have Hd := diag_units_le_pseudo_top σ.
 
     (* Each of the 5 LHS summands lands in the RHS *)
@@ -491,7 +501,7 @@ elim: n σ => [|n IH] σ Hσ.
       apply: pre_ka_mul_mono => //; exact: dpseudo_top_absorb_list.
     (* ⨆diag · error ⊑ error *)
     - etransitivity; last apply: sqsubseteq_join_right.
-      rewrite /error !assoc.
+      rewrite /repr_rel_rtc_error !assoc.
       apply: pre_ka_mul_mono; last reflexivity.
       apply: pre_ka_mul_mono; last reflexivity.
       apply: pre_ka_mul_mono; last reflexivity.
@@ -504,11 +514,11 @@ elim: n σ => [|n IH] σ Hσ.
     dpseudo_top ⋅ strings_r σ
     ⊔ dpseudo_top ⋅ strings_r (next_lt n σ')
     ⊔ dpseudo_top ⋅ strings_r (next_iter n σ') ⋅ star e
-    ⊔ error
+    ⊔ repr_rel_rtc_error
     ≡
     dpseudo_top ⋅ strings_r (next_lt (S n) σ)
     ⊔ dpseudo_top ⋅ strings_r (next_iter (S n) σ) ⋅ star e
-    ⊔ error.
+    ⊔ repr_rel_rtc_error.
   { by rewrite next_lt_succ strings_r_app
       pre_ka_right_dist next_iter_succ -assoc. }
 
@@ -530,7 +540,7 @@ Lemma repr_rel_iter_empty
   (∀ xs, xs ∈ σ → Unit xs ⊑ L) →
   next_iter n σ = [] →
   strings_r σ ⋅ star e ⊑
-    ka_term_diag pseudo_top ⋅ strings_r (next_lt n σ) ⊔ error.
+    dpseudo_top ⋅ strings_r (next_lt n σ) ⊔ repr_rel_rtc_error.
 Proof.
 move=> Hσ Hempty.
 etransitivity; first exact: repr_rel_iter n σ Hσ.
@@ -574,6 +584,22 @@ rewrite /pad_rel -l_alt monoid_morphism_mul l_natural.
 case=> /= p' [] _ [] /leibniz_equiv_iff -> [pP /leibniz_equiv_iff ->].
 by case: pP => {}p' [] /leibniz_equiv_iff -> /l_alt ?; eauto.
 Qed.
+
+Lemma pad_rel_rtc_1 xs ys e :
+  rtc (λ xs ys, Unit (xs, ys) ⊑ e) xs ys →
+  rtc (λ xs ys, Unit (xs, ys) ⊑ pad_rel e)
+    (lift xs ⋅ [None]) (lift ys ⋅ [None]).
+Proof.
+elim: xs ys / => // xs ys zs xs_ys _ IH.
+move/sqsubseteq_pad_rel_1: xs_ys.
+by etransitivity; last exact: IH; apply: rtc_once.
+Qed.
+
+Lemma pad_rel_rtc_2 xs ys e :
+  rtc (λ xs ys, Unit (xs, ys) ⊑ pad_rel e) (lift xs ⋅ [None]) ys →
+  ∃ ys', ys = lift ys' ⋅ [None] ∧
+         rtc (λ xs ys, Unit (xs, ys) ⊑ e) xs ys'.
+Proof. Admitted.
 
 Lemma sqsubseteq_pad_lang_1 xs L :
   Unit xs ⊑ L →
@@ -641,13 +667,7 @@ Lemma repr_rel_rtc_soundness' e L ρ (xs ys : list T) :
   dpseudo_top ⋅ ka_term_inj2 (pad_lang L) ⊔ dpseudo_top ⋅ mismatch ⋅ ρ →
   Unit ys ⊑ L.
 Proof.
-move=> xs_ys xs_L.
-have {}xs_ys:
-  rtc (λ xs' ys', Unit (xs', ys') ⊑ pad_rel e)
-      (lift xs ⋅ [None]) (lift ys ⋅ [None]).
-{ elim: xs ys / xs_ys {xs_L} => // xs ys zs xs_ys _ IH.
-  move/sqsubseteq_pad_rel_1: xs_ys.
-  by etransitivity; last exact: IH; apply: rtc_once. }
+move=> /pad_rel_rtc_1 xs_ys xs_L.
 have : Unit (lift ys ⋅ [None]) ⊑ pad_lang L.
   exact: repr_rel_rtc_soundness xs_ys xs_L.
 case/sqsubseteq_pad_lang_2 => ys' [] e_ys' {xs_ys xs_L}.
@@ -680,6 +700,23 @@ apply: (finite_state_alphabet_change t' s') fin_e.
 - by case.
 - by case.
 - by case=> [[?|]|[?|]] ? //= [<-].
+Qed.
+
+Lemma repr_rel_iter_empty' e L (xs : list T)
+    (R : repr_rel (pad_rel e) (pad_lang L)) n :
+  Unit xs ⊑ L →
+  next_iter R n [lift xs ⋅ [None]] = [] →
+  Unit (1, lift xs ⋅ [None]) ⋅ star (pad_rel e) ⊑
+  dpseudo_top ⋅ strings_r (next_lt R n [lift xs ⋅ [None]])
+  ⊔ repr_rel_rtc_error R.
+Proof.
+move=> xs_L next_done.
+have {}xs_L: Unit (lift xs ⋅ [None]) ⊑ pad_lang L
+  by exact: sqsubseteq_pad_lang_1.
+have ->: Unit (1, lift xs ⋅ [None]) ≡ strings_r [lift xs ⋅ [None]].
+  by rewrite strings_r_alt /= right_id.
+apply: repr_rel_iter_empty next_done.
+by move=> ? /elem_of_list_singleton ->.
 Qed.
 
 End Padding.

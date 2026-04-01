@@ -741,6 +741,15 @@ case=> [A1 Ae1] [A2 Ae2].
 by exists (fsa_join A1 A2); rewrite Ae1 Ae2.
 Qed.
 
+Lemma finite_state_join_list {I} (P : I → T) xs :
+  (∀ x, x ∈ xs → finite_state (P x)) →
+  finite_state (⨆ x ∈ xs, P x).
+Proof.
+elim: xs => //= [|x xs IH] xsP; first exact: finite_state_bottom.
+apply: finite_state_join; first by apply: xsP; set_solver.
+apply: IH => ? ?; apply: xsP; set_solver.
+Qed.
+
 Lemma finite_state_mul e1 e2 :
   finite_state e1 →
   finite_state e2 →

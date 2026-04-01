@@ -62,6 +62,9 @@ move=> sl sr /l_alt.
 by rewrite pre_ka_morphism_bottom.
 Qed.
 
+Lemma bounded_output_bot : bounded_output ⊥.
+Proof. exists 0; exact: bounded_output_with_bot. Qed.
+
 Lemma bounded_output_with_join k1 k2 e1 e2 :
   bounded_output_with k1 e1 →
   bounded_output_with k2 e2 →
@@ -86,6 +89,15 @@ Proof.
 move=> [k1 H1] [k2 H2].
 exists (max k1 k2).
 exact: bounded_output_with_join.
+Qed.
+
+Lemma bounded_output_join_list {I} (P : I → ka_term (list T * list T)) xs :
+  (∀ x : I, x ∈ xs → bounded_output (P x)) →
+  bounded_output (⨆ x ∈ xs, P x).
+Proof.
+elim: xs => //= [|x xs IH] xsP; first exact: bounded_output_bot.
+apply: bounded_output_join; first by apply: xsP; set_solver.
+apply: IH => ? ?; apply: xsP; set_solver.
 Qed.
 
 (** Lemma 30 (partial): Bounded-output is preserved by multiplication. *)
