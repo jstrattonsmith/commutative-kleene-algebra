@@ -10,6 +10,25 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+Section NSteps.
+
+Lemma nsteps_0_inv {A} {R : relation A} {a b} : nsteps R 0 a b → a = b.
+Proof. by move=> H; inversion H. Qed.
+
+Lemma nsteps_inv_l {A} {R : relation A} {n a b} :
+  nsteps R (S n) a b → ∃ c, R a c ∧ nsteps R n c b.
+Proof. by move=> H; inversion H; eauto. Qed.
+
+Lemma nsteps_det {A} {R : relation A} n :
+  (∀ a b1 b2, R a b1 → R a b2 → b1 = b2) →
+  (∀ a b1 b2, nsteps R n a b1 → nsteps R n a b2 → b1 = b2).
+Proof. Admitted.
+
+End NSteps.
+
+Arguments nsteps_inv_r {_ _ _ _ _}.
+Arguments nsteps_add_inv {_ _ _ _ _ _}.
+
 Lemma elem_of_concat {T} (x : T) xss :
   x ∈ concat xss ↔ ∃ xs, xs ∈ xss ∧ x ∈ xs.
 Proof.

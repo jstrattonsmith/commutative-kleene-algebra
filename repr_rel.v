@@ -672,16 +672,13 @@ suff -> : xs = xs' by [].
 apply: lift_inj. exact: app_inv_tail Hxs.
 Qed.
 
-Lemma nsteps_0_inv {A} {R : relation A} {a b} : nsteps R 0 a b → a = b.
-Proof. by move=> H; inversion H. Qed.
-
 Lemma pad_rel_nsteps_2 e m xs ys :
   nsteps (λ xs ys, Unit (xs, ys) ⊑ pad_rel e) m (lift xs ⋅ [None]) ys →
   ∃ ys', ys = lift ys' ⋅ [None] ∧ nsteps (λ xs ys, Unit (xs, ys) ⊑ e) m xs ys'.
 Proof.
 elim: m => [|m IH] in ys *.
 - move=> /nsteps_0_inv <-; exists xs; split => //; constructor.
-- case/(nsteps_inv_r _ _ _)=> zs [] /IH [zs' [] -> xs_zs'].
+- case/nsteps_inv_r=> zs [] /IH [zs' [] -> xs_zs'].
   case/sqsubseteq_pad_rel_2=> [[_ ys'] [] [/lift_pad_inj <- ->] zs'_ys'].
   exists ys'; split => //.
   by apply: nsteps_r.
@@ -808,6 +805,48 @@ have ->: Unit (1, lift xs ⋅ [None]) ≡ strings_r [lift xs ⋅ [None]].
   by rewrite strings_r_alt /= right_id.
 apply: repr_rel_iter_empty next_done.
 by move=> ? /elem_of_list_singleton ->.
+Qed.
+
+Lemma repr_rel_iter_final e C L (xs ys : list T)
+    (R : repr_rel (pad_rel e) (pad_lang L)) :
+  Unit xs ⊑ C →
+  C ⊑ L →
+  ka_term_proj1 e ⊑ C →
+  (∀ xs ys1 ys2,
+    Unit (xs, ys1) ⊑ e →
+    Unit (xs, ys2) ⊑ e →
+    ys1 = ys2) →
+  (∀ ys', ¬ Unit (ys, ys') ⊑ e) →
+  rtc (λ xs ys, Unit (xs, ys) ⊑ e) xs ys →
+  Unit (1, lift xs ⋅ [None]) ⋅ star (pad_rel e) ⊑
+    dpseudo_top ⋅
+    ka_term_inj2 (pad_lang C ⊔ Unit (lift ys ⋅ [None]))
+    ⊔ repr_rel_rtc_error R.
+Proof.
+move=> xs_C C_L e_C det_e final_ys /rtc_nsteps [n xs_ys].
+set ub := pad_lang C ⊔ _.
+have <- : strings_r (next_lt R (S n) [lift xs ⋅ [None]]) ⊑ ka_term_inj2 ub.
+{ rewrite strings_r_alt; f_equiv; rewrite join_list_sqsubseteq => zs.
+  case/next_lt_nsteps=> _ [] m [] /elem_of_list_singleton -> [] m_n xs_zs.
+  case/pad_rel_nsteps_2: xs_zs => {}zs [] -> xs_zs.
+  move: xs_zs; have [->|{}m_n] : m = n ∨ n = S m + (n - S m) by lia.
+    move=> xs_zs; have <-: ys = zs by apply: nsteps_det xs_ys xs_zs.
+    by rewrite -l_alt; right => /=.
+  rewrite m_n in xs_ys; case/nsteps_add_inv: xs_ys=> ys' [] xs_ys' ys'_ys xs_zs.
+  case/nsteps_inv_r: xs_ys'=> zs' [] xs_zs' zs'_ys'.
+  have ->: zs = zs' by apply: nsteps_det xs_zs xs_zs'.
+  have /l_alt ?: Unit (lift zs' ⋅ [None]) ⊑ pad_lang C; last first.
+    by rewrite -l_alt; left.
+  by apply: sqsubseteq_pad_lang_1; rewrite -e_C -zs'_ys'. }
+rewrite C_L in xs_C.
+apply: repr_rel_iter_empty' => //; apply: elem_of_nil_inv => zs.
+case/next_iter_nsteps=> _ [] /elem_of_list_singleton -> xs_zs.
+case/nsteps_inv_r: xs_zs=> ys' [] xs_ys' ys'_zs.
+case/pad_rel_nsteps_2: xs_ys' => {}ys' [] -> xs_ys' in ys'_zs *.
+have ys_ys': ys = ys' by exact: nsteps_det xs_ys xs_ys'.
+rewrite -{}ys_ys' {xs_ys' ys'} in ys'_zs *.
+case/sqsubseteq_pad_rel_2: ys'_zs => [[ys' zs']] [] [ey ez].
+move/lift_pad_inj: ey => <- {ys'}; exact: final_ys.
 Qed.
 
 End Padding.
