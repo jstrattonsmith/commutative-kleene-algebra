@@ -213,6 +213,9 @@ case e: (nat_to_fin i) =>  [n'|] //= [<-] /=; congr S.
 exact: IH.
 Qed.
 
+Lemma fin_to_natK {m} (i : fin m) : nat_to_fin i = Some i.
+Proof. by elim: m / i => //= m i ->. Qed.
+
 Lemma nat_to_fin_ge {m} (i : nat) : m ≤ i → @nat_to_fin m i = None.
 Proof.
 elim: m i => [|m IH] //= [|i] m_i; first lia.
@@ -365,11 +368,6 @@ Definition C := config_set active_states.
 
 Definition T := config_set (enum Q).
 
-(** Running or accepted *)
-
-Definition partially_accepted :=
-  C ⊔ Unit (config_word 0 0 Fin.F1).
-
 (** The transition relation for a concrete MM2 program. *)
 
 Definition mm2_R := transition_rel next_state mm2_prog active_states.
@@ -378,6 +376,11 @@ Definition mm2_R := transition_rel next_state mm2_prog active_states.
 
 Definition mm2_config (s : mm2_state) : list (mm_sym Q) :=
   config_word (fst (snd s)) (snd (snd s)) (translate_state (fst s)).
+
+(** Running or accepted *)
+
+Definition partially_accepted :=
+  C ⊔ Unit (mm2_config (0,(0,0))).
 
 Lemma power_le_star {T' : pre_ka} (x : T') k :
   x ^ k ⊑ star x.
@@ -425,6 +428,11 @@ move: Heq; rewrite /config_word /mul /list_mul
   !app_assoc => Heq.
 by have [_ []] := app_inj_tail _ _ _ _ Heq.
 Qed.
+
+Lemma config_set_inv xs (qs : list Q) :
+  Unit xs ⊑ config_set qs →
+  ∃ a b q, xs = config_word a b q ∧ q ∈ qs.
+Proof. Admitted.
 
 Lemma translate_state_active i :
   0 < i ≤ n → translate_state i ∈ active_states.
@@ -490,6 +498,21 @@ apply: config_word_le.
 apply: (elem_of_enum (translate_state i)).
 Qed.
 
+Lemma fin_case m (q : fin (S m)) : q = 0%fin ∨ ∃ q', q = Fin.FS q'.
+Proof. apply (Fin.caseS' q); eauto. Qed.
+
+Lemma elem_of_T_inv xs : Unit xs ⊑ T → ∃ s, xs = mm2_config s.
+Proof.
+case/config_set_inv=> a [] b [] q [] -> _.
+have [->|[{}q ->]] := fin_case q.
+{ by exists (0,(a,b)). }
+have [->|[{}q ->]] := fin_case q.
+{ exists (S n, (a,b)). rewrite /mm2_config /=.
+  rewrite nat_to_fin_ge //; lia. }
+exists (S (fin_to_nat q), (a, b)).
+by rewrite /mm2_config /= fin_to_natK.
+Qed.
+
 (** ** The encoding faithfully represents the transitions of a Minsky machine (~
 Lemma 14). *)
 
@@ -523,7 +546,7 @@ have Ha : a1 = a2.
   - by move=> [= /IH ->]. }
 subst a2; have Hb : b1 = b2.
 { move: (f_equal (@length _) H).
-  by rewrite !app_length !repeat_length /=;
+  by rewrite !length_app !repeat_length /=;
     lia. }
 subst b2; split; [done|]; split; [done|].
 have /app_inv_head H' := H.
@@ -1206,8 +1229,7 @@ Qed.
 
 Lemma encoding_rtc_sound' s1 s2 :
   fst s2 ≤ n →
-  rtc (λ xs ys, Unit (xs, ys) ⊑ mm2_R)
-    (mm2_config s1) (mm2_config s2) →
+  rtc (λ xs ys, Unit (xs, ys) ⊑ mm2_R) (mm2_config s1) (mm2_config s2) →
   rtc (mm2_step P) s1 s2.
 Proof.
 move=> Hle /encoding_rtc_sound
@@ -1356,22 +1378,22 @@ Lemma mm2_R_completeness s1 :
   rtc (mm2_step P) s1 (0,(0,0)) →
   red_lb s1 ⊑ red_ub.
 Proof.
-move=> /encoding_rtc_complete /pad_rel_rtc_1 /rtc_nsteps [m xs_ys].
-move/pad_rel_nsteps_2'/rtc_nsteps_2 in xs_ys => {m}.
-case/(encoding_rtc_sound' (Nat.le_0_l _))/rtc_nsteps: xs_ys => m xs_ys.
-have s1_T: Unit (mm2_config s1) ⊑ T
-  by exact: elem_of_T.
-have term: next_iter repr_rel_mm2_R (S m)
-  [map Some (mm2_config s1) ⋅ [None]] = [].
-{ admit. }
-have := repr_rel_iter_empty' s1_T term.
-rewrite strings_r_alt;
-  set X := next_lt _ _ _ => red_leq.
-apply: transitivity red_leq _;
-  apply: join_mono => //.
-apply: pre_ka_mul_mono => //.
-apply: semi_lattice_morphism_sqsubseteq_proper.
-admit.
-Admitted.
+move=> /encoding_rtc_complete xs_ys.
+rewrite /red_lb /red_ub /partially_accepted pad_lang_join.
+have ->: pad_lang (Unit (mm2_config (0,(0,0))))
+         ≡ Unit (map Some (mm2_config (0,(0,0))) ⋅ [None]).
+{ by rewrite /pad_lang /= monoid_morphism_mul. }
+apply: repr_rel_iter_final xs_ys.
+- apply: elem_of_T.
+- apply: mm2_R_ub1.
+- move=> xs ys1 ys2 xs_ys1 xs_ys2.
+  have: Unit xs ⊑ ka_term_proj1 mm2_R by rewrite -xs_ys1.
+  rewrite mm2_R_ub1 C_T; case/elem_of_T_inv=> s xs_s.
+  rewrite xs_s in xs_ys1 xs_ys2.
+  case/encoding_sound: xs_ys1 => s1' [] ys1_s1' s_s1'.
+  case/encoding_sound: xs_ys2 => s2' [] ys2_s2' s_s2'.
+  have := mm2_step_det s_s1' s_s2'; congruence.
+- exact: no_step_from_halt.
+Qed.
 
 End MM2Adapter.

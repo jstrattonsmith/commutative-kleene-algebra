@@ -594,6 +594,11 @@ Local Definition lift2 : list T * list T → list (option T) * list (option T) :
 Definition pad_lang L := ka_term_map lift L ⋅ Unit [None].
 Definition pad_rel e := ka_term_map lift2 e ⋅ Unit ([None], [None]).
 
+Lemma pad_lang_join L1 L2 : pad_lang (L1 ⊔ L2) ≡ pad_lang L1 ⊔ pad_lang L2.
+Proof.
+by rewrite /pad_lang semi_lattice_morphism_join pre_ka_left_dist.
+Qed.
+
 Lemma sqsubseteq_pad_rel_1 p e :
   Unit p ⊑ e →
   Unit (lift2 p ⋅ ([None], [None])) ⊑ pad_rel e.
