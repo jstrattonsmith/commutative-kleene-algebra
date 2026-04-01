@@ -747,11 +747,397 @@ case=> k; elim: k s1 s2 =>
   by exists (S k').
 Qed.
 
+Local Lemma Unit_le_mul_pair
+    (e1 e2 : ka_term (list (mm_sym Q) *
+      list (mm_sym Q)))
+    (s w : list (mm_sym Q)) :
+  Unit (s, w) ⊑ e1 ⋅ e2 →
+  ∃ s1 w1 s2 w2,
+    s = s1 ++ s2 ∧ w = w1 ++ w2 ∧
+    Unit (s1, w1) ⊑ e1 ∧
+    Unit (s2, w2) ⊑ e2.
+Proof.
+rewrite -l_alt /=.
+case=> [[s1 w1] [[s2 w2] [[El Er]
+  [/l_alt H1 /l_alt H2]]]].
+simpl in El, Er.
+apply leibniz_equiv in El.
+apply leibniz_equiv in Er; subst.
+by exists s1, w1, s2, w2.
+Qed.
+
+Local Lemma Unit_le_Unit_pair
+    (sl sr sl' sr' : list (mm_sym Q)) :
+  Unit (sl, sr) ⊑
+    (Unit (sl', sr')
+      : ka_term (list (mm_sym Q) *
+        list (mm_sym Q))) →
+  sl = sl' ∧ sr = sr'.
+Proof.
+rewrite -l_alt /=.
+case=> El Er.
+simpl in El, Er.
+by apply leibniz_equiv in El;
+  apply leibniz_equiv in Er.
+Qed.
+
+Local Lemma Unit_le_join_pair
+    (e1 e2 : ka_term (list (mm_sym Q) *
+      list (mm_sym Q)))
+    (s w : list (mm_sym Q)) :
+  Unit (s, w) ⊑ e1 ⊔ e2 →
+  Unit (s, w) ⊑ e1 ∨ Unit (s, w) ⊑ e2.
+Proof.
+move/l_alt => /= [H|H];
+  [left|right]; exact/l_alt.
+Qed.
+
+Local Lemma translate_state_inv
+    (fi : fin n) pc :
+  translate_state pc = Fin.FS (Fin.FS fi) →
+  pc = S (fin_to_nat fi).
+Proof.
+case: pc => [|pc].
+- rewrite /translate_state /= => E.
+  have := f_equal fin_to_nat E; simpl; lia.
+- rewrite /translate_state.
+  case Hf: (@nat_to_fin n pc) => [fi'|].
+  + move/FS_inj/FS_inj => Hfi; subst fi'.
+    by rewrite -(nat_to_finK Hf).
+  + move=> E.
+    have := f_equal fin_to_nat E; simpl; lia.
+Qed.
+
+Local Lemma translate_state_eq q :
+  translate_state (S (fin_to_nat q)) =
+  Fin.FS (Fin.FS q) :> Q.
+Proof.
+rewrite /translate_state.
+have Hpc := fin_to_nat_lt q.
+have [fi' Hfi'] := @nat_to_fin_lt n
+  (fin_to_nat q) Hpc.
+rewrite Hfi'; do 2 f_equal.
+exact/fin_to_nat_inj/(nat_to_finK Hfi').
+Qed.
+
+Local Ltac solve_encoding_eq :=
+  rewrite /mm2_config /config_word /=;
+  rewrite ?app_nil_r -?app_assoc //=.
+
+Local Ltac decompose_leaves :=
+  repeat match goal with
+  | H : Unit (_, _) ⊑ Unit (_, _) |- _ =>
+    apply Unit_le_Unit_pair in H;
+    destruct H; subst
+  end.
+
 Lemma encoding_sound s1 w :
   Unit (mm2_config s1, w) ⊑ mm2_R →
   ∃ s2, w = mm2_config s2 ∧ mm2_step P s1 s2.
-Proof. Admitted.
-
+Proof.
+rewrite -l_alt /mm2_R /transition_rel
+  semi_lattice_morphism_join_list
+  elem_of_lang_join_list.
+case=> q' [q_active /l_alt Hl].
+have [fi Hfi] :=
+  elem_of_active_state q_active.
+move: Hl; rewrite Hfi => Hl {q' Hfi
+  q_active}.
+set q := Fin.FS (Fin.FS fi).
+have Hpc : fin_to_nat fi < n :=
+  fin_to_nat_lt fi.
+case Hρ: (nth_error P (fin_to_nat fi)) =>
+  [ρ|]; last by move/nth_error_None: Hρ; lia.
+have Hts := translate_state_eq fi.
+have Hprog := mm2_prog_spec Hρ.
+rewrite Hts in Hprog.
+rewrite Hprog in Hl.
+case: ρ Hρ Hprog Hl => [||j|j] Hρ Hprog Hl.
+- (* mm2_inc_a *)
+  (* e1 ⋅ e2 ⋅ e3 ⋅ e4 ⋅ e5 where
+     e1 = sym_r mm_a, e2 = star_d mm_a,
+     e3 = star_d mm_b,
+     e4 = sym_l (mm_q q),
+     e5 = sym_r (mm_q (next_state q)) *)
+  case/Unit_le_mul_pair: Hl =>
+    s14 [w14 [s5 [w5
+      [Es [Ew [Hl Hl5]]]]]].
+  case/Unit_le_mul_pair: Hl =>
+    s13 [w13 [s4 [w4
+      [Es14 [Ew14 [Hl Hl4]]]]]].
+  case/Unit_le_mul_pair: Hl =>
+    s12 [w12 [s3 [w3
+      [Es13 [Ew13 [Hl Hl3]]]]]].
+  case/Unit_le_mul_pair: Hl =>
+    s1' [w1' [s2 [w2
+      [Es12 [Ew12 [Hl1 Hl2]]]]]].
+  apply star_d_inv in Hl2.
+  destruct Hl2 as [ka [-> ->]].
+  apply star_d_inv in Hl3.
+  destruct Hl3 as [kb [-> ->]].
+  apply Unit_le_Unit_pair in Hl1.
+  destruct Hl1 as [-> ->].
+  apply Unit_le_Unit_pair in Hl4.
+  destruct Hl4 as [-> ->].
+  apply Unit_le_Unit_pair in Hl5.
+  destruct Hl5 as [-> ->].
+  have Hcw : mm2_config s1 =
+    config_word ka kb q.
+  { move: Es; rewrite Es14 Es13 Es12.
+    rewrite /mm2_config /config_word /=.
+    by rewrite ?app_nil_r -?app_assoc. }
+  have /config_word_inj [Ha [Hb Hq]] :=
+    Hcw.
+  have Hpc' := translate_state_inv Hq.
+  exists (1 + fst s1,
+    (S (fst (snd s1)), snd (snd s1))).
+  have Ew' : w = config_word
+    (S ka) kb (next_state q).
+  { move: Ew; rewrite Ew14 Ew13 Ew12.
+    rewrite /config_word /=.
+    by rewrite ?app_nil_r -?app_assoc. }
+  split.
+  + rewrite Ew' /mm2_config /config_word
+      /= Ha Hb Hpc'.
+    by rewrite /next_state /q.
+  + apply/mm2_step_fun_spec.
+    rewrite /mm2_step_fun.
+    case: s1 Hpc' Ha Hb Es Ew Ew' Hcw Hq
+      => [pc1 [a1 b1]] /= Hpc' Ha Hb
+        _ _ _ _ _.
+    by rewrite Hpc' /= Hρ /= Ha Hb.
+- (* mm2_inc_b:
+     star_d mm_a ⋅ sym_r mm_b ⋅ star_d mm_b
+     ⋅ sym_l (mm_q q)
+     ⋅ sym_r (mm_q (next_state q)) *)
+  case/Unit_le_mul_pair: Hl =>
+    s14 [w14 [s5 [w5
+      [Es [Ew [Hl Hl5]]]]]].
+  case/Unit_le_mul_pair: Hl =>
+    s13 [w13 [s4 [w4
+      [Es14 [Ew14 [Hl Hl4]]]]]].
+  case/Unit_le_mul_pair: Hl =>
+    s12 [w12 [s3 [w3
+      [Es13 [Ew13 [Hl Hl3]]]]]].
+  case/Unit_le_mul_pair: Hl =>
+    s1' [w1' [s2 [w2
+      [Es12 [Ew12 [Hl1 Hl2]]]]]].
+  apply star_d_inv in Hl1.
+  destruct Hl1 as [ka [-> ->]].
+  apply star_d_inv in Hl3.
+  destruct Hl3 as [kb [-> ->]].
+  apply Unit_le_Unit_pair in Hl2.
+  destruct Hl2 as [-> ->].
+  apply Unit_le_Unit_pair in Hl4.
+  destruct Hl4 as [-> ->].
+  apply Unit_le_Unit_pair in Hl5.
+  destruct Hl5 as [-> ->].
+  have Hcw : mm2_config s1 =
+    config_word ka kb q.
+  { move: Es; rewrite Es14 Es13 Es12.
+    rewrite /config_word /=.
+    by rewrite ?app_nil_r -?app_assoc. }
+  have /config_word_inj [Ha [Hb Hq]] :=
+    Hcw.
+  have Hpc' := translate_state_inv Hq.
+  have Ew' : w = config_word
+    ka (S kb) (next_state q).
+  { move: Ew; rewrite Ew14 Ew13 Ew12.
+    rewrite /config_word /=.
+    by rewrite ?app_nil_r -?app_assoc. }
+  exists (1 + fst s1,
+    (fst (snd s1), S (snd (snd s1)))).
+  split.
+  + rewrite Ew' /mm2_config /config_word
+      /= Ha Hb Hpc'.
+    by rewrite /next_state /q.
+  + apply/mm2_step_fun_spec.
+    rewrite /mm2_step_fun.
+    case: s1 Hpc' Ha Hb Es Ew Ew' Hcw Hq
+      => [pc1 [a1 b1]] /= Hpc' Ha Hb
+        _ _ _ _ _.
+    by rewrite Hpc' /= Hρ /= Ha Hb.
+- (* mm2_dec_a j *)
+  case/Unit_le_join_pair: Hl => Hl.
+  + (* zero branch: a = 0,
+       star_d mm_b ⋅ sym_l (mm_q q)
+       ⋅ sym_r (mm_q (next_state q)) *)
+    case/Unit_le_mul_pair: Hl =>
+      s12 [w12 [s3 [w3
+        [Es [Ew [Hl Hl3]]]]]].
+    case/Unit_le_mul_pair: Hl =>
+      s1' [w1' [s2 [w2
+        [Es12 [Ew12 [Hl1 Hl2]]]]]].
+    apply star_d_inv in Hl1.
+    destruct Hl1 as [kb [-> ->]].
+    apply Unit_le_Unit_pair in Hl2.
+    destruct Hl2 as [-> ->].
+    apply Unit_le_Unit_pair in Hl3.
+    destruct Hl3 as [-> ->].
+    have Hcw : mm2_config s1 =
+      config_word 0 kb q.
+    { move: Es; rewrite Es12.
+      rewrite /config_word /=.
+      by rewrite ?app_nil_r -?app_assoc. }
+    have /config_word_inj [Ha [Hb Hq]] :=
+      Hcw.
+    have Hpc' := translate_state_inv Hq.
+    have Ew' : w = config_word
+      0 kb (next_state q).
+    { move: Ew; rewrite Ew12.
+      rewrite /config_word /=.
+      by rewrite ?app_nil_r -?app_assoc. }
+    exists (1 + fst s1,
+      (fst (snd s1), snd (snd s1))).
+    split.
+    * rewrite Ew' /mm2_config /config_word
+        /= Ha Hb Hpc'.
+      by rewrite /next_state /q.
+    * apply/mm2_step_fun_spec.
+      rewrite /mm2_step_fun.
+      case: s1 Hpc' Ha Hb Es Ew Ew' Hcw Hq
+        => [pc1 [a1 b1]] /= Hpc' Ha Hb
+          _ _ _ _ _.
+      by rewrite Hpc' /= Hρ /= Ha Hb.
+  + (* nonzero branch: a = S a',
+       sym_l mm_a ⋅ star_d mm_a
+       ⋅ star_d mm_b ⋅ sym_l (mm_q q)
+       ⋅ sym_r (mm_q q') *)
+    case/Unit_le_mul_pair: Hl =>
+      s14 [w14 [s5 [w5
+        [Es [Ew [Hl Hl5]]]]]].
+    case/Unit_le_mul_pair: Hl =>
+      s13 [w13 [s4 [w4
+        [Es14 [Ew14 [Hl Hl4]]]]]].
+    case/Unit_le_mul_pair: Hl =>
+      s12 [w12 [s3 [w3
+        [Es13 [Ew13 [Hl Hl3]]]]]].
+    case/Unit_le_mul_pair: Hl =>
+      s1' [w1' [s2 [w2
+        [Es12 [Ew12 [Hl1 Hl2]]]]]].
+    apply star_d_inv in Hl2.
+    destruct Hl2 as [ka [-> ->]].
+    apply star_d_inv in Hl3.
+    destruct Hl3 as [kb [-> ->]].
+    apply Unit_le_Unit_pair in Hl1.
+    destruct Hl1 as [-> ->].
+    apply Unit_le_Unit_pair in Hl4.
+    destruct Hl4 as [-> ->].
+    apply Unit_le_Unit_pair in Hl5.
+    destruct Hl5 as [-> ->].
+    have Hcw : mm2_config s1 =
+      config_word (S ka) kb q.
+    { move: Es; rewrite Es14 Es13 Es12.
+      rewrite /config_word /=.
+      by rewrite ?app_nil_r -?app_assoc. }
+    have /config_word_inj [Ha [Hb Hq]] :=
+      Hcw.
+    have Hpc' := translate_state_inv Hq.
+    have Ew' : w = config_word
+      ka kb (translate_state j).
+    { move: Ew; rewrite Ew14 Ew13 Ew12.
+      rewrite /config_word /=.
+      by rewrite ?app_nil_r -?app_assoc. }
+    exists (j, (ka, snd (snd s1))).
+    split.
+    * by rewrite Ew' /mm2_config /= Hb.
+    * apply/mm2_step_fun_spec.
+      rewrite /mm2_step_fun.
+      case: s1 Hpc' Ha Hb Es Ew Ew' Hcw Hq
+        => [pc1 [a1 b1]] /= Hpc' Ha Hb
+          _ _ _ _ _.
+      by rewrite Hpc' /= Hρ /= Ha Hb.
+- (* mm2_dec_b j *)
+  case/Unit_le_join_pair: Hl => Hl.
+  + (* zero branch: b = 0,
+       star_d mm_a ⋅ sym_l (mm_q q)
+       ⋅ sym_r (mm_q (next_state q)) *)
+    case/Unit_le_mul_pair: Hl =>
+      s12 [w12 [s3 [w3
+        [Es [Ew [Hl Hl3]]]]]].
+    case/Unit_le_mul_pair: Hl =>
+      s1' [w1' [s2 [w2
+        [Es12 [Ew12 [Hl1 Hl2]]]]]].
+    apply star_d_inv in Hl1.
+    destruct Hl1 as [ka [-> ->]].
+    apply Unit_le_Unit_pair in Hl2.
+    destruct Hl2 as [-> ->].
+    apply Unit_le_Unit_pair in Hl3.
+    destruct Hl3 as [-> ->].
+    have Hcw : mm2_config s1 =
+      config_word ka 0 q.
+    { move: Es; rewrite Es12.
+      rewrite /config_word /=.
+      by rewrite ?app_nil_r -?app_assoc. }
+    have /config_word_inj [Ha [Hb Hq]] :=
+      Hcw.
+    have Hpc' := translate_state_inv Hq.
+    have Ew' : w = config_word
+      ka 0 (next_state q).
+    { move: Ew; rewrite Ew12.
+      rewrite /config_word /=.
+      by rewrite ?app_nil_r -?app_assoc. }
+    exists (1 + fst s1,
+      (fst (snd s1), snd (snd s1))).
+    split.
+    * rewrite Ew' /mm2_config /config_word
+        /= Ha Hb Hpc'.
+      by rewrite /next_state /q.
+    * apply/mm2_step_fun_spec.
+      rewrite /mm2_step_fun.
+      case: s1 Hpc' Ha Hb Es Ew Ew' Hcw Hq
+        => [pc1 [a1 b1]] /= Hpc' Ha Hb
+          _ _ _ _ _.
+      by rewrite Hpc' /= Hρ /= Ha Hb.
+  + (* nonzero branch: b = S b',
+       star_d mm_a ⋅ sym_l mm_b
+       ⋅ star_d mm_b ⋅ sym_l (mm_q q)
+       ⋅ sym_r (mm_q q') *)
+    case/Unit_le_mul_pair: Hl =>
+      s14 [w14 [s5 [w5
+        [Es [Ew [Hl Hl5]]]]]].
+    case/Unit_le_mul_pair: Hl =>
+      s13 [w13 [s4 [w4
+        [Es14 [Ew14 [Hl Hl4]]]]]].
+    case/Unit_le_mul_pair: Hl =>
+      s12 [w12 [s3 [w3
+        [Es13 [Ew13 [Hl Hl3]]]]]].
+    case/Unit_le_mul_pair: Hl =>
+      s1' [w1' [s2 [w2
+        [Es12 [Ew12 [Hl1 Hl2]]]]]].
+    apply star_d_inv in Hl1.
+    destruct Hl1 as [ka [-> ->]].
+    apply star_d_inv in Hl3.
+    destruct Hl3 as [kb [-> ->]].
+    apply Unit_le_Unit_pair in Hl2.
+    destruct Hl2 as [-> ->].
+    apply Unit_le_Unit_pair in Hl4.
+    destruct Hl4 as [-> ->].
+    apply Unit_le_Unit_pair in Hl5.
+    destruct Hl5 as [-> ->].
+    have Hcw : mm2_config s1 =
+      config_word ka (S kb) q.
+    { move: Es; rewrite Es14 Es13 Es12.
+      rewrite /config_word /=.
+      by rewrite ?app_nil_r -?app_assoc. }
+    have /config_word_inj [Ha [Hb Hq]] :=
+      Hcw.
+    have Hpc' := translate_state_inv Hq.
+    have Ew' : w = config_word
+      ka kb (translate_state j).
+    { move: Ew; rewrite Ew14 Ew13 Ew12.
+      rewrite /config_word /=.
+      by rewrite ?app_nil_r -?app_assoc. }
+    exists (j, (fst (snd s1), kb)).
+    split.
+    * by rewrite Ew' /mm2_config /= Ha.
+    * apply/mm2_step_fun_spec.
+      rewrite /mm2_step_fun.
+      case: s1 Hpc' Ha Hb Es Ew Ew' Hcw Hq
+        => [pc1 [a1 b1]] /= Hpc' Ha Hb
+          _ _ _ _ _.
+      by rewrite Hpc' /= Hρ /= Ha Hb.
+Qed.
 
 Lemma encoding_rtc_complete s1 s2 :
   rtc (mm2_step P) s1 s2 →
@@ -778,12 +1164,56 @@ move=> Hrtc; apply: (rtc_ind_r
   exact: rtc_r Hrtc' Hstep.
 Qed.
 
+Local Lemma translate_state_inj i1 i2 :
+  i2 ≤ n →
+  translate_state i1 = translate_state i2 →
+  i1 = i2.
+Proof.
+case: i2 => [|q2].
+- move=> _ Hts; case: i1 Hts => [//|q1].
+  rewrite /translate_state => E.
+  have := f_equal fin_to_nat E; simpl.
+  by case: (nat_to_fin q1) => [?|] /=; lia.
+- move=> Hq2.
+  have Hq2' : q2 < n by lia.
+  have [fi2 Hfi2] := @nat_to_fin_lt n q2 Hq2'.
+  case: i1 => [|q1].
+  + rewrite /translate_state Hfi2 => E.
+    have := f_equal fin_to_nat E; simpl.
+    by have := nat_to_finK Hfi2; lia.
+  + rewrite /translate_state Hfi2.
+    case Hfi1: (nat_to_fin q1) => [fi1|].
+    * move/FS_inj/FS_inj => Hfi.
+      have := nat_to_finK Hfi1.
+      have := nat_to_finK Hfi2.
+      by rewrite Hfi; congruence.
+    * move=> E.
+      have := f_equal fin_to_nat E; simpl.
+      by have := nat_to_finK Hfi2; lia.
+Qed.
+
+Local Lemma mm2_config_inj s s2 :
+  fst s2 ≤ n →
+  mm2_config s = mm2_config s2 → s = s2.
+Proof.
+move=> Hle /config_word_inj [Ha [Hb Hq]].
+have Hpc := translate_state_inj Hle Hq.
+case: s Ha Hb {Hq} Hpc => [i [a b]]
+  /= -> -> ->;
+  case: s2 Hle => [? [??]] /=.
+by move=> _.
+Qed.
+
 Lemma encoding_rtc_sound' s1 s2 :
-  rtc (λ xs ys, Unit (xs, ys) ⊑ mm2_R) (mm2_config s1) (mm2_config s2) →
+  fst s2 ≤ n →
+  rtc (λ xs ys, Unit (xs, ys) ⊑ mm2_R)
+    (mm2_config s1) (mm2_config s2) →
   rtc (mm2_step P) s1 s2.
 Proof.
-case/encoding_rtc_sound.
-Admitted.
+move=> Hle /encoding_rtc_sound
+  [s [Heq Hrtc]].
+by rewrite -(mm2_config_inj Hle (eq_sym Heq)).
+Qed.
 
 Local Lemma proj_elem q : Unit [mm_q q] ⊑ ⨆ q ∈ enum Q, Unit [mm_q q].
 Proof. exact: sqsubseteq_join_list (elem_of_enum _). Qed.
@@ -829,7 +1259,12 @@ exact: encode_proj1_le.
 Qed.
 
 Lemma C_T : C ⊑ T.
-Proof. Admitted.
+Proof.
+rewrite /C /T /config_set.
+apply: pre_ka_mul_mono => //.
+apply/join_list_sqsubseteq => q q_active.
+exact: sqsubseteq_join_list (elem_of_enum _).
+Qed.
 
 Lemma mm2_R_ub1' : ka_term_proj1 mm2_R ⊑ T.
 Proof. by rewrite -C_T; exact: mm2_R_ub1. Qed.
@@ -923,7 +1358,7 @@ Lemma mm2_R_completeness s1 :
 Proof.
 move=> /encoding_rtc_complete /pad_rel_rtc_1 /rtc_nsteps [m xs_ys].
 move/pad_rel_nsteps_2'/rtc_nsteps_2 in xs_ys => {m}.
-case/encoding_rtc_sound'/rtc_nsteps: xs_ys => m xs_ys.
+case/(encoding_rtc_sound' (Nat.le_0_l _))/rtc_nsteps: xs_ys => m xs_ys.
 have s1_T: Unit (mm2_config s1) ⊑ T
   by exact: elem_of_T.
 have term: next_iter repr_rel_mm2_R (S m)
