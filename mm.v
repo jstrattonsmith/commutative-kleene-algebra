@@ -201,6 +201,22 @@ case e: (nat_to_fin i) =>  [n'|] //= [<-] /=; congr S.
 exact: IH.
 Qed.
 
+Lemma nat_to_fin_ge {m} (i : nat) : m ≤ i → @nat_to_fin m i = None.
+Proof.
+elim: m i => [|m IH] //= [|i] m_i; first lia.
+by rewrite IH //; lia.
+Qed.
+
+Lemma nat_to_fin_lt m i :
+  i < m → ∃ fi : fin m, nat_to_fin i = Some fi.
+Proof.
+elim: m i => [|m IH] i Hi /=; first lia.
+case: i Hi => [|i] Hi /=.
+- by eexists.
+- have [fi ->] := IH i ltac:(lia).
+  by eexists.
+Qed.
+
 End Fin.
 
 Section MM2Adapter.
@@ -351,9 +367,7 @@ apply: transitivity (pre_ka_mul_star _).
 by apply: pre_ka_mul_mono IH.
 Qed.
 
-Lemma repeat_le_star (x : mm_sym Q) a :
-  @sqsubseteq (ka_term (list (mm_sym Q))) _
-    (Unit (repeat x a)) (star (Unit [x])).
+Lemma repeat_le_star (x : mm_sym Q) a : Unit (repeat x a) ⊑ star (Unit [x]).
 Proof.
 have -> : repeat x a = [x] ^ a.
 { by elim: a => //= a ->. }
@@ -392,16 +406,6 @@ move: Heq; rewrite /config_word /mul /list_mul
 by have [_ []] := app_inj_tail _ _ _ _ Heq.
 Qed.
 
-Lemma nat_to_fin_lt m i :
-  i < m → ∃ fi : fin m, @nat_to_fin m i = Some fi.
-Proof.
-elim: m i => [|m IH] i Hi /=; first lia.
-case: i Hi => [|i] Hi /=.
-- by eexists.
-- have [fi ->] := IH i ltac:(lia).
-  by eexists.
-Qed.
-
 Lemma translate_state_active i :
   0 < i ≤ n → translate_state i ∈ active_states.
 Proof.
@@ -416,39 +420,47 @@ exists fi; split; first done.
 exact: elem_of_enum.
 Qed.
 
-Lemma active_translate_state q :
+Lemma elem_of_active_state q :
   q ∈ active_states →
-  ∃ i, 0 < i ≤ n ∧ q = translate_state i.
+  ∃ i : fin n, q = Fin.FS (Fin.FS i).
 Proof.
 rewrite /active_states.
 move/elem_of_list_fmap => [q' [->
   /elem_of_list_fmap [q'' [-> _]]]].
-exists (S (fin_to_nat q'')).
+by eauto.
+Qed.
+
+Lemma active_translate_state q :
+  q ∈ active_states →
+  ∃ i, 0 < i ≤ n ∧ q = translate_state i.
+Proof.
+case/elem_of_active_state => {}q ->.
+exists (S (fin_to_nat q)).
 split.
 - split; first lia.
-  have := fin_to_nat_lt q''; lia.
+  have := fin_to_nat_lt q; lia.
 - rewrite /translate_state /=.
   have [fi Hfi] := @nat_to_fin_lt n
-    (fin_to_nat q'')
-    (fin_to_nat_lt q'').
+    (fin_to_nat q)
+    (fin_to_nat_lt q).
   rewrite Hfi; do 2 f_equal.
-  have H := @nat_to_finK n (fin_to_nat q'')
+  have H := @nat_to_finK n (fin_to_nat q)
     fi Hfi.
   exact/fin_to_nat_inj.
 Qed.
 
-Lemma elem_of_C s :
-  Unit (mm2_config s) ⊑ C ↔ 0 < s.1 ≤ n.
+Lemma elem_of_C s : Unit (mm2_config s) ⊑ C ↔ 0 < s.1 ≤ n.
 Proof.
 rewrite /mm2_config /C; case: s => [i [a b]] /=.
 split.
-- move/config_set_char/active_translate_state.
-  case=> j [[Hj1 Hj2] Heq].
-  rewrite /translate_state in Heq.
-  admit.
+- case/config_set_char/elem_of_active_state=> q.
+  case: i=> //= i /FS_inj.
+  have [//|contra]: S i <= n ∨ n ≤ i by lia.
+  { lia. }
+  by rewrite nat_to_fin_ge //.
 - move=> Hi.
   exact: config_word_le (translate_state_active Hi).
-Admitted.
+Qed.
 
 Lemma elem_of_T s : Unit (mm2_config s) ⊑ T.
 Proof.
