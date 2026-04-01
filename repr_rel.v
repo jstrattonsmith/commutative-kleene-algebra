@@ -352,8 +352,23 @@ Proof. exact: Nat.iter_succ_r. Qed.
 
 Lemma next_iter_nsteps n σ ys :
   ys ∈ next_iter n σ →
-  ∃ xs, xs ∈ σ ∧ nsteps (λ xs ys, Unit (xs, ys) ⊑ e) n xs ys.
-Proof. Admitted.
+  ∃ xs, xs ∈ σ ∧
+    nsteps (λ xs ys, Unit (xs, ys) ⊑ e) n xs ys.
+Proof.
+move: ys; elim: n σ => [|n IH] σ ys.
+- move=> Hys. exists ys. split; first exact Hys.
+  exact: nsteps_O.
+- (* ys ∈ next_set (next_iter n σ) *)
+  rewrite /next_set.
+  move/elem_of_list_In/in_flat_map =>
+    [zs [Hzs_in
+      /elem_of_list_In /(next_spec R) Hstep]].
+  move/elem_of_list_In: Hzs_in => Hzs_in.
+  change (zs ∈ next_iter n σ) in Hzs_in.
+  have [xs [Hxs Hn]] := IH _ _ Hzs_in.
+  exists xs. split; first exact Hxs.
+  exact: nsteps_r Hn Hstep.
+Qed.
 
 Lemma next_lt_succ (n : nat) (σ : list (list T)) :
   next_lt (S n) σ = σ ++ next_lt n (next_set σ).
@@ -367,8 +382,19 @@ Qed.
 
 Lemma next_lt_nsteps n σ ys :
   ys ∈ next_lt n σ →
-  ∃ xs m, xs ∈ σ ∧ m < n ∧ nsteps (λ xs ys, Unit (xs, ys) ⊑ e) m xs ys.
-Proof. Admitted.
+  ∃ xs m, xs ∈ σ ∧ m < n ∧
+    nsteps (λ xs ys, Unit (xs, ys) ⊑ e) m xs ys.
+Proof.
+elim: n σ => [|n IH] σ /=.
+- by move/elem_of_nil.
+- move/elem_of_app => [Hn|Hi].
+  + have [xs [m [Hxs [Hm Hs]]]] := IH _ Hn.
+    exists xs, m. split; first exact Hxs.
+    split; [lia | exact Hs].
+  + have [xs [Hxs Hs]] := next_iter_nsteps Hi.
+    exists xs, n. split; first exact Hxs.
+    split; [lia | exact Hs].
+Qed.
 
 (** Helper: ⨆ xs ∈ σ, Unit(xs,xs) ⊑ pseudo_top *)
 
@@ -595,11 +621,50 @@ move/sqsubseteq_pad_rel_1: xs_ys.
 by etransitivity; last exact: IH; apply: rtc_once.
 Qed.
 
+Local Lemma lift_inj xs ys :
+  lift xs = lift ys → xs = ys.
+Proof.
+rewrite /lift; move: ys;
+  by elim: xs => [|x xs IH] [|y ys] //=
+    [= -> /IH ->].
+Qed.
+
 Lemma pad_rel_rtc_2 xs ys e :
-  rtc (λ xs ys, Unit (xs, ys) ⊑ pad_rel e) (lift xs ⋅ [None]) ys →
+  rtc (λ xs ys, Unit (xs, ys) ⊑ pad_rel e)
+    (lift xs ⋅ [None]) ys →
   ∃ ys', ys = lift ys' ⋅ [None] ∧
          rtc (λ xs ys, Unit (xs, ys) ⊑ e) xs ys'.
-Proof. Admitted.
+Proof.
+move=> Hrtc.
+have : ∃ xs', lift xs ⋅ [None] = lift xs' ⋅ [None]
+  ∧ ∃ ys', ys = lift ys' ⋅ [None] ∧
+    rtc (λ xs ys, Unit (xs, ys) ⊑ e) xs' ys'.
+{ move: Hrtc.
+  apply: (rtc_ind_r (λ z, _)).
+  - exists xs. split; first done.
+    exists xs. split; first done.
+    exact: rtc_refl.
+  - move=> z1 z2 _  Hstep
+      [xs' [Hxs [z1' [Hz1 Hrtc']]]].
+    subst z1.
+    case/sqsubseteq_pad_rel_2: Hstep =>
+      [[sl sr] [Hz /= Hstep]].
+    have Esl : z1' = sl.
+    { apply: lift_inj. apply: app_inv_tail.
+      have := f_equal fst Hz.
+      by rewrite /lift2 /lift /=
+        /mul /prod_mul /list_mul. }
+    subst sl. exists xs'. split; first done.
+    exists sr. split.
+    { have := f_equal snd Hz.
+      by rewrite /lift2 /lift /=
+        /mul /prod_mul /list_mul. }
+    exact: rtc_r Hrtc' Hstep. }
+move=> [xs' [Hxs [ys' [-> Hrtc']]]].
+exists ys'. split; first done.
+suff -> : xs = xs' by [].
+apply: lift_inj. exact: app_inv_tail Hxs.
+Qed.
 
 Lemma sqsubseteq_pad_lang_1 xs L :
   Unit xs ⊑ L →
