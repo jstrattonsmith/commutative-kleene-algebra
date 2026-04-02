@@ -22,7 +22,14 @@ Proof. by move=> H; inversion H; eauto. Qed.
 Lemma nsteps_det {A} {R : relation A} n :
   (∀ a b1 b2, R a b1 → R a b2 → b1 = b2) →
   (∀ a b1 b2, nsteps R n a b1 → nsteps R n a b2 → b1 = b2).
-Proof. Admitted.
+Proof.
+  move=> Hr a b1 b2; elim: n a => [
+    a /nsteps_0_inv <- /nsteps_0_inv <- //
+  | n IH a /nsteps_inv_l [c1 [Hr1 Hb1]] /nsteps_inv_l [c2 [Hr2 Hb2]]].
+  have {Hr Hr1 Hr2} Hcs := Hr _ _ _ Hr1 Hr2.
+  rewrite -{}Hcs in Hb2.
+  by apply (IH c1).
+Qed.
 
 End NSteps.
 
