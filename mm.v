@@ -429,10 +429,40 @@ move: Heq; rewrite /config_word /mul /list_mul
 by have [_ []] := app_inj_tail _ _ _ _ Heq.
 Qed.
 
+Lemma lang_sing_mm_a (w : list_monoid mm_sym_setoid) (m : nat) :
+  (lang_sing [@mm_a Q] ^ m) w -> w ≡ repeat mm_a m.
+elim: m w => [| m IH]; first by rewrite /power /repeat /= => _ ->; eauto.
+rewrite /= => _ [_ [x2 [-> [-> Hlang]]]]; rewrite (IH _ Hlang); eauto.
+Qed.
+
+Lemma lang_sing_mm_b (w : list_monoid mm_sym_setoid) (m : nat) :
+  (lang_sing [@mm_b Q] ^ m) w -> w ≡ repeat mm_b m.
+elim: m w => [| m IH]; first by rewrite /power /repeat /= => _ ->; eauto.
+rewrite /= => _ [_ [x2 [-> [-> Hlang]]]]; rewrite (IH _ Hlang); eauto.
+Qed.
+
+Lemma unit_sqsubseteq_join_list_unit (w : list_monoid mm_sym_setoid) (qs : list Q) :
+  Unit w ⊑ ⨆ q ∈ qs, Unit [mm_q q] -> ∃ q, q ∈ qs ∧ w ≡ [mm_q q].
+Proof.
+move=> /l_alt Hw.
+rewrite semi_lattice_morphism_join_list elem_of_lang_join_list in Hw.
+case: Hw => /= [q [Hq H]]; exists q; eauto.
+Qed.
+
 Lemma config_set_inv xs (qs : list Q) :
   Unit xs ⊑ config_set qs →
   ∃ a b q, xs = config_word a b q ∧ q ∈ qs.
-Proof. Admitted.
+Proof.
+rewrite -l_alt /config_set monoid_morphism_mul /=.
+case=> w12 [w3 [Heq [
+  [w1 [w2 [Hw12 [[na /lang_sing_mm_a Hna] [nb /lang_sing_mm_b Hnb]]]]]
+  /l_alt /unit_sqsubseteq_join_list_unit [q [Hq Hw3]]
+]]].
+move: Heq.
+rewrite {w12}Hw12 {w1}Hna {w2}Hnb {w3}Hw3 leibniz_equiv_iff => ->.
+exists na, nb, q.
+rewrite /config_word app_assoc; eauto.
+Qed.
 
 Lemma translate_state_active i :
   0 < i ≤ n → translate_state i ∈ active_states.
