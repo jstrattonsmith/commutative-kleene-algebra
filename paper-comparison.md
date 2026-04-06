@@ -1,81 +1,162 @@
 # Paper vs. Rocq Development: Comparison
 
-This document compares the CSL 2025 paper *"Kleene Algebra with Commutativity Conditions Is Undecidable"* (Azevedo de Amorim et al.) with the Rocq formalization in `kacc_undec.v`.
+This document compares the CSL 2025 paper [*"Kleene Algebra
+with Commutativity Conditions Is Undecidable"*][paper] (Azevedo
+de Amorim, Zhang, Gaboardi) with the Rocq formalization in this
+repository.
 
 ## What the paper proves
 
-The paper shows that the equational theory of Kleene algebra (and even pre-Kleene algebra) with commutativity conditions on atomic terms is undecidable. The proof reduces the halting problem for two-counter (Minsky) machines to equational reasoning, then uses effective inseparability to obtain undecidability. The argument has three main parts:
+The paper shows that the equational theory of Kleene algebra
+(and even pre-Kleene algebra) with commutativity conditions on
+atomic terms is undecidable.  The proof reduces the halting
+problem for two-counter (Minsky) machines to equational
+reasoning, then uses effective inseparability to obtain
+undecidability.  The argument has three main parts:
 
-1. **Soundness** (Theorem 3.4): If a machine halts with output 1, a certain inequality holds in the regular language model.
-2. **Completeness** (Theorem 3.5): If a machine halts with output 1, one can compute a term making the inequality valid in *all* pre-Kleene algebras (no induction axioms needed).
-3. **Effective inseparability** (Theorem 3.5–3.6): The sets of machines halting with output 0 vs. 1 are effectively inseparable, so no computable decision procedure can distinguish the two cases.
+1. **Soundness** (Theorem 15): If a machine halts in the zero
+   state, a certain inequality holds in the regular language
+   model.
+2. **Completeness** (Theorem 16): If a machine halts in the
+   zero state, the same inequality holds in *all* pre-Kleene
+   algebras (no induction axioms needed).
+3. **Effective inseparability** (Theorems 17--18): The sets of
+   machines halting with output 0 vs. 1 are effectively
+   inseparable, so no computable decision procedure exists.
 
 ## What the Rocq development covers
 
-### Fully formalized (with complete proofs)
+### Fully formalized
 
-- **Algebraic hierarchy** (Sections 1–6 of the development): `setoid` → `monoid` → `semi_lattice` → `pre_ka`, including all mixin records, morphism classes, and concrete instances (`bool`, `count`, product monoids, `gset`). This corresponds to the paper's Section 2 definitions but is significantly more elaborate, with the hierarchy built from scratch using stdpp typeclasses rather than relying on existing Rocq algebra libraries.
+- **Algebraic hierarchy** (`algebra.v`): `setoid` → `monoid` →
+  `semi_lattice`, including mixin records, morphism classes, and
+  concrete instances (`bool`, product monoids, `gset`).
+  Corresponds to the paper's Section 2 but is more elaborate,
+  building the hierarchy from scratch on top of stdpp.
 
-- **Free KA terms** (`ka_term`): The full AST with `Unit`, `⊥`, `⊔`, `⋅`, `star`, along with the universal elimination map `ka_term_elim` and proof that `ka_term T` forms a `pre_ka`. The paper treats free terms abstractly via the functor 𝒯; the formalization provides a concrete inductive type.
+- **Free KA terms** (`pre_ka.v`): The full `ka_term` AST with
+  `Unit`, `⊥`, `⊔`, `⋅`, `star`, the universal elimination map
+  `ka_term_elim`, and proof that `ka_term T` forms a `pre_ka`.
+  Also includes `count` and `bool` pre-KA instances.  The paper
+  treats free terms abstractly; the formalization provides a
+  concrete inductive type.
 
-- **Language semantics**: The `lang` record and interpretation `l : ka_term T → lang` with injectivity on finite terms (`l_inj_finite`). Corresponds to the paper's ℒ functor.
+- **Language semantics** (`lang.v`): The `lang` record and
+  interpretation `l : ka_term T → lang`, with injectivity on
+  finite terms (`l_inj_finite`, Corollary 7) and the string
+  membership characterization (`l_alt`, Theorem 5).
 
-- **Finite automata**: `fsa` and `nfa` records with constructions for join, multiplication (`fsa_mul'`), and Kleene star (`fsa_star'`), plus the key decomposition lemma (`fsa_elem_k_decomp_gen`). The paper's Section 5 (expansion/derivatives) is partially covered here.
+- **Finite automata** (`automata.v`): `fsa`/`nfa` records with
+  join, product (`fsa_mul'`), and Kleene star (`fsa_star'`)
+  constructions, plus the key decomposition lemma
+  (`fsa_elem_k_decomp_gen`, Lemma 27).  Also: `ka_term_proj1`,
+  `ka_term_proj2`, `ka_term_diag`, and `finite_state`.
 
-- **Derivatives**: Brzozowski-style `derivative` function on `ka_term (list T)` and the `repr_rel` record for representable relations (the paper's bounded-output condition from Section 5.2).
+- **Representable relations** (`repr_rel.v`): The `repr_rel`
+  record (Section 5) with `next`, `residue`, and `expand_rel`
+  fields.  Iteration lemmas `repr_rel_iter` (Lemma 21) and
+  `repr_rel_iter_empty` (Theorem 22).  Also: padding
+  infrastructure (`pad_lang`, `pad_rel`) and the final iteration
+  lemma `repr_rel_iter_final`.
 
-- **Counting/finiteness predicates**: `count_term`, `has_one`, `finite_state`, `pseudo_top` — auxiliary tools not explicitly named in the paper but used in the completeness argument.
+- **Bounded-output terms** (`bounded_output.v`): `bounded_output`
+  (Definition 28), closure under join/mul/star (Lemma 30),
+  `bounded_outputb` decision procedure, `prefix_free`,
+  and the main construction `bounded_output_repr_rel`
+  (Lemma 31) showing bounded-output finite-state terms yield
+  representable relations.
 
-- **Projection functions** `π_l`, `π_r` and the commutativity lemma `proj_com` (that left and right projections commute). This is the formal counterpart of the paper's direct sum ⊕ construction.
+- **MM2 encoding** (`mm.v`): The full encoding of two-counter
+  Minsky machine instructions as KA terms over the alphabet
+  `{mm_a, mm_b, mm_q q}` (Definitions 11--13).  Includes
+  `config_word`, `config_set`, `encode_instr`, `mm2_R`, and
+  the connection to the MM2 library's step relation.
 
-- **MM2 instruction encoding**: `interp` / `interp_single` / `interpret_mm2_instr` map Minsky machine instructions to KA terms using the alphabet `Σ_M = {Q_M n, a, b, c_0, c_1}`. The configuration term `C_M` and transition relation `R_M` are defined. This directly corresponds to the paper's Definition 3.3.
+- **Step-level soundness and completeness** (`mm.v`):
+  `encoding_complete` and `encoding_sound` prove that a single
+  MM2 step corresponds exactly to membership in the transition
+  relation `mm2_R`.  Lifted to reflexive-transitive closure as
+  `encoding_rtc_complete` and `encoding_rtc_sound`.
 
-- **Term simplification**: `ka_simpl`, `ka_simpl_plus`, `ka_simpl_dot`, `ka_simpl_star` with correctness proofs (`ka_simplE`). Not present in the paper; an engineering convenience for the formalization.
+- **Main soundness** (`mm2_R_soundness`, Theorem 15):
+  If the machine halts and `red_lb s₁ ⊑ red_ub` holds, then it
+  halts in state `(0,(0,0))`.
 
-- **Various KA lemmas**: `zero_eq_sum`, `zero_eq_prod`, `zero_neq_one`, `term_lang_equiv` (string membership ↔ term ordering), `either_empty_or_nonzero`, `finite_def'`, and many others. Some of these correspond to unnamed lemmas in the paper; others are auxiliary results needed for the formal development.
-
-### Partially formalized (admitted or incomplete)
-
-- **`proj_concat`** (line 3732): `t ≡ (π_l t) ⋅ (π_r t)` — admitted. This is the key decomposition lemma asserting every term equals its left projection times its right projection. The paper relies on this implicitly via the ⊕ construction.
-
-- **`step_form`** (line 3836): The lemma that if a string pair is in the step relation of `R_M`, then the source string has a configuration form `a^n · b^m · Q_M(i)`. Admitted. Corresponds to part of the paper's soundness argument.
-
-- **`zero_eq_prod`** (line 3226): `0 ≡ t₁ · t₂ → t₁ ≡ 0 ∨ t₂ ≡ 0` — admitted. A basic algebraic fact used throughout.
-
-- **`zero_neq_prod`** (line 3264): The contrapositive — admitted.
-
-- **`x_xstar__xstar_x`** and **`x_x_star`** (lines 4007, 4019): Star commutativity with its argument (`t·t✶ ≡ t✶·t`) and the right-unfold (`t✶ ≡ t✶·t`). Both admitted. The paper's pre-KA axioms only include left-unfold; these require additional reasoning.
-
-- **`star_term_interp_empty`** (line 3579): That `[] ∈ l(t✶)` — admitted.
-
-- **`one_star`** (line 4155): `1 ≤ x✶` — aborted with the comment "HELP! -- can't be helped".
-
-- **Canonicalization** (lines 3854–3939): Functions `collect_L_R`, `compose_L_R`, `remove_1`, `left_assoc` are defined but `canonicalize_equiv` (proving the canonicalized term is equivalent) is commented out with incomplete proof attempts.
+- **Main completeness** (`mm2_R_completeness`, Theorem 16):
+  If the machine reaches `(0,(0,0))`, then `red_lb s₁ ⊑ red_ub`
+  holds in every pre-Kleene algebra.  The proof uses
+  `repr_rel_iter_final` together with determinism
+  (`mm2_step_det`) and the absence of transitions from the halt
+  state (`no_step_from_halt`).
 
 ### Not yet formalized
 
-- **Soundness theorem** (paper Theorem 3.4): The full statement that if a machine reaches `c_1`, the encoding inequality holds in ℒΣ̈_M. The development has `term_leq_R_M__in_lang_interp` stated but its proof is incomplete (cuts off mid-proof).
-
-- **Completeness theorem** (paper Theorem 3.5): Computing the witness term ρ that makes the inequality valid in all pre-Kleene algebras. Not present in the formalization.
-
-- **Effective inseparability and final undecidability** (paper Theorems 3.5–3.6): The diagonal argument constructing machine M_η and the reduction to undecidability. Not present.
-
-- **The `diff` term in the inequality**: While `diff` is defined (line 2650), it is not yet connected to the main soundness/completeness statements.
-
-- **Expansion lemma** (paper Section 5.1): The generalization of derivatives that avoids induction axioms. The `repr_rel` record captures the interface but the key lemma showing the transition relation satisfies it is not proved.
+- **Effective inseparability and undecidability** (Theorems
+  17--18): The diagonal argument constructing machine M_η and the
+  final reduction to undecidability are not formalized.  These
+  are largely machine-independent and could reuse existing
+  library results.
 
 ## Structural differences
 
-| Aspect | Paper | Rocq development |
-|--------|-------|------------------|
-| **Algebraic hierarchy** | Uses standard definitions, assumes familiarity | Built from scratch with explicit mixin records and coercions; more verbose but fully self-contained |
-| **Commutativity model** | Abstract "commutable sets" with a commuting relation ~ | Concrete `L`/`R` constructors on `ka_term` with `proj_com` as the commutativity axiom |
-| **Direct sum ⊕** | Categorical construction on commutable sets | Modeled via product types `T * S` with `ka_term_inj1`/`ka_term_inj2` and projection morphisms |
-| **Machine model** | Abstract two-counter machines with `Inc`, `If`, `Halt` | Uses `mm2_instr` from the Coq Library of Undecidability (`mm2_inc_a`, `mm2_inc_b`, `mm2_dec_a`, `mm2_dec_b`) — no explicit `Halt` instructions |
-| **Proof style** | Pen-and-paper with proof sketches | Mix of ssreflect tactics (earlier, more polished sections) and vanilla Ltac (later, work-in-progress sections) |
-| **KA axioms** | Left-biased pre-KA (only left-unfold for star) | Same: `PreKAMixin` has only `star_unfold : star x ≡ 1 ⊔ x · star x`. No induction axioms. |
-| **Finite automata** | Mentioned briefly; main role is in expansion lemma | Extensively developed (`fsa`, `nfa`, product/star constructions, `fsa_elem_k_decomp_gen`) |
+- **Algebraic hierarchy.** The paper uses standard
+  definitions; the formalization builds the hierarchy from
+  scratch with mixin records and stdpp coercions.
+
+- **Commutativity model.** The paper uses abstract commutable
+  sets with a relation ~.  The formalization uses product types
+  `T * S` with `ka_term_inj1`/`ka_term_inj2` and projection
+  morphisms `ka_term_proj1`/`ka_term_proj2`.
+
+- **Machine model.** The paper defines abstract two-counter
+  machines.  The formalization uses `mm2_instr` from
+  coq-library-undecidability.
+
+- **Proof style.** SSReflect tactics throughout.
+
+- **KA axioms.** Same as the paper: left-biased pre-KA with
+  only left-unfold `star x ≡ 1 ⊔ x ⋅ star x`.
+
+- **Prefix-freeness.** The paper requires prefix-freeness for
+  representable relations (Lemma 31).  The formalization
+  avoids this by padding languages with a sentinel `None`;
+  see below.
+
+- **Finite automata.** Sketched in the paper's expansion
+  section; fully developed in the formalization (`fsa`, `nfa`,
+  product/star, `fsa_elem_k_decomp_gen`).
+
+## Padding trick
+
+The paper's Lemma 31 requires the language `L` to be
+prefix-free.  Proving prefix-freeness of the configuration
+language `T` directly would require reasoning about the
+distinctness of `mm_a`, `mm_b`, and `mm_q q` symbols and the
+structure of configuration words.
+
+Instead, the formalization works with *padded* languages and
+relations throughout: every word is extended with a sentinel
+character `None` (the original symbols are wrapped in `Some`).
+The padded language `pad_lang L` is automatically prefix-free
+because every word ends with the unique terminator `None`.  This
+is proved once as `prefix_free_pad_lang` in `bounded_output.v`
+and used via the wrapper `bounded_output_repr_rel'`, which
+upgrades `bounded_output_repr_rel` (Lemma 31) to work without
+any prefix-freeness hypothesis on the original language.
+
+The soundness and completeness theorems in `mm.v` work entirely
+with padded terms (`pad_rel mm2_R`, `pad_lang T`), connecting
+back to the unpadded MM2 step relation via `pad_rel_nsteps_2`
+and `sqsubseteq_pad_lang_1`/`sqsubseteq_pad_lang_2`.
 
 ## Summary
 
-The Rocq development has successfully formalized the foundational algebraic infrastructure and the encoding of Minsky machines as KA terms — roughly the first half of the paper's argument. The main gap is the second half: the soundness and completeness theorems connecting machine execution to term inequalities, and the final undecidability result via effective inseparability. Several intermediate lemmas in the MM2 encoding section remain admitted, and the canonicalization procedure (which may support the completeness proof) is incomplete.
+The formalization covers the paper's core technical content:
+the algebraic infrastructure, the encoding of Minsky machines
+as KA terms, and the soundness/completeness theorems connecting
+machine halting to term inequalities.  All proofs are complete
+— there are no admitted lemmas.  The main gap relative to the
+paper is the final undecidability result via effective
+inseparability (Theorems 17--18).
+
+[paper]: https://arxiv.org/pdf/2411.15979
