@@ -1,12 +1,12 @@
 Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.
-From stdpp Require Import list .
+From stdpp Require Import list.
 From Stdlib Require Import Relations Transitive_Closure.
 From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.
 
 Definition mm2_run_step (P : list mm2_instr) (s : mm2_state) :=
-  match s.1 with
+  match fst s with
   | 0 => None
   | S _ => match nth_error P (pred s.1) with
     | Some instr => match instr, s with
@@ -83,7 +83,7 @@ split.
   case Estep: (mm2_run_step P s) => [s'' |] //= Hn.
   apply rt_trans with (y := s''); last by apply IH.
   apply rt_step. by apply mm2_run_step_spec.
-- move=> Hrt. induction Hrt as [s s' Hstep | s | s smid s' Hrt1 IH1 Hrt2 IH2].
+- move=> Hrt. induction Hrt as [?? Hstep | ? | s smid ?? IH1 ? IH2].
   + exists 1. simpl.
     by apply mm2_run_step_spec in Hstep as ->.
   + exists 0. reflexivity.
