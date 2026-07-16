@@ -195,6 +195,40 @@ Global Existing Instance ka_term_star.
 Global Instance ka_term_one `{!One T} : One (ka_term T) :=
   Unit 1.
 
+(** Terms over a countable alphabet are themselves countable.  Following
+    the encoding used for HeapLang expressions in Iris (and for [coPset]
+    in stdpp), we inject [ka_term T] into the generic tree type
+    [gen_tree T] and transport countability back along that injection. *)
+
+Global Instance ka_term_eq_dec `{EqDecision T} : EqDecision (ka_term T).
+Proof. solve_decision. Defined.
+
+Global Instance ka_term_countable `{Countable T} :
+  Countable (ka_term T).
+Proof.
+set (enc :=
+  fix go (e : ka_term T) :=
+    match e with
+    | Unit x => GenLeaf x
+    | ka_term_bottom => GenNode 0 []
+    | ka_term_join e1 e2 => GenNode 1 [go e1; go e2]
+    | ka_term_mul e1 e2 => GenNode 2 [go e1; go e2]
+    | ka_term_star e => GenNode 3 [go e]
+    end).
+set (dec :=
+  fix go (t : gen_tree T) :=
+    match t with
+    | GenLeaf x => Unit x
+    | GenNode 0 [] => ka_term_bottom
+    | GenNode 1 [t1; t2] => ka_term_join (go t1) (go t2)
+    | GenNode 2 [t1; t2] => ka_term_mul (go t1) (go t2)
+    | GenNode 3 [t] => ka_term_star (go t)
+    | _ => ka_term_bottom
+    end).
+refine (inj_countable' enc dec _).
+by move=> e; elim: e => //= *; congruence.
+Qed.
+
 Section KATermTheory.
 
 Variable T : monoid.
