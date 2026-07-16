@@ -7,6 +7,7 @@
 utils.v
 algebra.v
 pre_ka.v
+enumerable.v
 lang.v
 automata.v
 repr_rel.v
