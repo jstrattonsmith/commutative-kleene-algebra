@@ -240,13 +240,6 @@ Variable P : list mm2_instr.
 Let n := length P.
 Let Q := fin (S (S n)).
 
-Local Ltac equivs_to_eq :=
-  repeat match goal with
-  | H : @equiv _ (@monoid_equiv
-      (list_monoid mm_sym_setoid)) _ _
-    |- _ =>
-    apply mm_list_equiv_eq in H
-  end; subst.
 
 (** Convert a library mm2_instr at PC index i (1-indexed)
     to our mm_instr type.  Jump targets outside 1..n cause
@@ -263,6 +256,7 @@ Definition translate_state (q : nat) : Q :=
            end
   end.
 
+(* QUEST: why translate_state and next_state? *)
 Definition next_state (q : Q) : Q :=
   translate_state q.
 

@@ -16,7 +16,7 @@ From kacc Require Import utils algebra.
 
 Class Star T := star : T → T.
 Global Hint Mode Star ! : typeclass_instances.
-Global Instance: Params (@star) 1 := {}.
+Global Instance: Params ( @star) 1 := {}.
 
 Record PreKAMixin T
     `{!Equiv T, Join T, Bottom T, Mul T, One T, Star T} := {
@@ -25,7 +25,7 @@ Record PreKAMixin T
   mixin_pre_ka_left_absorb : LeftAbsorb (≡@{T}) ⊥ (⋅);
   mixin_pre_ka_right_empty : RightAbsorb (≡@{T}) ⊥ (⋅);
   mixin_pre_ka_star_unfold : ∀ x : T, star x ≡ 1 ⊔ x ⋅ star x;
-  mixin_pre_ka_star_proper : Proper ((≡) ==> (≡)) (@star T _);
+  mixin_pre_ka_star_proper : Proper ((≡) ==> (≡)) ( @star T _);
 }.
 Arguments PreKAMixin T {_ _ _ _ _ _}.
 
@@ -705,7 +705,7 @@ Lemma has_oneP e : has_one e = true ↔ 1 ⊑ e.
 Proof.
 split; last first.
   move=> e_gt1; have: 1 ⊑ has_one e.
-    rewrite -[1](@monoid_morphism_one _ _ (@is_one T _)).
+    rewrite -[1]( @monoid_morphism_one _ _ ( @is_one T _)).
     (* FIXME: Why do we need to unfold this in two steps? *)
     by rewrite -[is_one 1]/(has_one (Unit 1)) -[Unit 1]/1 e_gt1.
   by move=> /sqsubseteq_iff/leibniz_equiv_iff; case: has_one.
