@@ -1,5 +1,7 @@
 Require Import ssreflect.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts.
+From Undecidability.Synthetic Require Import DecidabilityFacts.
+From Undecidability.Synthetic Require Import MoreReducibilityFacts.
 From stdpp Require Import base countable.
 From kacc Require Import utils algebra pre_ka.
 
@@ -280,6 +282,25 @@ move=> [e1 e2] /=; split.
   by have [n Hn] := HenD d; exists n; rewrite Hn.
 - move=> [n]; case E: (enD n) => [d|] // Hd.
   exact: (check_sound Hgs Hd).
+Qed.
+
+(** The canonical order [⊑] on [ka_term T], characterised by
+    [x ⊑ y ↔ x ⊔ y ≡ y], is enumerable whenever the carrier's [≡] is: it
+    reduces to [ka_eq] along [(x, y) ↦ (x ⊔ y, y)], and enumerability is
+    preserved under reductions with an enumerable source and discrete
+    target. *)
+Theorem ka_sqsubseteq_enumerable :
+  enumerable (fun p : T * T => p.1 ≡ p.2) →
+  enumerable (fun p : ka_term T * ka_term T => p.1 ⊑ p.2).
+Proof.
+move=> Henum.
+apply: (@enumerable_red (ka_term T * ka_term T) (ka_term T * ka_term T)
+          (fun p => p.1 ⊑ p.2) (fun q => q.1 ≡ q.2)).
+- exists (fun p => (p.1 ⊔ p.2, p.2)).
+  by move=> [a b] /=; rewrite sqsubseteq_iff.
+- exact: (@countable_enumerableT (ka_term T * ka_term T) _ _).
+- apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
+- exact: ka_eq_enumerable Henum.
 Qed.
 
 End KaEqEnumerable.
