@@ -118,6 +118,7 @@ set (dec :=
     | _ => D_unit 0
     end).
 refine (inj_countable' enc dec _).
+(* QUEST: what is * doing here? *)
 by elim=> //= *; congruence.
 Qed.
 
@@ -234,7 +235,7 @@ Lemma check_complete :
   (∀ x y, x ≡ y → ∃ n, g n = Some (x, y)) →
   ∀ e1 e2, ka_eq e1 e2 → ∃ d, check d = Some (e1, e2).
 Proof.
-move=> Hg e1 e2 He; elim: He.
+move=> Hg e1 e2; elim.
 - by move=> x; exists (D_refl x).
 - by move=> x y _ [d Hd]; exists (D_sym d); rewrite /= Hd.
 - move=> x y z _ [d1 H1] _ [d2 H2]; exists (D_trans d1 d2).
@@ -297,7 +298,7 @@ move=> Henum.
 apply: (@enumerable_red (ka_term T * ka_term T) (ka_term T * ka_term T)
           (fun p => p.1 ⊑ p.2) (fun q => q.1 ≡ q.2)).
 - exists (fun p => (p.1 ⊔ p.2, p.2)).
-  by move=> [a b] /=; rewrite sqsubseteq_iff.
+  by move=> [a b] /=; exact: sqsubseteq_iff.
 - exact: (@countable_enumerableT (ka_term T * ka_term T) _ _).
 - apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
 - exact: ka_eq_enumerable Henum.

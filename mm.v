@@ -1210,7 +1210,7 @@ move=> Hrtc; apply: (rtc_ind_r
   exists s3; split; [done|].
   exact: rtc_r Hrtc' Hstep.
 Qed.
-
+(*
 Local Lemma translate_state_inj i1 i2 :
   i2 ≤ n →
   translate_state i1 = translate_state i2 →
@@ -1237,8 +1237,8 @@ case: i2 => [|q2].
     * move=> E.
       have := f_equal fin_to_nat E; simpl.
       by have := nat_to_finK Hfi2; lia.
-Qed.
-
+Qed. *)
+(*
 Local Lemma mm2_config_inj s s2 :
   fst s2 ≤ n →
   mm2_config s = mm2_config s2 → s = s2.
@@ -1249,7 +1249,7 @@ case: s Ha Hb {Hq} Hpc => [i [a b]]
   /= -> -> ->;
   case: s2 Hle => [? [??]] /=.
 by move=> _.
-Qed.
+Qed. *)
 
 Local Lemma proj_elem q : Unit [mm_q q] ⊑ ⨆ q ∈ enum Q, Unit [mm_q q].
 Proof. exact: sqsubseteq_join_list (elem_of_enum _). Qed.
