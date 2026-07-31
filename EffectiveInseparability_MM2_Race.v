@@ -1,0 +1,371 @@
+(* The race relation over MM2 program codes (Phase 2, take 3), realized as
+   a SINGLE L_computable_closed relation R_race : Vector.t nat 3 -> nat ->
+   Prop taking (i,j,y) together (not one relation per (i,j) pair) -- this
+   is deliberate: it lets a *single* application of the axiom-free
+   `L_computable_closed R -> MM2_computable R` chain (composing
+   coq-library-undecidability's Synthetic/Models_Equivalent.v cycle with
+   kacc's own FRACTRAN_computable_to_MM2_computable.v) produce ONE MM2
+   program realizing the whole family of races, avoiding any need to
+   extract a witness program per (i,j) pair (which would need choice,
+   since MM2_computable/L_computable_closed are Prop-level `exists`, not
+   Sigma types).
+
+   See ~/.claude-research/.../project_ka_eq_phase2_take3_update.md for the
+   full architecture writeup this file implements. *)
+
+From Stdlib Require Import Unicode.Utf8.
+From Stdlib Require Import Lia.
+From kacc Require Import EffectiveInseparability_MM2.
+
+Require Import SyntheticComputability.Models.CT.
+Require Import Undecidability.L.L.
+Require Import Undecidability.L.Util.L_facts.
+Require Import Undecidability.L.Tactics.LTactics.
+Require Import SyntheticComputability.Shared.partial.
+Require Import SyntheticComputability.Shared.embed_nat.
+
+Require Import ssreflect.
+Unset Implicit Arguments.
+
+(* --- 0. The race, as plain Gallina functions over MM2 program codes ---- *)
+
+(* semidec_of_MM2 is already defined+computable in EffectiveInseparability_MM2.v
+   (it is literally mm2_haltedAt (progOf c) n (1,(y,0))); register its
+   computable instance here since it wasn't needed for that file's own
+   goals. *)
+Instance semidec_of_MM2_computable : computable semidec_of_MM2.
+Proof. unfold semidec_of_MM2. extract. Qed.
+
+Definition raceBit_MM2 (i j y n : nat) : bool :=
+  orb (semidec_of_MM2 i (embed (y,y)) n) (semidec_of_MM2 j (embed (y,y)) n).
+
+Instance raceBit_MM2_computable : computable raceBit_MM2.
+Proof. extract. Qed.
+
+Definition winnerBit_MM2 (i y n : nat) : bool := semidec_of_MM2 i (embed (y,y)) n.
+
+Instance winnerBit_MM2_computable : computable winnerBit_MM2.
+Proof. extract. Qed.
+
+Definition raceVal_MM2 (i j y : nat) : part nat :=
+  bind (mu (fun n => ret (raceBit_MM2 i j y n)))
+       (fun n => if winnerBit_MM2 i y n then ret 0 else ret 1).
+
+(* --- 1. A single 3-argument L term realizing the whole race family ----
+   Deliberately ONE term taking (i,j,y) all as bound variables (not one
+   term per (i,j) pair, as EffectiveInseparability_L.v's own eta_L_body
+   does with i,j baked in via Gallina currying): this lets a *single*
+   application of the L_computable_closed -> ... -> MM2_computable chain
+   produce one MM2 program for the whole family, with no per-(i,j) choice
+   needed later. Structurally this is eta_L_body's own shape, with one
+   extra bound argument (i is now also a de Bruijn variable, not baked
+   into a Gallina partial application via tcode) -- see eta_L_body's own
+   comments in EffectiveInseparability_L.v for why the search predicate
+   must be inlined this way (as a literal lam) rather than built by
+   calling a separate Gallina function with a not-yet-substituted
+   variable. *)
+
+Require SyntheticComputability.Models.LMuRecursion.
+
+Definition s_race : term :=
+  lam (lam (lam (
+    L.app
+      (L.app
+        (L.app (L.app (L.app (ext winnerBit_MM2) (var 2)) (var 0))
+               (L.app LMuRecursion.mu
+                      (lam (L.app (L.app (L.app (L.app (ext raceBit_MM2) (var 3)) (var 2)) (var 1)) (var 0)))))
+        (enc 0))
+      (enc 1)
+  ))).
+
+Lemma s_race_proc : proc s_race.
+Proof.
+pose proof LMuRecursion.mu_proc.
+pose proof (proc_ext winnerBit_MM2_computable) as Hw.
+pose proof (proc_ext raceBit_MM2_computable) as Hr.
+unfold s_race. Lproc.
+Qed.
+
+(* raceP_MM2 i j y: same search predicate as inlined inside s_race, but as
+   a standalone term with i,j,y all baked in via Gallina currying --
+   connected to s_race's own inlined (de Bruijn-referencing) copy by
+   s_race_reduce below, mirroring eta_L_body_inner_reduce's role in
+   EffectiveInseparability_L.v. *)
+Definition raceP_MM2 (i j y : nat) : term :=
+  lam (L.app (L.app (L.app (L.app (ext raceBit_MM2) (enc i)) (enc j)) (enc y)) (var 0)).
+
+Lemma s_race_reduce i j y :
+  L.app (L.app (L.app s_race (enc i)) (enc j)) (enc y) ==
+  L.app (L.app (L.app (L.app (L.app (ext winnerBit_MM2) (enc i)) (enc y))
+               (L.app LMuRecursion.mu (raceP_MM2 i j y)))
+        (enc 0))
+      (enc 1).
+Proof.
+unfold s_race, raceP_MM2.
+apply star_equiv.
+etransitivity.
+{ apply star_trans_l, star_trans_l, step_star, step_beta; [reflexivity | Lproc]. }
+etransitivity.
+{ apply star_trans_l, step_star, step_beta; [reflexivity | Lproc]. }
+etransitivity.
+{ apply step_star, step_beta; [reflexivity | Lproc]. }
+cbn [subst Nat.eqb nat_enc].
+assert (Hw : forall n t, subst (ext winnerBit_MM2) n t = ext winnerBit_MM2)
+  by (intros; apply SyntheticComputability.Models.CT.closed_subst;
+      now apply proc_closed, proc_ext).
+assert (Hr : forall n t, subst (ext raceBit_MM2) n t = ext raceBit_MM2)
+  by (intros; apply SyntheticComputability.Models.CT.closed_subst;
+      now apply proc_closed, proc_ext).
+assert (Hm : forall n t, subst LMuRecursion.mu n t = LMuRecursion.mu)
+  by (intros; apply SyntheticComputability.Models.CT.closed_subst;
+      now apply proc_closed, LMuRecursion.mu_proc).
+assert (He : forall (k n : nat) (t : term), subst (enc k) n t = enc k)
+  by (intros; apply SyntheticComputability.Models.CT.closed_subst;
+      now apply proc_closed, proc_enc).
+rewrite !Hw.
+rewrite !Hr.
+rewrite !Hm.
+rewrite !He.
+reflexivity.
+Qed.
+
+Require Import Undecidability.L.Datatypes.LNat.
+Require Import Undecidability.L.Datatypes.LOptions.
+Require Import Undecidability.L.Datatypes.LBool.
+Require Undecidability.L.Functions.Eval.
+Require Undecidability.L.Computability.Seval.
+Require Undecidability.L.Computability.Computability.
+Notation enc_extinj := Undecidability.L.Computability.Computability.enc_extinj.
+
+(* Church-boolean branch, generic in b -- same fact as
+   EffectiveInseparability_L.v's winnerBit_branch, reproved locally to
+   avoid depending on that file. *)
+Lemma bool_branch (b : bool) (v : nat) :
+  L.app (L.app (ext b) (enc 0)) (enc 1) == enc v <-> (if b then v = 0 else v = 1).
+Proof.
+destruct b; cbn.
+- split.
+  + intros H. assert (Hb : L.app (L.app (ext true) (enc 0)) (enc 1) == enc 0) by now Lsimpl.
+    rewrite Hb in H. symmetry in H. now apply enc_extinj in H.
+  + intros ->. now Lsimpl.
+- split.
+  + intros H. assert (Hb : L.app (L.app (ext false) (enc 0)) (enc 1) == enc 1) by now Lsimpl.
+    rewrite Hb in H. symmetry in H. now apply enc_extinj in H.
+  + intros ->. now Lsimpl.
+Qed.
+
+Lemma raceP_MM2_dec i j y : forall n : nat, exists b : bool, L.app (raceP_MM2 i j y) (ext n) == ext b.
+Proof.
+intros n. unfold raceP_MM2. eexists. now Lsimpl.
+Qed.
+
+Lemma raceP_MM2_proc i j y : proc (raceP_MM2 i j y).
+Proof.
+pose proof (proc_ext raceBit_MM2_computable).
+unfold raceP_MM2. Lproc.
+Qed.
+
+Lemma minimal_unique_MM2 (P : nat -> bool) (n1 n2 : nat) :
+  P n1 = true -> (forall m, m < n1 -> P m = false) ->
+  P n2 = true -> (forall m, m < n2 -> P m = false) ->
+  n1 = n2.
+Proof.
+intros H1 Hm1 H2 Hm2.
+destruct (Compare_dec.lt_eq_lt_dec n1 n2) as [[Hlt|Heq]|Hgt]; auto.
+- specialize (Hm2 n1 Hlt). congruence.
+- specialize (Hm1 n2 Hgt). congruence.
+Qed.
+
+Lemma s_race_full_reduce i j y v :
+  L.app (L.app (L.app s_race (enc i)) (enc j)) (enc y) == enc v
+  <-> exists n, L.app LMuRecursion.mu (raceP_MM2 i j y) == enc n
+                /\ (if winnerBit_MM2 i y n then v = 0 else v = 1).
+Proof.
+rewrite s_race_reduce.
+split.
+- intros H.
+  assert (Hconv0 :
+    converges
+      (L.app
+         (L.app
+            (L.app (L.app (L.app (ext winnerBit_MM2) (enc i)) (enc y))
+                   (L.app LMuRecursion.mu (raceP_MM2 i j y)))
+            (enc 0))
+         (enc 1)))
+    by (eexists; split; [exact H | Lproc]).
+  apply Seval.app_converges in Hconv0 as [Hconv1 _].
+  apply Seval.app_converges in Hconv1 as [Hconv2 _].
+  apply Seval.app_converges in Hconv2 as [_ Hconv].
+  destruct Hconv as [vn [Hvn Hlvn]].
+  destruct (LMuRecursion.mu_sound (raceP_MM2_proc i j y) (raceP_MM2_dec i j y) Hlvn Hvn) as [n [-> _]].
+  exists n. split; [exact Hvn |].
+  assert (Hcore :
+    L.app (L.app (L.app (ext winnerBit_MM2) (enc i)) (enc y)) (enc n)
+    == ext (winnerBit_MM2 i y n))
+    by now Lsimpl.
+  rewrite Hvn in H. rewrite Hcore in H.
+  now apply bool_branch.
+- intros [n [Hmu Hif]].
+  rewrite Hmu.
+  transitivity (L.app (L.app (ext (winnerBit_MM2 i y n)) (enc 0)) (enc 1)); [now Lsimpl |].
+  now apply bool_branch.
+Qed.
+
+(* --- 2. L_computable_closed R_race ------------------------------------- *)
+
+From Stdlib Require Import Vector.
+Import VectorNotations.
+
+Definition R_race (v : Vector.t nat 3) (m : nat) : Prop :=
+  raceVal_MM2 (Vector.hd v) (Vector.hd (Vector.tl v))
+              (Vector.hd (Vector.tl (Vector.tl v))) =! m.
+
+Lemma equiv_enc_eval s (v : nat) : s == enc v -> L.eval s (enc v).
+Proof.
+intros H. apply eval_iff. split; [| apply proc_enc].
+apply equiv_lambda; [apply proc_enc | exact H].
+Qed.
+
+Lemma eval_enc_equiv s (v : nat) : L.eval s (enc v) -> s == enc v.
+Proof.
+intros H % eval_iff. destruct H as [H _]. now apply star_equiv.
+Qed.
+
+(* raceVal_MM2 i j y =! v, unfolded to a concrete step-search condition --
+   mirrors EffectiveInseparability_L.v's raceVal_iff_race_L, purely at the
+   Gallina/partial.v level (no L terms involved yet). *)
+Lemma raceVal_MM2_iff_race i j y v :
+  raceVal_MM2 i j y =! v <->
+    exists n,
+      (raceBit_MM2 i j y n = true) /\
+      (forall m, m < n -> raceBit_MM2 i j y m = false) /\
+      (if winnerBit_MM2 i y n then v = 0 else v = 1).
+Proof.
+unfold raceVal_MM2.
+split.
+- intros [n [Hmu Hbranch]] % bind_hasvalue.
+  apply mu_hasvalue in Hmu as [Htrue Hforall].
+  simpl in Htrue, Hbranch, Hforall.
+  apply (@ret_hasvalue_inv partial.implementation.monotonic_functions) in Htrue.
+  exists n. split; [exact Htrue |]. split.
+  + intros m Hlt.
+    specialize (Hforall m Hlt).
+    now apply (@ret_hasvalue_inv partial.implementation.monotonic_functions) in Hforall.
+  + destruct (winnerBit_MM2 i y n) eqn:EW.
+    * apply (@ret_hasvalue_inv partial.implementation.monotonic_functions) in Hbranch. symmetry. exact Hbranch.
+    * apply (@ret_hasvalue_inv partial.implementation.monotonic_functions) in Hbranch. symmetry. exact Hbranch.
+- intros [n [Htrue [Hlt Hval]]].
+  apply bind_hasvalue.
+  exists n. split.
+  + apply mu_hasvalue. split.
+    * simpl. apply (@ret_hasvalue' partial.implementation.monotonic_functions). exact Htrue.
+    * intros m Hm. simpl. now apply (@ret_hasvalue' partial.implementation.monotonic_functions), Hlt.
+  + simpl. destruct (winnerBit_MM2 i y n) eqn:EW.
+    * rewrite Hval. apply (@ret_hasvalue partial.implementation.monotonic_functions).
+    * rewrite Hval. apply (@ret_hasvalue partial.implementation.monotonic_functions).
+Qed.
+
+(* raceBit_MM2 i j y n reflects "does the mu-search underlying raceP_MM2
+   converge to n" -- connects the Gallina-level search predicate to the
+   L-level LMuRecursion.mu combinator. Combined with raceVal_MM2_iff_race
+   and s_race_full_reduce, this closes the gap between raceVal_MM2 =! v
+   (abstract, Gallina-level) and s_race's own == enc v (L-term level). *)
+Lemma s_race_val_iff i j y v :
+  L.app (L.app (L.app s_race (enc i)) (enc j)) (enc y) == enc v
+  <-> raceVal_MM2 i j y =! v.
+Proof.
+rewrite s_race_full_reduce.
+rewrite raceVal_MM2_iff_race.
+split.
+- intros [n [Hmu Hw]].
+  destruct (LMuRecursion.mu_sound (raceP_MM2_proc i j y) (raceP_MM2_dec i j y)
+              (proc_lambda (proc_enc n)) Hmu) as [n' [Heq [Htrue Hmin]]].
+  rewrite ext_is_enc in Heq. apply inj_enc in Heq. subst n'.
+  assert (Htrue' : raceBit_MM2 i j y n = true).
+  { unfold raceP_MM2 in Htrue. LsimplHypo. Lrewrite in Htrue. symmetry in Htrue.
+    now apply enc_extinj in Htrue. }
+  assert (Hmin' : forall m, m < n -> raceBit_MM2 i j y m = false).
+  { intros m Hlt. specialize (Hmin m Hlt). unfold raceP_MM2 in Hmin.
+    LsimplHypo. Lrewrite in Hmin. symmetry in Hmin.
+    now apply enc_extinj in Hmin. }
+  exists n. split; [exact Htrue' |]. split; [exact Hmin' | exact Hw].
+- intros [n [Htrue [Hmin Hv]]].
+  assert (HPtrue : L.app (raceP_MM2 i j y) (ext n) == ext true).
+  { unfold raceP_MM2. Lsimpl. now rewrite Htrue. }
+  destruct (LMuRecursion.mu_complete (raceP_MM2_proc i j y) (raceP_MM2_dec i j y) HPtrue) as [n0 Hn0].
+  destruct (LMuRecursion.mu_sound (raceP_MM2_proc i j y) (raceP_MM2_dec i j y) (proc_lambda (proc_enc n0)) Hn0)
+    as [n0' [Heq0 [Htrue0 Hmin0]]].
+  rewrite ext_is_enc in Heq0. apply inj_enc in Heq0. subst n0'.
+  assert (Htrue0' : raceBit_MM2 i j y n0 = true).
+  { unfold raceP_MM2 in Htrue0. LsimplHypo. Lrewrite in Htrue0. symmetry in Htrue0.
+    now apply enc_extinj in Htrue0. }
+  assert (Hmin0' : forall m, m < n0 -> raceBit_MM2 i j y m = false).
+  { intros m Hm. specialize (Hmin0 m Hm). unfold raceP_MM2 in Hmin0.
+    LsimplHypo. Lrewrite in Hmin0. symmetry in Hmin0.
+    now apply enc_extinj in Hmin0. }
+  assert (Hn0n : n0 = n) by (eapply minimal_unique_MM2; eauto).
+  subst n0. exists n. split; [exact Hn0 | exact Hv].
+Qed.
+
+Lemma vector3_eta (v : Vector.t nat 3) :
+  v = [Vector.hd v; Vector.hd (Vector.tl v); Vector.hd (Vector.tl (Vector.tl v))].
+Proof.
+refine (Vector.caseS' v (fun v => v = [Vector.hd v; Vector.hd (Vector.tl v); Vector.hd (Vector.tl (Vector.tl v))]) _).
+intros h1 v1.
+refine (Vector.caseS' v1 (fun v1 => (h1 :: v1) = [h1; Vector.hd v1; Vector.hd (Vector.tl v1)]) _).
+intros h2 v2.
+refine (Vector.caseS' v2 (fun v2 => (h1 :: h2 :: v2) = [h1; h2; Vector.hd v2]) _).
+intros h3 v3.
+refine (Vector.case0 (fun v3 => (h1 :: h2 :: h3 :: v3) = [h1; h2; h3]) _ v3).
+reflexivity.
+Qed.
+
+Lemma s_race_applied_terminal (i j y : nat) o :
+  L.app (L.app (L.app s_race (enc i)) (enc j)) (enc y) == o -> lambda o ->
+  exists m : nat, o = enc m.
+Proof.
+intros H Ho.
+rewrite s_race_reduce in H.
+assert (Hconv0 :
+  converges
+    (L.app
+       (L.app
+          (L.app (L.app (L.app (ext winnerBit_MM2) (enc i)) (enc y))
+                 (L.app LMuRecursion.mu (raceP_MM2 i j y)))
+          (enc 0))
+       (enc 1)))
+  by (eexists; split; [exact H | exact Ho]).
+apply Seval.app_converges in Hconv0 as [Hconv1 _].
+apply Seval.app_converges in Hconv1 as [Hconv2 _].
+apply Seval.app_converges in Hconv2 as [_ Hconv].
+destruct Hconv as [vn [Hvn Hlvn]].
+destruct (LMuRecursion.mu_sound (raceP_MM2_proc i j y) (raceP_MM2_dec i j y) Hlvn Hvn) as [n [-> _]].
+assert (Hcore :
+  L.app (L.app (L.app (ext winnerBit_MM2) (enc i)) (enc y)) (enc n)
+  == ext (winnerBit_MM2 i y n))
+  by now Lsimpl.
+rewrite Hvn in H. rewrite Hcore in H.
+destruct (winnerBit_MM2 i y n) eqn:EW.
+- exists 0. eapply unique_normal_forms; [exact Ho | apply proc_enc |].
+  rewrite <- H. now apply bool_branch.
+- exists 1. eapply unique_normal_forms; [exact Ho | apply proc_enc |].
+  rewrite <- H. now apply bool_branch.
+Qed.
+
+Lemma L_computable_closed_R_race : L_computable_closed R_race.
+Proof.
+exists s_race. split.
+{ destruct s_race_proc as [Hc _]. exact Hc. }
+intros v.
+rewrite (vector3_eta v).
+set (i := Vector.hd v). set (j := Vector.hd (Vector.tl v)).
+set (y := Vector.hd (Vector.tl (Vector.tl v))).
+unfold R_race. cbn [Vector.hd Vector.tl Vector.fold_left].
+split.
+- intros m. rewrite <- s_race_val_iff. split.
+  + intros H % equiv_enc_eval. exact H.
+  + intros H % eval_enc_equiv. exact H.
+- intros o Ho % eval_iff.
+  destruct Ho as [Ho1 Ho2].
+  eapply s_race_applied_terminal; [now apply star_equiv | exact Ho2].
+Qed.
