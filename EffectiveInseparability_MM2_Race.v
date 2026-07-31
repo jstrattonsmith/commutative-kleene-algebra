@@ -369,3 +369,36 @@ split.
   destruct Ho as [Ho1 Ho2].
   eapply s_race_applied_terminal; [now apply star_equiv | exact Ho2].
 Qed.
+
+(* --- 3. Compile R_race into an actual MM2 program, axiom-free ----------
+   Composes coq-library-undecidability's Synthetic/Models_Equivalent.v
+   cycle (L_computable_closed -> MMA_computable -> TM_computable ->
+   BSM_computable -> MM_computable -> FRACTRAN_computable) with kacc's own
+   FRACTRAN_computable_to_MM2_computable.v (FRACTRAN_computable ->
+   MMA2_computable -> MM2_computable), all fully proven, axiom-free
+   theorems already in the library. This is the piece Approach B2
+   originally needed but couldn't find (the MM_to_MMA2.v compiler found
+   earlier is termination-only; this chain, via FRACTRAN, is genuinely
+   output-preserving -- MM2_computable's own definition encodes the actual
+   output value via prime-power divisibility, not just termination). *)
+
+From Undecidability Require Import
+  L_computable_closed_to_MMA_computable
+  MMA_computable_to_TM_computable
+  TM_computable_to_BSM_computable
+  BSM_computable_to_MM_computable
+  MM_computable_to_FRACTRAN_computable.
+
+From kacc Require Import FRACTRAN_computable_to_MM2_computable.
+
+Lemma R_race_MM2_computable : MM2_computable R_race.
+Proof.
+apply mma2_computable_to_mm2_computable.
+apply fractran_computable_to_mma2_computable.
+apply MM_computable_to_FRACTRAN_computable.
+apply BSM_computable_to_MM_computable.
+apply TM_computable_to_BSM_computable.
+apply MMA_computable_to_TM_computable.
+apply L_computable_closed_to_MMA_computable.
+exact L_computable_closed_R_race.
+Qed.
