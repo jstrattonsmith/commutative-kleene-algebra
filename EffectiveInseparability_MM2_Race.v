@@ -307,17 +307,29 @@ split.
   subst n0. exists n. split; [exact Hn0 | exact Hv].
 Qed.
 
+(* Base case for the recursive eta-expansion below: a length-1 vector is
+   just its head, singleton-listed. Can't reuse the [remember]+[have]
+   trick one more level down without it self-rewriting (the goal
+   [w = [hd w]] mentions [w] both as the vector being expanded and,
+   simultaneously, inside [hd w]), so this one base case is closed
+   directly via [transitivity] instead. *)
+Lemma vector1_eta (A : Type) (w : Vector.t A 1) : w = [Vector.hd w].
+Proof.
+transitivity (Vector.hd w :: Vector.tl w).
+- apply VectorSpec.eta.
+- now rewrite (VectorSpec.nil_spec (Vector.tl w)).
+Qed.
+
 Lemma vector3_eta (v : Vector.t nat 3) :
   v = [Vector.hd v; Vector.hd (Vector.tl v); Vector.hd (Vector.tl (Vector.tl v))].
 Proof.
-refine (Vector.caseS' v (fun v => v = [Vector.hd v; Vector.hd (Vector.tl v); Vector.hd (Vector.tl (Vector.tl v))]) _).
-intros h1 v1.
-refine (Vector.caseS' v1 (fun v1 => (h1 :: v1) = [h1; Vector.hd v1; Vector.hd (Vector.tl v1)]) _).
-intros h2 v2.
-refine (Vector.caseS' v2 (fun v2 => (h1 :: h2 :: v2) = [h1; h2; Vector.hd v2]) _).
-intros h3 v3.
-refine (Vector.case0 (fun v3 => (h1 :: h2 :: h3 :: v3) = [h1; h2; h3]) _ v3).
-reflexivity.
+remember (tl v) as t eqn:Eqt.
+have <-: t = [hd (t); hd (tl (t))]; last by subst t; apply VectorSpec.eta.
+subst t.
+remember (tl (tl v)) as t2 eqn:Eqt2.
+have <-: t2 = [hd t2]; last by subst t2; apply VectorSpec.eta.
+subst t2.
+apply vector1_eta.
 Qed.
 
 Lemma s_race_applied_terminal (i j y : nat) o :
