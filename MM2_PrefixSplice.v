@@ -8,13 +8,13 @@
    (1+len(Pre), (f y, 0))" spec for the prefix's own input/output relation
    `f : nat -> nat`.
 
-   Lifted out of SMN_MM2.v (Phase 2, take 3), whose own `mm2_prefix`
-   (computing `pair_xy x _`) is exactly one instance of `Pre`/`f` here --
-   see SMN_MM2.v for that instantiation. The point of splitting this out:
+   Lifted out of SMN_MM2.v, whose own `mm2_prefix` (computing
+   `pair_xy x _`) is exactly one instance of `Pre`/`f` here -- see
+   SMN_MM2.v for that instantiation. The point of splitting this out:
    this splicing engine is reusable for ANY compile-time-constant-indexed
-   prefix, e.g. the EXP_K combinator (raw register -> K^(register), needed
-   for task #28) is expected to be another instance, not a variant that
-   needs its own copy of this reasoning. *)
+   prefix, e.g. an EXP_K-style combinator (raw register ->
+   K^(register)) would be expected to be another instance, not a
+   variant that needs its own copy of this reasoning. *)
 
 From Stdlib Require Import Arith List Lia.
 From Stdlib Require Import Relations.Relation_Operators.

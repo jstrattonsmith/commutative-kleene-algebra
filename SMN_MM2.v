@@ -1,10 +1,10 @@
-(* SMN_for T_MM2 (Phase 2, take 3, Approach 3): build SMN_S(c,x) so that
-   Theta_ours_MM2 (SMN_S c x) y agrees with Theta_ours_MM2 c (pair_xy x y), for a
-   fixed pairing pair_xy chosen SPECIFICALLY to be realizable by an actual
-   2-register MM2 program (unlike embed_nat's Cantor pairing, which needs
-   genuine runtime-value*runtime-value multiplication -- see the
-   project-memory writeup on the register-packing blocker for why that
-   matters).
+(* SMN_for T_MM2: build SMN_S(c,x) so that Theta_ours_MM2 (SMN_S c x) y
+   agrees with Theta_ours_MM2 c (pair_xy x y), for a fixed pairing
+   pair_xy chosen SPECIFICALLY to be realizable by an actual 2-register
+   MM2 program (unlike embed_nat's Cantor pairing, which needs genuine
+   runtime-value*runtime-value multiplication -- raw-register squaring
+   has no direct 2-register MM2 realization, which is why this file
+   doesn't just reuse embed_nat's pairing).
 
    pair_xy x y := 2^x * (2*y+1) - 1, i.e. z+1 = 2^x * (2y+1) -- the standard
    "2-adic valuation" bijection nat*nat =~= nat. Its defining feature: for a

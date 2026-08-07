@@ -1,17 +1,16 @@
-(* The race relation over MM2 program codes (Phase 2, take 3), realized as
-   a SINGLE L_computable_closed relation R_race : Vector.t nat 3 -> nat ->
-   Prop taking (i,j,y) together (not one relation per (i,j) pair) -- this
-   is deliberate: it lets a *single* application of the axiom-free
+(* The race relation over MM2 program codes, realized as a SINGLE
+   L_computable_closed relation R_race : Vector.t nat 3 -> nat -> Prop
+   taking (i,j,y) together (not one relation per (i,j) pair) -- this is
+   deliberate: it lets a *single* application of the axiom-free
    `L_computable_closed R -> MM2_computable R` chain (composing
    coq-library-undecidability's Synthetic/Models_Equivalent.v cycle with
    kacc's own FRACTRAN_computable_to_MM2_computable.v) produce ONE MM2
    program realizing the whole family of races, avoiding any need to
    extract a witness program per (i,j) pair (which would need choice,
    since MM2_computable/L_computable_closed are Prop-level `exists`, not
-   Sigma types).
-
-   See ~/.claude-research/.../project_ka_eq_phase2_take3_update.md for the
-   full architecture writeup this file implements. *)
+   Sigma types). This is the S-M-N-style construction SMN_MM2.v builds
+   on (via raceVal_MM2), predating and superseded by the T_L-based route
+   used by the main Theorem17-19 argument. *)
 
 From Stdlib Require Import Unicode.Utf8.
 From Stdlib Require Import Lia.

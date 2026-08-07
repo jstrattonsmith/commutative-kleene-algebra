@@ -1,29 +1,40 @@
-(* Phase 2 take 3 -- Task #4. Bridges R_TL_MM2_computable's divisibility-
-   encoded output convention to EffectiveInseparability_MM2.v's
+(* Bridges T_L (Rocq's own L-interpreter, compiled via the library's
+   FRACTRAN->MMA2 chain) to EffectiveInseparability_MM2.v's own
    Theta_ours_MM2/A0_MM2/R_target convention (halt EXACTLY at (0,(0,0))).
 
    The two conventions genuinely don't align on their own:
-   MM2_computable's programs halt by "running off the end" (landing at
-   some position i with out_code i P, concretely length P + 1 for this
+   MMA2_computable-style programs halt by "running off the end" (landing
+   at some position i with out_code i P, concretely length P + 1 for this
    specific FRACTRAN->MMA2 compiler step -- confirmed directly from
    fractran_mma_sound's own statement), while mm.v's whole undecidability
    argument (mm2_R_soundness/completeness, hence R_target/red_leq) is
    specifically about reaching (0,(0,0)) -- that's baked into how the
    MM2-halting-problem gets encoded into KA-term inequalities, not a
    choice EffectiveInseparability_MM2.v made. So a splice is needed: run
-   the MM2_computable-style program, then test whether the output
-   register is divisible by qs 1 (the only test we ever need, since our
-   relation only outputs m in {0,1}), and redirect to (0,(0,0)) iff so.
+   the compiled program, then test whether the output register is
+   divisible by qs 1 (the only test we ever need, since our relation
+   only outputs m in {0,1}), and redirect to (0,(0,0)) iff so.
 
-   Step 1 (this section): re-derive fractran_computable_to_mma2_computable
-   with a PINNED stop position (length (fractran_mma Q) + 1 exactly,
-   instead of an abstract existential i) -- needed so the splice below can
-   reliably append code right after the compiled program. The existing
-   MMA2_computable/MM2_computable theorems don't expose this pinned fact
-   even though their own proofs establish it internally (Qed-opacity), so
-   this re-derives it directly from the same underlying lemmas
-   (fractran_mma_sound, eval_iff, sss_output_fun) that the original
-   fractran_computable_to_mma2_computable proof already uses. *)
+   File structure (generic machinery first, CKA/T_L-specific glue after):
+
+   - GENERIC: FRACTRAN_computable_to_MMA2_pinned re-derives the library's
+     own fractran_computable_to_mma2_computable with a PINNED stop
+     position (length (fractran_mma Q) + 1 exactly, instead of an
+     abstract existential i) -- needed so the splice below can reliably
+     append code right after the compiled program. The existing
+     MMA2_computable/MM2_computable theorems don't expose this pinned
+     fact even though their own proofs establish it internally
+     (Qed-opacity, see TLUniform_MM2.v's header for the fuller story of
+     why this file doesn't just reuse that packaged form); this
+     re-derives it directly from the same underlying lemmas
+     (fractran_mma_sound, eval_iff, sss_output_fun) the library's own
+     proof already uses. Parametric in any FRACTRAN-computable R, not
+     tied to T_L or KACC at all.
+
+   - CKA/T_L-SPECIFIC: R_TL_FRACTRAN_computable (compiling T_L itself),
+     Section Splice (building the actual divides-test-and-redirect
+     program, Psplice, and connecting it to mm.v's R_target), and the
+     closing R_TL_R_target_connection. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia Relations.
 From Undecidability Require Import FRACTRAN.
@@ -103,6 +114,8 @@ move=> v m; rewrite {}rest; split.
   lia.
 Qed.
 
+(* --- CKA/T_L-specific from here on. --- *)
+
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.T_L_Extract.
 From Undecidability Require Import
@@ -146,12 +159,28 @@ Variable (Q : list (nat * nat)).
 
 Definition P0 : list (mm_instr (pos 2)) := fractran_mma Q.
 
+(* i0 is the pinned stop position of P0 (see R_TL_MMA2_pinned/
+   FRACTRAN_computable_to_MMA2_pinned above) -- the spliced-on code below
+   starts exactly here. *)
 Definition i0 : nat := length P0 + 1.
 
+(* Length of the mma_mod_cst block that tests "does qs 1 divide the
+   output register (pos0)", written into pos1 as a byproduct. Fixed at
+   6 + 4*(qs 1) instructions by mma_mod_cst's own definition
+   (mma_mod_cst_length) -- not a free parameter, just inlined here so
+   p_target/q_target can be stated as plain nat additions instead of a
+   call to List.length. *)
 Definition modblock_len : nat := 6 + 4 * (qs 1).
 
+(* Where control lands after the mod-test: on "divides", mma_mod_cst
+   leaves the quotient in pos1 and falls through to here, which is the
+   start of divide_block below. *)
 Definition p_target : nat := i0 + modblock_len.
 
+(* One past the end of the whole spliced program (divide_block is
+   mma_null ++ mma_jump, 3 instructions) -- the position control falls
+   off the end into on "not divides", i.e. the natural MM2-halting stop
+   state for the m=0 case. *)
 Definition q_target : nat := p_target + 3.
 
 Definition divide_block : list (mm_instr (pos 2)) :=
@@ -260,27 +289,25 @@ Qed.
    the same base relation, not exposed as a ready-made lemma anywhere in
    scope. *)
 
-Lemma rtc_transitive {A} (R : A -> A -> Prop) (x y z : A) :
-  relations.rtc R x y -> relations.rtc R y z -> relations.rtc R x z.
-Proof.
-intros H. revert z. induction H as [ | x y y' Hxy Hyy' IH]; intros z Hz.
-- exact Hz.
-- apply IH in Hz. eapply relations.rtc_l; eassumption.
-Qed.
-
 Lemma crt_to_rtc {A} (R : A -> A -> Prop) (x y : A) :
   clos_refl_trans _ R x y -> relations.rtc R x y.
 Proof.
 induction 1 as [x y Hxy | x | x y z Hxy IHxy Hyz IHyz].
 - eapply relations.rtc_l; [exact Hxy | apply relations.rtc_refl].
 - apply relations.rtc_refl.
-- eapply rtc_transitive; eassumption.
+- eapply relations.rtc_transitive; eassumption.
 Qed.
 
 Definition c_P : nat := codeOf (List.map mma_mm2_instr Psplice).
 
-Lemma progOf_c_P : progOf c_P = List.map mma_mm2_instr Psplice.
-Proof. apply progOf_codeOf. Qed.
+(* Explicit type ascription matters here: without it, the inferred type
+   would state progOf (codeOf (...)) = ... with codeOf left unfolded,
+   rather than folded to c_P -- which then makes `rewrite progOf_c_P`
+   fail downstream (A0_L_Prime.v) since the goal mentions c_P, not its
+   unfolded codeOf form, and rewrite's matching doesn't delta-unfold to
+   find it. *)
+Definition progOf_c_P : progOf c_P = List.map mma_mm2_instr Psplice :=
+  progOf_codeOf (List.map mma_mm2_instr Psplice).
 
 Lemma Psplice_mm2_divides (v : Vector.t nat 2) (b : nat) :
   sss_compute (@mma_sss 2) (1, P0) (1, (ps 1 * enc 2 v) ## 0 ## vec_nil) (i0, b ## 0 ## vec_nil) ->
@@ -359,23 +386,20 @@ Qed.
 
 End Splice.
 
-Lemma R_TL_MMA2_pinned :
-  exists (Q : list (nat * nat)),
-    forall (v : Vector.t nat 2) (m : nat),
-      T_L_Uniform.R_TL v m <->
-      exists b,
-        sss_compute (@mma_sss 2) (1, fractran_mma Q)
-          (1, (ps 1 * enc 2 v) ## 0 ## vec_nil)
-          (length (fractran_mma Q) + 1, b ## 0 ## vec_nil) /\
-        divides (qs 1 ^ m) b /\
-        ~ divides (qs 1 ^ (S m)) b.
-Proof.
-apply FRACTRAN_computable_to_MMA2_pinned.
-exact R_TL_FRACTRAN_computable.
-Qed.
+Definition R_TL_MMA2_pinned := FRACTRAN_computable_to_MMA2_pinned R_TL_FRACTRAN_computable.
 
-(* --- Task #4's payoff: R_TL bridged all the way to mm.v's own R_target,
-   for the only outputs R_TL / A0_L / B1_L ever care about (m in {0,1}). *)
+(* --- Payoff: R_TL bridged all the way to mm.v's own R_target.
+
+   The `m <= 1` hypothesis is not a limitation of the splice construction
+   itself (Psplice/the divides-test above works for any m, distinguishing
+   "m = 0" from "m > 0" via a single divisibility check) -- it's here
+   because it's all A0_L/B1_L (Theorem17_KATerm.v, A0_L_Prime.v) ever
+   need: those sets only ever ask about R_TL's outputs 0 and 1, never
+   larger m. Stating the connection only for m <= 1 keeps this theorem's
+   proof from having to characterize what happens for m >= 2 (which the
+   divides-test alone doesn't determine, since divides (qs 1 ^ m) is not
+   injective across m without the accompanying ~divides (qs 1 ^ (S m))
+   bound also pinning m from above). *)
 
 Theorem R_TL_R_target_connection :
   exists c : nat, forall (v : Vector.t nat 2) (m : nat),

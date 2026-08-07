@@ -32,10 +32,10 @@ Definition psi_L (c m : nat) : option nat :=
   end.
 
 Lemma theta_L_hasvalue_iff (c x v : nat) :
-  hasvalue (θ_L c x) v <-> exists n, T_L c x n = Some v.
+  hasvalue (θ_L c x) v <-> ∃ n, T_L c x n = Some v.
 Proof. unfold θ_L, hasvalue. reflexivity. Qed.
 
-Lemma W_psi_L_iff (c x : nat) : (exists m, psi_L c m = Some x) <-> W_L c x.
+Lemma W_psi_L_iff (c x : nat) : (∃ m, psi_L c m = Some x) <-> W_L c x.
 Proof.
 unfold W_L, ter. setoid_rewrite theta_L_hasvalue_iff. split.
 - intros [m Hm]. unfold psi_L in Hm.
@@ -54,7 +54,7 @@ Hypothesis ct : CT_L.
 
 Lemma EA_L_spec :
   forall p : nat -> nat -> Prop, penumerable p ->
-    exists gamma : nat -> nat, parametric_enumerator (fun x => psi_L (gamma x)) p.
+    ∃ γ : nat -> nat, parametric_enumerator (fun x => psi_L (γ x)) p.
 Proof.
 intros p [f Hf].
 pose (g := fun (xy n : nat) =>

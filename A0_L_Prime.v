@@ -1,6 +1,5 @@
-(* Phase 2 take 3 -- Task #5. Defines A0_L' as a superset of A0_L,
-   disjoint from B1_L, enumerable -- built directly on top of
-   R_TL_R_target_connection (Task #4, TLUniform_Bridge.v).
+(* Defines A0_L' as a superset of A0_L, disjoint from B1_L, enumerable --
+   built directly on top of R_TL_R_target_connection (TLUniform_Bridge.v).
 
    Key design point: R_target/red_leq is a KA-term-level *safety*
    statement (a language-containment fact), not directly a termination
@@ -12,9 +11,17 @@
    R_target (that wouldn't obviously be enumerable). Instead it's defined
    via Theta_ours_MM2/A0_MM2 (EffectiveInseparability_MM2.v), whose
    enumerability is already proven there (step-indexed search, same
-   shape as Theta_ours_L/A0_L) -- R_target only comes in later (Task #6)
-   via the EASY direction (halted-at-(0,0) -> red_leq), which is all a
-   reduction to R_target actually needs. *)
+   shape as Theta_ours_L/A0_L) -- R_target only comes in later
+   (Theorem17_KATerm.v) via the EASY direction (halted-at-(0,0) ->
+   red_leq), which is all a reduction to R_target actually needs.
+
+   File structure: sections 0-1 (rtc_to_iter, Psplice_theta_divides/
+   Psplice_theta_not_divides) are the CKA/MM2-specific bridge from the
+   splice's reachability facts to Theta_ours_MM2; section 2 (A0_L') is
+   the CKA-specific set itself; section 3 (theta_ours_L_iff onward) is
+   generic T_L/Theta_ours_L search-witness machinery, reusable for any
+   argument connecting T_L's mu-search to a plain hasvalue numbering;
+   section 4 assembles the CKA-specific deliverable. *)
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia.
 From Undecidability Require Import FRACTRAN.
@@ -65,7 +72,8 @@ Qed.
 
 (* --- 1. Connect the splice's MM2-level facts (TLUniform_Bridge.v)
    directly to Theta_ours_MM2/A0_MM2, bypassing R_target entirely (that
-   detour is only needed later, for Task #6's actual KA-term reduction).
+   detour is only needed later, for Theorem17_KATerm.v's actual KA-term
+   reduction).
    (0,(0,0)) is always mm2_stop (index 0 has no instruction), so once
    rtc_to_iter gives a concrete step count reaching it, mm2_haltedAt/
    mm2_outcome_at fire immediately. *)
@@ -250,7 +258,8 @@ Qed.
 
 End Splice3.
 
-(* --- Task #5's deliverable. --- *)
+(* --- The deliverable: A0_L' as an enumerable superset of A0_L,
+   disjoint from B1_L. --- *)
 
 Theorem A0_L_prime_exists :
   exists A0Lp : nat -> Prop,

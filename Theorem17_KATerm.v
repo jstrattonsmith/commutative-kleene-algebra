@@ -1,19 +1,19 @@
-(* Phase 2 take 3 -- Task #6 (final step). Closes the project's Theorem 17
-   analogue: the KA-term-level set K (an actual red_lb/red_ub inequality,
-   i.e. a bona fide statement about validity of a KA-term ordering, via
-   mm.v's R_target) is effectively inseparable from B1_L.
+(* Closes the project's Theorem 17 analogue: the KA-term-level set K
+   (an actual red_lb/red_ub inequality, i.e. a bona fide statement about
+   validity of a KA-term ordering, via mm.v's R_target) is effectively
+   inseparable from B1_L.
 
-   Key structural discovery this session (traced through both source
-   papers, not previously in the codebase): NO numbering change is
-   needed, and eff_insep_shape_superset (Task #1) does NOT need to be
-   reapplied via any new "reduction transports eff_insep to a different
-   W" machinery. Kuznetsov's own argument (ICTAC 2023, Section 4,
-   Propositions 7-9) settles this directly: K, B1_L, A0_L are ALL
-   subsets of the SAME domain (nat, indexed by z), and Proposition 9
-   (eff_insep_shape_superset) is simply reapplied with A0_L as the known
-   subset and K as the new superset. Azevedo de Amorim et al.'s own
-   Theorem 17 (CSL 2025) is itself stated exactly this way -- disjointness
-   plus a witness function, with NO enumerability of the sets baked in.
+   Key structural point (traced through both source papers): NO
+   numbering change is needed, and the transport lemma this file builds
+   (eff_insep_core_superset, a Proposition-9-style superset transport)
+   does not need any new "reduction transports eff_insep to a different
+   W" machinery layered on top. Kuznetsov's own argument (ICTAC 2023,
+   Section 4, Propositions 7-9) settles this directly: K, B1_L, A0_L are
+   ALL subsets of the SAME domain (nat, indexed by z), and Proposition 9
+   is simply reapplied with A0_L as the known subset and K as the new
+   superset. Azevedo de Amorim et al.'s own Theorem 17 (CSL 2025) is
+   itself stated exactly this way -- disjointness plus a witness
+   function, with NO enumerability of the sets baked in.
 
    The one genuine obstacle: the *library's* eff_insep_shape bundles
    `enumerable A` into its own definition (for Proposition 7's
@@ -28,9 +28,16 @@
    (eff_insep_core below, matching both papers' own Definition 5 / "there
    exists a partial computable f..." verbatim) and transports along
    that instead. This delivers exactly the paper's Theorem 17 statement
-   for the KA-term-level set K; strengthening it to full Sigma^0_1-
-   completeness (Kuznetsov's Proposition 7 / the project's Theorem 19)
-   remains open, pending K's enumerability. *)
+   for the KA-term-level set K; K's enumerability (needed to strengthen
+   this to the fully bundled eff_insep_shape) is picked up in
+   K_Enumerable.v/Theorem17_Full.v.
+
+   File structure: sections 0-1 (eff_insep_core, eff_insep_core_superset)
+   are fully generic -- parametrized over an arbitrary numbering W and
+   sets A/B/A', reusable for any effective-inseparability argument that
+   wants the unbundled (no-enumerability-required) notion. Sections 2-3
+   are the CKA-specific instantiation: K itself, and its effective
+   inseparability from B1_L. *)
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia.
 From Undecidability Require Import FRACTRAN.
@@ -70,8 +77,8 @@ Qed.
 
 (* --- 1. Proposition 9 / eff_insep_shape_superset, unbundled: no
    enumerability hypothesis on the new superset A'. Same proof shape as
-   EffectiveInseparabilityTransport.v's eff_insep_shape_superset (Task #1),
-   just without the enumerable A' plumbing. *)
+   EffectiveInseparabilityTransport.v's eff_insep_shape_superset, just
+   without the enumerable A' plumbing. GENERIC. *)
 
 Lemma eff_insep_core_superset (W : nat -> nat -> Prop) (A B A' : nat -> Prop) :
   eff_insep_core W A B ->
@@ -123,7 +130,7 @@ Qed.
 
 End Splice6.
 
-(* --- 3. Task #6's deliverable: K (the KA-term-level set) is effectively
+(* --- 3. The deliverable: K (the KA-term-level set) is effectively
    inseparable (unbundled sense) from B1_L. This is the project's
    Theorem 17 analogue at the actual KA-term/red_leq level. *)
 
