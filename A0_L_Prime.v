@@ -23,6 +23,7 @@ From Undecidability.MinskyMachines Require Import MM2 MMA mm_defs mma_defs fract
 Import MM2Notations.
 From Undecidability.Shared.Libs.DLW Require Import gcd pos vec sss subcode.
 Import vec_notations.
+From kacc Require Import TLUniform_MM2.
 From kacc Require Import TLUniform_Bridge.
 From kacc Require Import EffectiveInseparability_MM2.
 Require kacc.mm.

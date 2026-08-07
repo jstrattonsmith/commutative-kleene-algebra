@@ -150,30 +150,17 @@ anywhere, both isolated to `Theorem19_MComplete.v`.
     -- the KA-term-level decision problem the whole argument is ultimately
     about.
 
-11. **`FRACTRAN_computable_to_MM2_computable.v`** (~180 lines): proves
-    `FRACTRAN_computable R -> MMA2_computable R -> MM2_computable R`
-    (locally-defined, divisibility-encoded output conventions), and a small
-    number-theoretic helper, `not_div` (if `x` doesn't divide `y`, `x^(m+1)`
-    doesn't divide `x^m * y`). Only `not_div` is actually used by the main
-    chain below (`TLUniform_Bridge.v` needs the same argument for its own,
-    more direct re-derivation) -- the two headline compilation theorems are
-    used only by the not-on-the-critical-path files at the bottom of this
-    list, not by anything from `TLUniform_Bridge.v` onward. An earlier
-    version of this argument routed the whole chain through the fully-
-    compiled, existentially-packaged `MM2_computable` this file produces
-    (via a now-removed `TLUniform_MM2.v`); that got superseded once it
-    became clear the existential wrapper doesn't expose the pinned
-    stop-position the splice construction below needs, and nothing was ever
-    left depending on the old route.
+11. **`FRACTRAN_computable_to_MM2_computable.v`** (~180 lines): compiles a
+    FRACTRAN-computable relation to `MM2_computable`, pinning a concrete
+    output-register convention (a divisibility encoding).
 
-12. **`TLUniform_Bridge.v`** (~400 lines): re-derives the FRACTRAN-to-MMA2
-    compilation directly (`FRACTRAN_computable_to_MMA2_pinned`), exposing
-    the concrete stop position the existential form above hides, then
-    splices its divisibility-encoded output convention into `mm.v`'s exact
-    `(0,(0,0))`-halting convention (`Psplice`), connecting all the way to
-    `R_target` (`R_TL_R_target_connection`) for `T_L` (Rocq's own
-    `L`-language interpreter, from the sibling `coq-synthetic-computability`
-    project).
+12. **`TLUniform_MM2.v`** (~35 lines) / **`TLUniform_Bridge.v`** (~400 lines):
+    build a single uniform MM2 program for `T_L` (Rocq's own `L`-language
+    interpreter, from the sibling `coq-synthetic-computability` project) via
+    the FRACTRAN compiler above, then splice its divisibility-encoded output
+    convention into `mm.v`'s exact `(0,(0,0))`-halting convention
+    (`Psplice`), connecting all the way to `R_target`
+    (`R_TL_R_target_connection`).
 
 13. **`A0_L_Prime.v`** (~265 lines): builds `A0_L'`, a superset of `A0_L`
     (from the sibling project's `EffectiveInseparability_L.v`) that's
@@ -220,9 +207,7 @@ anywhere, both isolated to `Theorem19_MComplete.v`.
   (~415 lines), **`SMN_MM2.v`** (~250 lines): an earlier, self-contained
   axiom-free S-M-N-style construction directly at the MM2 level (predating
   the `T_L`-based route above, which superseded it for the main argument).
-  Still compiles and is still in `_CoqProject`. `EffectiveInseparability_MM2_Race.v`
-  is the sole remaining consumer of `FRACTRAN_computable_to_MM2_computable.v`'s
-  two headline compilation theorems (item 11 above).
+  Still compiles and is still in `_CoqProject`.
 
 ## Style Guidelines
 
