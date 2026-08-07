@@ -3,12 +3,21 @@
 
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Pinned to match coq-synthetic-computability's own pin, so the Rocq
+    # toolchain (Rocq 9.0.1, Equations 1.3.1+9.0, stdpp 1.12.0) agrees between
+    # the two projects.
+    nixpkgs.url = "github:NixOS/nixpkgs/c5296fdd05cfa2c187990dd909864da9658df755";
     coq-library-undecidability.url = "github:uds-psl/coq-library-undecidability/rocq-9.0";
     coq-library-undecidability.flake = false;
+    # Local checkout so in-progress edits are picked up without committing/
+    # pushing first; consumed as a real flake so we can reuse its own overlay.
+    coq-synthetic-computability.url = "path:/Users/Jeremy/Documents/College/RIT/PhD/CKA_Undec/coq-synthetic-computability";
+    # Share our pinned coq-library-undecidability instead of building a
+    # second, possibly-drifted copy.
+    coq-synthetic-computability.inputs.coq-library-undecidability.follows = "coq-library-undecidability";
   };
 
-  outputs = inputs@{ self, flake-parts, nixpkgs, coq-library-undecidability, ... }:
+  outputs = inputs@{ self, flake-parts, nixpkgs, coq-library-undecidability, coq-synthetic-computability, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
         # To import an internal flake module: ./other.nix
@@ -22,7 +31,10 @@
       perSystem = { config, self', inputs', pkgs, system, ... }: {
         _module.args.pkgs = import nixpkgs {
           inherit system;
-          overlays = [ self.overlays.default ];
+          overlays = [
+            coq-synthetic-computability.overlays.default
+            self.overlays.default
+          ];
         };
 
         # Per-system attributes can be defined here. The self' and inputs'
@@ -53,20 +65,23 @@
             coq-ka-comm-undec = prev.mkCoqDerivation {
               pname = "coq-ka-comm-undec";
               version = ./.;
+              # coq-library-undecidability (via its L/Tactics/Extract.v)
+              # transitively needs the equations OCaml findlib plugin on
+              # OCAMLPATH; mlPlugin ensures that setup hook fires for
+              # consumers of this derivation too (e.g. `nix develop`).
+              mlPlugin = true;
               propagatedBuildInputs = [
                 final.coq
                 final.coq-library-undecidability
+                final.coq-synthetic-computability
                 final.stdpp
               ];
             };
-            coq-library-undecidability = prev.mkCoqDerivation {
-              pname = "coq-library-undecidability";
-              version = coq-library-undecidability.outPath;
-              propagatedBuildInputs = [
-                final.coq
-                final.metarocq-template-rocq
-              ];
-            };
+            # coq-library-undecidability is defined by
+            # coq-synthetic-computability's own overlay (applied before this
+            # one, above) -- it patches in the L/ files our Models/CT.v needs
+            # plus the MetaRocq/equations deps. Deliberately not redefined
+            # here so that patched version is what `final` resolves to.
           });
         };
 

@@ -17,9 +17,48 @@
         "type": "github"
       }
     },
+    "coq-synthetic-computability": {
+      "inputs": {
+        "coq-library-undecidability": [
+          "coq-library-undecidability"
+        ],
+        "flake-parts": "flake-parts",
+        "nixpkgs": "nixpkgs",
+        "pytanque": "pytanque",
+        "rocq-mcp": "rocq-mcp"
+      },
+      "locked": {
+        "lastModified": 1786035676,
+        "narHash": "sha256-CwhfqyaDc1Q7mouEz041lN4egqEHtmsySGUzKs0XP5E=",
+        "path": "/Users/Jeremy/Documents/College/RIT/PhD/CKA_Undec/coq-synthetic-computability",
+        "type": "path"
+      },
+      "original": {
+        "path": "/Users/Jeremy/Documents/College/RIT/PhD/CKA_Undec/coq-synthetic-computability",
+        "type": "path"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": "nixpkgs-lib"
+      },
+      "locked": {
+        "lastModified": 1775087534,
+        "narHash": "sha256-91qqW8lhL7TLwgQWijoGBbiD4t7/q75KTi8NxjVmSmA=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "3107b77cd68437b9a76194f0f7f9c55f2329ca5b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-parts_2": {
+      "inputs": {
+        "nixpkgs-lib": "nixpkgs-lib_2"
       },
       "locked": {
         "lastModified": 1762980239,
@@ -46,12 +85,27 @@
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-unstable",
         "repo": "nixpkgs",
+        "rev": "c5296fdd05cfa2c187990dd909864da9658df755",
         "type": "github"
       }
     },
     "nixpkgs-lib": {
+      "locked": {
+        "lastModified": 1774748309,
+        "narHash": "sha256-+U7gF3qxzwD5TZuANzZPeJTZRHS29OFQgkQ2kiTJBIQ=",
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "rev": "333c4e0545a6da976206c74db8773a1645b5870a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "type": "github"
+      }
+    },
+    "nixpkgs-lib_2": {
       "locked": {
         "lastModified": 1761765539,
         "narHash": "sha256-b0yj6kfvO8ApcSE+QmA6mUfu8IYG6/uU28OFn4PaC8M=",
@@ -66,11 +120,60 @@
         "type": "github"
       }
     },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1769170682,
+        "narHash": "sha256-oMmN1lVQU0F0W2k6OI3bgdzp2YOHWYUAw79qzDSjenU=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "c5296fdd05cfa2c187990dd909864da9658df755",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "c5296fdd05cfa2c187990dd909864da9658df755",
+        "type": "github"
+      }
+    },
+    "pytanque": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1776538811,
+        "narHash": "sha256-1Hae21BuMdE6MjRdiBO7fcsuS4HzahOdLLhynAUox3I=",
+        "owner": "LLM4Rocq",
+        "repo": "pytanque",
+        "rev": "4092b1238b56468fdc1b3d100e078791c9690fd4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "LLM4Rocq",
+        "repo": "pytanque",
+        "type": "github"
+      }
+    },
+    "rocq-mcp": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1776328817,
+        "narHash": "sha256-R+alv6VrLtoN/iCwzIwD4gf7ZU2RY3xH99HvB6j9HPg=",
+        "owner": "LLM4Rocq",
+        "repo": "rocq-mcp",
+        "rev": "56929d2ba6ec92a078177739f4118b9abbf6d641",
+        "type": "github"
+      },
+      "original": {
+        "owner": "LLM4Rocq",
+        "repo": "rocq-mcp",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "coq-library-undecidability": "coq-library-undecidability",
-        "flake-parts": "flake-parts",
-        "nixpkgs": "nixpkgs"
+        "coq-synthetic-computability": "coq-synthetic-computability",
+        "flake-parts": "flake-parts_2",
+        "nixpkgs": "nixpkgs_2"
       }
     }
   },
