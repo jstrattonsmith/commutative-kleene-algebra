@@ -39,10 +39,10 @@ From Undecidability.FRACTRAN Require Import fractran_utils prime_seq mm_fractran
 From Undecidability.Shared.Libs.DLW Require Import utils sss subcode.
 
 From kacc Require Import FRACTRAN_computable_to_MM2_computable.
-From kacc Require Import TLUniform_MM2.
 From kacc Require Import EffectiveInseparability_MM2.
 Require kacc.mm.
 From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.
+Require Import SyntheticComputability.Models.T_L_Uniform.
 
 Lemma FRACTRAN_computable_to_MMA2_pinned {k} (R : Vector.t nat k -> nat -> Prop) :
   FRACTRAN_computable R ->
