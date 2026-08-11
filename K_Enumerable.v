@@ -75,20 +75,34 @@ apply: dec_count_enum.
 - exact: (@countable_enumerableT (Tm * Tm) _ _).
 Qed.
 
-Theorem sqsubseteq_Tm_enumerable :
-  enumerable (fun p : ka_term Tm * ka_term Tm => p.1 ⊑ p.2).
+(* --- The actual general KA-term inequality relation over this
+   carrier -- not K itself, which is only ever a SLICE of it (the
+   right-hand side fixed to red_ub Prog). This is what the source
+   paper's own Theorem 18/19 are stated over. K_to_KA_ineq below is
+   the reduction witnessing that slice relationship; it is used twice,
+   in opposite directions: here, to import enumerability FROM KA_ineq
+   INTO K, and in Theorem19_Full.v, to transport m-completeness the
+   other way, OUT of K and into KA_ineq (composed with
+   red_m_transitive). *)
+
+Definition KA_ineq : ka_term Tm * ka_term Tm -> Prop := fun p => p.1 ⊑ p.2.
+
+Theorem KA_ineq_enumerable : enumerable KA_ineq.
 Proof. exact: ka_sqsubseteq_enumerable Tm_equiv_enumerable. Qed.
+
+Definition K_to_KA_ineq (z : nat) : ka_term Tm * ka_term Tm :=
+  (mm.red_lb Prog ((1, (ps 1 * enc 2 (z_vec z), 0))%nat), mm.red_ub Prog).
+
+Lemma K_to_KA_ineq_spec (z : nat) : K c z <-> KA_ineq (K_to_KA_ineq z).
+Proof. reflexivity. Qed.
 
 Theorem K_enumerable : enumerable (K c).
 Proof.
-apply: (@enumerable_red nat (ka_term Tm * ka_term Tm) (K c)
-          (fun p => p.1 ⊑ p.2)).
-- exists (fun z : nat => (mm.red_lb Prog ((1, (ps 1 * enc 2 (z_vec z), 0))%nat),
-                     mm.red_ub Prog)).
-  intros z. reflexivity.
+apply: (@enumerable_red nat (ka_term Tm * ka_term Tm) (K c) KA_ineq).
+- exists K_to_KA_ineq. exact: K_to_KA_ineq_spec.
 - exists (fun n => Some n). intros n. exists n. reflexivity.
 - apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
-- exact: sqsubseteq_Tm_enumerable.
+- exact: KA_ineq_enumerable.
 Qed.
 
 End KEnumerable.
