@@ -5,6 +5,7 @@
 -R . kacc
 
 MM2/Stepper.v
+MM2/Simulator.v
 MM2/FractranCompiler.v
 Computability/TL_Bridge.v
 Computability/EA_L.v

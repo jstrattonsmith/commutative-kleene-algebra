@@ -31,6 +31,7 @@ From Undecidability.MinskyMachines Require Import MM2.
 Require Import SyntheticComputability.Shared.partial.
 Require kacc.mm.
 Require kacc.MM2.Stepper.
+From kacc Require Import MM2.Simulator.
 From kacc Require Import EffectiveInseparability_MM2.
 From kacc Require Import Theorem17_KATerm K_Enumerable.
 From kacc Require Import Theorem19_MComplete Theorem19_Full.

@@ -172,6 +172,7 @@ Qed.
    the generic specialization interface (MM2_PrefixSplice.v) ------------- *)
 
 From kacc Require Import mm.
+From kacc Require Import MM2.Simulator.
 From kacc Require Import EffectiveInseparability_MM2.
 From kacc Require Import MM2_PrefixSplice.
 

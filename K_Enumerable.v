@@ -17,6 +17,7 @@ From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
 From kacc Require Import algebra pre_ka enumerable.
 Require kacc.mm.
+From kacc Require Import MM2.Simulator.
 From kacc Require Import EffectiveInseparability_MM2.
 From kacc Require Import Theorem17_KATerm.
 

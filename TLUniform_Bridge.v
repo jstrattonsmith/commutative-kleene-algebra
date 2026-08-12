@@ -49,7 +49,7 @@ From Undecidability.MinskyMachines Require Import mm_defs mma_defs fractran_mma 
 From Undecidability.FRACTRAN Require Import fractran_utils prime_seq mm_fractran.
 From Undecidability.Shared.Libs.DLW Require Import utils sss subcode.
 
-From kacc Require Import MM2.FractranCompiler.
+From kacc Require Import MM2.FractranCompiler MM2.Simulator.
 From kacc Require Import EffectiveInseparability_MM2.
 Require kacc.mm.
 From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.

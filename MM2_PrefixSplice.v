@@ -23,6 +23,7 @@ Import MM2Notations.
 
 From kacc.MM2 Require Import Stepper.
 From kacc Require Import mm.
+From kacc Require Import MM2.Simulator.
 From kacc Require Import EffectiveInseparability_MM2.
 
 (* --- 0. Splicing a prefix in front of a program, with jump targets
