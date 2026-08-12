@@ -3,7 +3,7 @@
    the "provability from a finite axiomatisation is r.e." bridge needed
    to show K enumerable: ka_sqsubseteq_enumerable shows that ⊑ on
    ka_term T is enumerable whenever the carrier monoid T's own ≡ is.
-   mm.v's carrier (for a fixed program P := progOf c) is
+   Encoding.v's carrier (for a fixed program P := progOf c) is
    list (mm_sym Q) * list (mm_sym Q) with Q := fin (S (S (length P))) --
    a product of free monoids over a finite, decidable-equality alphabet,
    so its ≡ is decidable, hence enumerable for free. *)
@@ -16,7 +16,7 @@ From Undecidability.FRACTRAN Require Import prime_seq.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
 From kacc Require Import algebra pre_ka enumerable.
-Require kacc.mm.
+Require kacc.CKA.Encoding.
 From kacc Require Import MM2.Simulator.
 From kacc Require Import EffectiveInseparability_MM2.
 From kacc Require Import Theorem17_KATerm.
@@ -41,18 +41,18 @@ Proof. apply _. Defined.
    the way Canonical Structure inference does during normal term
    elaboration. Giving the record explicitly sidesteps that. Its carrier
    (via the `monoid_car` coercion) is definitionally the same bare
-   product `list (mm_sym QF) * list (mm_sym QF)` mm.v's own red_lb/
+   product `list (mm_sym QF) * list (mm_sym QF)` Encoding.v's own red_lb/
    red_ub are stated over, so terms convert without issue. *)
 Definition TmMonoid : monoid :=
-  prod_monoid (list_monoid (option_setoid (@mm.mm_sym_setoid QF)))
-              (list_monoid (option_setoid (@mm.mm_sym_setoid QF))).
+  prod_monoid (list_monoid (option_setoid (@Encoding.mm_sym_setoid QF)))
+              (list_monoid (option_setoid (@Encoding.mm_sym_setoid QF))).
 
 Notation Tm := (monoid_car TmMonoid).
 
 Instance Tm_eqdec : EqDecision Tm.
 Proof. apply _. Defined.
 
-Instance mm_sym_QF_countable : Countable (mm.mm_sym QF).
+Instance mm_sym_QF_countable : Countable (Encoding.mm_sym QF).
 Proof. apply finite_countable. Defined.
 
 Instance Tm_countable : Countable Tm.
@@ -92,7 +92,7 @@ Theorem KA_ineq_enumerable : enumerable KA_ineq.
 Proof. exact: ka_sqsubseteq_enumerable Tm_equiv_enumerable. Qed.
 
 Definition K_to_KA_ineq (z : nat) : ka_term Tm * ka_term Tm :=
-  (mm.red_lb Prog ((1, (ps 1 * enc 2 (z_vec z), 0))%nat), mm.red_ub Prog).
+  (Encoding.red_lb Prog ((1, (ps 1 * enc 2 (z_vec z), 0))%nat), Encoding.red_ub Prog).
 
 Lemma K_to_KA_ineq_spec (z : nat) : K c z <-> KA_ineq (K_to_KA_ineq z).
 Proof. reflexivity. Qed.

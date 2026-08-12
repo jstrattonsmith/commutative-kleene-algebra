@@ -3,7 +3,7 @@
    Theorem19_MComplete.v / Theorem19_Full.v's SUPERSET-transport
    strategy at the embedded (binary-alphabet) level, substituting
    Theorem18_BinaryAlphabet.v's mm2_R_completeness'/mm2_R_soundness'
-   (halting-case only, exactly mirroring mm.mm2_R_completeness/
+   (halting-case only, exactly mirroring Encoding.mm2_R_completeness/
    mm2_R_soundness's own restriction) for the unembedded originals.
 
    Per the Azevedo de Amorim et al. paper's own Theorem 18/19 proof
@@ -52,7 +52,7 @@ From kacc Require Import Theorem18_BinaryAlphabet.
 From kacc Require Import Theorem17_KATerm K_Enumerable.
 From kacc Require Import Theorem17_Full Computability.EA_L Computability.Myhill.
 From kacc Require Import Theorem19_MComplete Theorem19_Full.
-Require kacc.mm.
+Require kacc.CKA.Encoding.
 
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.EffectiveInseparability_L.
@@ -88,7 +88,7 @@ Section SpliceBin.
 Variable (Q : list (nat * nat)).
 Notation QF := (Fin.t (S (S (length (progOf (c_P Q)))))).
 Variable (k : nat).
-Variable (bEnc : setoid_car (@mm.mm_sym_setoid QF) → list bool).
+Variable (bEnc : setoid_car (@Encoding.mm_sym_setoid QF) → list bool).
 Variable (HbEnc : ∀ x y, bEnc x = bEnc y → x = y).
 Variable (Hlen : ∀ x, length (bEnc x) = k).
 Variable (Hk_pos : (0 < k)%nat).
@@ -136,7 +136,7 @@ Qed.
 End SpliceBin.
 
 Theorem R_TL_R_target_connection_bin :
-  exists (c k : nat) (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+  exists (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat),
   forall (v : Vector.t nat 2) (m : nat),
     (m <= 1)%nat -> T_L_Uniform.R_TL v m ->
@@ -213,12 +213,12 @@ End GenericK.
 Lemma K_eq_K_of_R_target (c : nat) : Theorem17_KATerm.K c = K_of (R_target c).
 Proof. reflexivity. Qed.
 
-Definition K_bin (c k : nat) (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+Definition K_bin (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat) : nat -> Prop :=
   K_of (fun y => red_leq' (c := c) Hlen Hk_pos (1, (y, 0))%nat).
 
 Theorem eff_insep_K_bin_B1_L :
-  exists (c k : nat) (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+  exists (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat),
   eff_insep_core W_L (K_bin (c := c) Hlen Hk_pos) B1_L.
 Proof.
@@ -304,7 +304,7 @@ Instance Tm_bin_leibniz : base.LeibnizEquiv (monoid_car Tm_bin).
 Proof. apply _. Defined.
 
 Theorem K_bin_enumerable (c k : nat)
-    (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+    (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat) :
   enumerable (K_bin (c := c) Hlen Hk_pos).
 Proof.
@@ -334,7 +334,7 @@ eapply EffectiveInseparabilityTransport.eff_insep_shape_superset.
 Qed.
 
 Theorem eff_insep_shape_K_bin_B1_L :
-  exists (c k : nat) (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+  exists (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat),
   eff_insep_shape W_L (K_bin (c := c) Hlen Hk_pos) B1_L.
 Proof.
@@ -352,7 +352,7 @@ Qed.
 
 Theorem K_bin_m_complete :
   CT_L -> MP ->
-  exists (c k : nat) (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+  exists (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat),
   m-complete (K_bin (c := c) Hlen Hk_pos).
 Proof.
@@ -384,14 +384,14 @@ Definition KA_ineq_bin : ka_term (monoid_car Tm_bin) * ka_term (monoid_car Tm_bi
   @KA_ineq_over Tm_bin.
 
 Definition K_to_KA_ineq_bin (c k : nat)
-    (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+    (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat) (z : nat) :
     ka_term (monoid_car Tm_bin) * ka_term (monoid_car Tm_bin) :=
   (red_lb' (c := c) bEnc (1, (ps 1 * enc 2 (Theorem17_KATerm.z_vec z), 0))%nat,
    red_ub' (c := c) Hlen Hk_pos).
 
 Lemma K_to_KA_ineq_bin_spec (c k : nat)
-    (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+    (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat) (z : nat) :
   K_bin (c := c) Hlen Hk_pos z <-> KA_ineq_bin (K_to_KA_ineq_bin (bEnc := bEnc) Hlen Hk_pos z).
 Proof. rewrite /K_bin /K_of /K_to_KA_ineq_bin /KA_ineq_bin /=. exact: red_leq'_shape. Qed.

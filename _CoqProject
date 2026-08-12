@@ -23,7 +23,7 @@ repr_rel.v
 BinaryAlphabetTransport.v
 bounded_output.v
 BoundedOutputTransport.v
-mm.v
+CKA/Encoding.v
 
 EffectiveInseparability_MM2.v
 TLUniform_MM2.v

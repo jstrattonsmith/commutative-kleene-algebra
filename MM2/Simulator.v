@@ -8,7 +8,7 @@
 
    Extracted 2026-08-14 from EffectiveInseparability_MM2.v, whose
    remaining content (red_leq, R_target, R_target_iff_outcome) is
-   genuine glue bridging THIS simulator to mm.v's own KA-term
+   genuine glue bridging THIS simulator to Encoding.v's own KA-term
    encoding, not simulator content itself -- that glue now lives in
    CKA/Glue/MM2ToKATerm.v.
 
@@ -239,7 +239,7 @@ Qed.
    to sit alongside CKA/Glue/MM2ToKATerm.v's red_leq/R_target/
    R_target_iff_outcome (same source position, EffectiveInseparability_MM2.v's
    old Section 2) purely by accident of file layout -- none of them actually
-   mention mm.v/red_lb/red_ub, so they belong here, not with the glue. *)
+   mention Encoding.v/red_lb/red_ub, so they belong here, not with the glue. *)
 
 Lemma mm2_iter_rtc P n s0 : relations.rtc (mm2_step P) s0 (mm2_iter P n s0).
 Proof.

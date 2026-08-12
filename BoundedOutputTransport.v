@@ -26,8 +26,8 @@
    hypothesis is finite_stateb e = true rather than the fully abstract
    finite_state e (a purely syntactic, decidable check on e's own
    constructor shape, from automata.v) -- strictly stronger, but
-   exactly what mm.v's own construction of its transition term
-   provides at the leaf level (mm.v:1319-1320, via
+   exactly what Encoding.v's own construction of its transition term
+   provides at the leaf level (Encoding.v:1319-1320, via
    finite_state_join_list + finite_stateP per instruction), so this
    loses no real generality for the actual application. *)
 
@@ -172,9 +172,9 @@ Qed.
    purely SYNTACTIC, decidable check on a ka_term's own constructor
    shape (Unit/join/mul/star/bottom) -- plus finite_stateP :
    finite_stateb e = true -> finite_state e (automata.v:1032-1060).
-   mm.v's own construction of its transition term goes through EXACTLY
+   Encoding.v's own construction of its transition term goes through EXACTLY
    this route (finite_state_join_list + finite_stateP per instruction,
-   mm.v:1319-1320), not an ad-hoc automaton -- so proving finite_stateb
+   Encoding.v:1319-1320), not an ad-hoc automaton -- so proving finite_stateb
    is preserved under Embed_pair is both sufficient for the actual use
    case AND much simpler than automaton refinement: ka_term_map (what
    Embed_pair is) preserves every constructor DEFINITIONALLY
@@ -248,7 +248,7 @@ Qed.
    Lemma 34 -- no algebraic transport of an EXISTING repr_rel, a fresh
    one built directly for the embedded term. Hypothesis is
    finite_stateb e = true rather than the abstract finite_state e --
-   strictly stronger, but exactly what mm.v's own construction
+   strictly stronger, but exactly what Encoding.v's own construction
    provides at the leaf level (see the comment above), and what makes
    piece 3 tractable at all. *)
 

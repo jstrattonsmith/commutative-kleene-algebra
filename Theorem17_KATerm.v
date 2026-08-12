@@ -1,6 +1,6 @@
 (* Closes the project's Theorem 17 analogue: the KA-term-level set K
    (an actual red_lb/red_ub inequality, i.e. a bona fide statement about
-   validity of a KA-term ordering, via mm.v's R_target) is effectively
+   validity of a KA-term ordering, via Encoding.v's R_target) is effectively
    inseparable from B1_L.
 
    Key structural point (traced through both source papers): NO
@@ -55,7 +55,7 @@ Require Import SyntheticComputability.Shared.partial.
 Require Import SyntheticComputability.Shared.embed_nat.
 
 (* --- 2. K: the actual KA-term-level set, via R_target/red_leq -- a
-   genuine red_lb ⊑ red_ub statement (mm.v), not a detour through
+   genuine red_lb ⊑ red_ub statement (Encoding.v), not a detour through
    Theta_ours_MM2. Fixed once via R_TL_R_target_connection's witness c. *)
 
 (* Gödel-pairing packing of a single nat into a 2-vector, used to index

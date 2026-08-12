@@ -5,12 +5,12 @@
    plus the two facts (determinism, and the halted-iff-out-of-bounds
    characterization) built directly on top.
 
-   Extracted 2026-08-14 from mm.v's own Section MM2Adapter, where this
+   Extracted 2026-08-14 from Encoding.v's own Section MM2Adapter, where this
    fragment lived embedded among the actual KA-term encoding (mm2_R, C,
    T, red_lb/red_ub, etc.). Nothing here mentions a KA term, a
    pre-Kleene algebra, or this project's own encoding at all -- it's
    purely about the MM2 execution model, reusable by any other MM2-based
-   project. mm.v now Requires this file instead of defining the
+   project. Encoding.v now Requires this file instead of defining the
    fragment locally. *)
 
 Require Import Stdlib.Unicode.Utf8.

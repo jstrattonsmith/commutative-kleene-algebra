@@ -1,12 +1,12 @@
 (* Bridges MM2/Simulator.v's step-indexed evaluator (Theta_ours_MM2) to
-   mm.v's own KA-term encoding: R_target c y is the KA-term inequality
-   mm.v attaches to running the program coded by c from register state
+   Encoding.v's own KA-term encoding: R_target c y is the KA-term inequality
+   Encoding.v attaches to running the program coded by c from register state
    (y,0) -- a per-program *dependent* Prop (red_lb/red_ub's own KA-term
    type depends on P via Q := fin (S (S (length P))), so there is no
    single common `ka_term` type to state this over; each c simply
    routes through its own type internally, which is fine since the end
    result is just a Prop). This bridging needs no axiom -- it is a
-   straightforward consequence of mm.v's mm2_R_soundness/
+   straightforward consequence of Encoding.v's mm2_R_soundness/
    mm2_R_completeness, applicable regardless of which route
    (axiom-free machine-relative, or CT_L-based absolute) is used to
    finish the undecidability argument.
@@ -16,7 +16,7 @@
    B1_MM2, and their L-extractability) -- all pure MM2-execution-model
    content with zero KA reference, now in MM2/Simulator.v. What
    remains here is genuine glue: the only content that actually
-   touches mm.v's red_lb/red_ub. *)
+   touches Encoding.v's red_lb/red_ub. *)
 
 From Stdlib Require Import Unicode.Utf8.
 From stdpp Require relations.
@@ -24,7 +24,7 @@ From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.
 
 From kacc.MM2 Require Import Stepper Simulator.
-From kacc Require Import mm.
+From kacc Require Import CKA.Encoding.
 
 Require Import SyntheticComputability.Shared.partial.
 

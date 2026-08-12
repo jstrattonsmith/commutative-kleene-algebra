@@ -4,7 +4,7 @@
    second time at the binary-alphabet level, this file develops a
    GENERIC transport theorem -- repr_rel (Definition 20/repr_rel.v)
    transports along a fixed-length injective symbol encoding -- so that
-   ANY existing repr_rel instance (in particular repr_rel_mm2_R, mm.v)
+   ANY existing repr_rel instance (in particular repr_rel_mm2_R, Encoding.v)
    can be pushed forward to the canonical Sigma={0,1} carrier the
    source paper's own Theorem 18/19 use, without redoing the underlying
    finite-state/bounded-output work.
@@ -12,7 +12,7 @@
    GENERIC / reusable throughout: everything in this file is stated for
    an arbitrary finite alphabet T, not specific to mm_sym or this
    project's own encoding. CKA-specific instantiation (applying this to
-   mm.v's repr_rel_mm2_R and composing with Theorem19_Full.v's
+   Encoding.v's repr_rel_mm2_R and composing with Theorem19_Full.v's
    KA_ineq_m_complete) is deliberately NOT in this file -- that belongs
    in a follow-up file once this transport theorem itself is fully
    discharged.

@@ -1,12 +1,12 @@
 (* Bridges T_L (Rocq's own L-interpreter, compiled via the library's
-   FRACTRAN->MMA2 chain, then spliced via MM2/Splice.v) to mm.v's own
+   FRACTRAN->MMA2 chain, then spliced via MM2/Splice.v) to Encoding.v's own
    R_target/red_leq convention (halt EXACTLY at (0,(0,0))).
 
    MM2/Splice.v builds Psplice, a program that runs a compiled FRACTRAN
    program then tests/redirects on the output register's divisibility by
-   qs 1 -- entirely MM2-generic, no mention of mm.v or R_target. This
+   qs 1 -- entirely MM2-generic, no mention of Encoding.v or R_target. This
    file is the CKA/T_L-specific glue connecting that construction to
-   mm.v's own soundness/completeness pair (mm2_R_completeness/
+   Encoding.v's own soundness/completeness pair (mm2_R_completeness/
    soundness), closing with R_TL_R_target_connection. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia Relations.
@@ -24,7 +24,7 @@ From Undecidability.Shared.Libs.DLW Require Import utils sss subcode.
 
 From kacc Require Import MM2.FractranCompiler MM2.Simulator MM2.Splice.
 From kacc Require Import EffectiveInseparability_MM2.
-Require kacc.mm.
+Require kacc.CKA.Encoding.
 From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.
 
 Require Import SyntheticComputability.Models.CT.
@@ -47,10 +47,10 @@ apply L_computable_closed_to_MMA_computable.
 exact T_L_Uniform.L_computable_closed_R_TL.
 Qed.
 
-(* --- Connect MM2/Splice.v's construction to mm.v's own R_target
+(* --- Connect MM2/Splice.v's construction to Encoding.v's own R_target
    directly (bypassing Theta_ours_MM2 entirely -- R_target c y :=
    red_leq (progOf c) (1,(y,0)) is already stated for ANY program via
-   mm2_R_completeness/soundness, generalized over P inside mm.v's own
+   mm2_R_completeness/soundness, generalized over P inside Encoding.v's own
    MM2Adapter section). *)
 
 Lemma Psplice_R_target_divides (Q : list (nat * nat)) (v : Vector.t nat 2) (b : nat) :
@@ -60,7 +60,7 @@ Lemma Psplice_R_target_divides (Q : list (nat * nat)) (v : Vector.t nat 2) (b : 
 Proof.
 intros Hc Hd.
 unfold R_target.
-apply mm.mm2_R_completeness.
+apply Encoding.mm2_R_completeness.
 apply crt_to_rtc.
 apply Psplice_mm2_divides with (b := b); [exact Hc | exact Hd].
 Qed.
@@ -87,13 +87,13 @@ assert (Hred' : red_leq (List.map mma_mm2_instr (Psplice Q))
                   (mma_mm2_state (1, (ps 1 * enc 2 v) ## 0 ## vec_nil))).
 { unfold R_target in Hred. rewrite (progOf_c_P Q) in Hred. exact Hred. }
 assert (Hsound : s2 = (0, (0, 0))).
-{ eapply mm.mm2_R_soundness; [exact Hreach | exact Hstop | exact Hred']. }
+{ eapply Encoding.mm2_R_soundness; [exact Hreach | exact Hstop | exact Hred']. }
 exact (Hs2 Hsound).
 Qed.
 
 Definition R_TL_MMA2_pinned := FRACTRAN_computable_to_MMA2_pinned R_TL_FRACTRAN_computable.
 
-(* --- Payoff: R_TL bridged all the way to mm.v's own R_target.
+(* --- Payoff: R_TL bridged all the way to Encoding.v's own R_target.
 
    The `m <= 1` hypothesis is not a limitation of the splice construction
    itself (Psplice/the divides-test in MM2/Splice.v works for any m,

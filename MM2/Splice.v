@@ -1,5 +1,5 @@
 (* MM2-generic program-splicing machinery, extracted from
-   TLUniform_Bridge.v. Zero KA/mm.v content: everything here is about
+   TLUniform_Bridge.v. Zero KA/Encoding.v content: everything here is about
    MMA2/MM2 programs and the library's own FRACTRAN->MMA2 compiler.
 
    FRACTRAN_computable_to_MMA2_pinned re-derives the library's own
@@ -30,7 +30,7 @@
    mma_mma2_zero_reduction/mma_mma2_reduction).
 
    This file deliberately stops short of connecting to any KA-term-level
-   notion (mm.v's R_target/red_leq) -- that connection is CKA/T_L-
+   notion (Encoding.v's R_target/red_leq) -- that connection is CKA/T_L-
    specific glue and stays in TLUniform_Bridge.v. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia Relations.
@@ -245,7 +245,7 @@ Qed.
 
 (* Bridge between Coq's Relation_Operators.clos_refl_trans (what
    MMA2_to_MM2.v's `↠` notation for MM2 uses) and stdpp's relations.rtc
-   (what mm.v's mm2_R_soundness/completeness, hence R_target, are stated
+   (what Encoding.v's mm2_R_soundness/completeness, hence R_target, are stated
    over) -- standard equivalence of reflexive-transitive closures over
    the same base relation, not exposed as a ready-made lemma anywhere in
    scope. *)
