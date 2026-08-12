@@ -28,6 +28,7 @@ From kacc Require Import utils algebra pre_ka lang automata repr_rel
   bounded_output.
 From kacc Require Import BinaryAlphabetTransport BoundedOutputTransport.
 From Undecidability.MinskyMachines Require Import MM2.
+Require Import SyntheticComputability.Shared.partial.
 Require kacc.mm.
 From kacc Require Import EffectiveInseparability_MM2.
 From kacc Require Import Theorem17_KATerm K_Enumerable.
@@ -166,12 +167,16 @@ Lemma mm2_R_completeness' (s1 : nat * (nat * nat)) :
   rtc (mm2_step Prog) s1 (0, (0, 0)) →
   Unit (1, (Some <$> enc_word enc (mm.mm2_config Prog s1)) ⋅ [None])
     ⋅ star (pad_rel (Embed_pair enc (mm.mm2_R Prog)))
-  ⊑ dpseudo_top ⋅ ka_term_inj2
-      (pad_lang (Embed_word enc (mm.C Prog)
-                   ⊔ Unit (enc_word enc (mm.mm2_config Prog (0, (0, 0))))))
+  ⊑ dpseudo_top ⋅ ka_term_inj2 (pad_lang (Embed_word enc (mm.partially_accepted Prog)))
     ⊔ repr_rel_rtc_error repr_rel_embedded.
 Proof.
 move=> /mm.encoding_rtc_complete /rtc_embed xs_ys.
+change (Unit (1, (Some <$> enc_word enc (mm.mm2_config Prog s1)) ⋅ [None])
+    ⋅ star (pad_rel (Embed_pair enc (mm.mm2_R Prog)))
+  ⊑ dpseudo_top ⋅ ka_term_inj2
+      (pad_lang (Embed_word enc (mm.C Prog)
+                   ⊔ Unit (enc_word enc (mm.mm2_config Prog (0, (0, 0))))))
+    ⊔ repr_rel_rtc_error repr_rel_embedded).
 rewrite pad_lang_join.
 have -> : pad_lang (Unit (enc_word enc (mm.mm2_config Prog (0, (0, 0)))))
         ≡ Unit ((Some <$> enc_word enc (mm.mm2_config Prog (0, (0, 0)))) ⋅ [None]).
@@ -217,12 +222,12 @@ Lemma mm2_R_soundness_aux' (s1 s2 : nat * (nat * nat)) :
   rtc (mm2_step Prog) s1 s2 →
   Unit (1, (Some <$> enc_word enc (mm.mm2_config Prog s1)) ⋅ [None])
     ⋅ star (pad_rel (Embed_pair enc (mm.mm2_R Prog)))
-  ⊑ dpseudo_top ⋅ ka_term_inj2
-      (pad_lang (Embed_word enc (mm.partially_accepted Prog)))
-    ⊔ dpseudo_top ⋅ mismatch ⋅ residue repr_rel_embedded →
+  ⊑ dpseudo_top ⋅ ka_term_inj2 (pad_lang (Embed_word enc (mm.partially_accepted Prog)))
+    ⊔ repr_rel_rtc_error repr_rel_embedded →
   s2 = (0, (0, 0)) ∨ 0 < s2.1 ≤ length Prog.
 Proof.
-move=> /mm.encoding_rtc_complete /rtc_embed s1_s2 ub.
+move=> /mm.encoding_rtc_complete /rtc_embed s1_s2.
+rewrite /repr_rel_rtc_error -assoc => ub.
 have pa : Unit (enc_word enc (mm.mm2_config Prog s2))
         ⊑ Embed_word enc (mm.partially_accepted Prog).
 { exact: repr_rel_rtc_soundness' s1_s2 ub. }
@@ -257,15 +262,91 @@ Lemma mm2_R_soundness' (s1 s2 : nat * (nat * nat)) :
   mm2_stop Prog s2 →
   Unit (1, (Some <$> enc_word enc (mm.mm2_config Prog s1)) ⋅ [None])
     ⋅ star (pad_rel (Embed_pair enc (mm.mm2_R Prog)))
-  ⊑ dpseudo_top ⋅ ka_term_inj2
-      (pad_lang (Embed_word enc (mm.partially_accepted Prog)))
-    ⊔ dpseudo_top ⋅ mismatch ⋅ residue repr_rel_embedded →
+  ⊑ dpseudo_top ⋅ ka_term_inj2 (pad_lang (Embed_word enc (mm.partially_accepted Prog)))
+    ⊔ repr_rel_rtc_error repr_rel_embedded →
   s2 = (0, (0, 0)).
 Proof.
 move=> s1_s2 /mm.mm2_stop_spec s2_stop red_leq.
 have [//|] := mm2_R_soundness_aux' s1_s2 red_leq.
 congruence.
 Qed.
+
+(* --- Final step: mirror R_target_iff_outcome
+   (EffectiveInseparability_MM2.v:289-320) at the embedded level,
+   substituting mm2_R_completeness'/mm2_R_soundness' for the
+   originals -- everything else in that proof (mm2_iter_rtc,
+   mm2_haltedAt, mm2_stop_of_step_fun_none, mm2_state_eqb) is a plain
+   fact about the MM2 execution model, not about repr_rel/KA-terms, so
+   it transfers unchanged. Combining both versions for the SAME v
+   gives the order-reflection R_target c y <-> red_leq' (1,(y,0)),
+   which is exactly the many-one reduction needed to transport
+   m-completeness to the embedded/binary-alphabet relation. *)
+
+Definition red_leq' (s1 : nat * (nat * nat)) : Prop :=
+  ltac:(let t := type of (@mm2_R_completeness' s1) in
+        match t with _ -> ?B => exact B end).
+
+Lemma R_target_iff_outcome' y v :
+  Θ_ours_MM2 c y =! v -> (red_leq' (1%nat, (y, 0%nat)) ↔ v = 1%nat).
+Proof.
+intros [n Hn] % seval_hasvalue.
+rewrite seval_Theta_ours_MM2 in Hn.
+unfold red_leq'.
+assert (Hrtc : rtc (mm2_step Prog) (1%nat, (y, 0%nat)) (mm2_iter Prog n (1%nat, (y, 0%nat))))
+  by apply mm2_iter_rtc.
+unfold mm2_outcome_at in Hn.
+destruct (mm2_haltedAt Prog n (1%nat, (y, 0%nat))) eqn:Ehalt; [| discriminate].
+assert (Hstop_fun : mm.mm2_step_fun Prog (mm2_iter Prog n (1%nat, (y, 0%nat))) = None).
+{ unfold mm2_haltedAt in Ehalt.
+  destruct (mm.mm2_step_fun Prog (mm2_iter Prog n (1%nat, (y, 0%nat))));
+    [discriminate | reflexivity]. }
+assert (Hstop : mm2_stop Prog (mm2_iter Prog n (1%nat, (y, 0%nat))))
+  by exact (mm2_stop_of_step_fun_none _ _ Hstop_fun).
+destruct (mm2_state_eqb (mm2_iter Prog n (1%nat, (y, 0%nat))) (0, (0, 0))) eqn:Eeq.
+- apply mm2_state_eqb_true in Eeq.
+  assert (Hv : v = 1%nat) by congruence.
+  subst v.
+  split; [intros _; reflexivity | intros _].
+  apply mm2_R_completeness'. rewrite Eeq in Hrtc. exact Hrtc.
+- assert (Hv : v = 0%nat) by congruence.
+  subst v.
+  split.
+  + intros Hle. exfalso.
+    pose proof (mm2_R_soundness' Hrtc Hstop Hle) as Heq.
+    assert (Eeq' : mm2_state_eqb (mm2_iter Prog n (1%nat, (y, 0%nat))) (0, (0, 0)) = true)
+      by (apply mm2_state_eqb_true; exact Heq).
+    rewrite Eeq' in Eeq. discriminate.
+  + discriminate.
+Qed.
+
+(* --- GENUINE OPEN GAP, discovered while trying to close this, not a
+   Coq-mechanics issue: R_target_iff_outcome'/R_target_iff_outcome
+   only characterize red_leq/red_leq' CONDITIONALLY on Theta_ours_MM2
+   c y actually having a value (i.e. the underlying MM2 execution
+   halting within some finite step bound n). They say nothing about
+   the case where the execution diverges forever.
+
+   This matters because mm2_R_soundness_aux's own conclusion (s2 =
+   (0,(0,0)) \/ 0 < s2.1 <= length Prog, for EVERY s2 reached via rtc,
+   not just a halted one) is satisfiable by a NEVER-HALTING run: the
+   "in bounds" disjunct only constrains the program-counter component
+   of the state (0 < index <= n), not the two counters, so a program
+   that loops forever incrementing a counter while staying in bounds
+   satisfies red_leq without ever halting. mm.v has no
+   "mm2_R_completeness_aux"-style lemma covering this general
+   (possibly-infinite) case -- mm2_R_completeness only ever proves
+   completeness for the SPECIFIC halt-at-(0,0) case, matching how it's
+   actually used elsewhere in this project (R_target_iff_outcome
+   itself is only ever invoked WITH a Theta_ours_MM2 witness in hand,
+   e.g. for A0_MM2/B1_MM2, never unconditionally).
+
+   Consequently: K c z <-> KA_ineq_bin(...) -- a genuine many-one
+   reduction, needed for EVERY z, including ones where the underlying
+   program diverges -- does not follow from what mm.v/this file
+   provide. Closing it would need a new completeness lemma
+   characterizing red_leq (and red_leq') for divergent runs too, which
+   is new mathematical content, not a restatement of existing pieces.
+   Left unaddressed here; flagged for Jeremy rather than guessed past. *)
 
 End WithEncoding.
 
