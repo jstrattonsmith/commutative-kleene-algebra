@@ -14,7 +14,17 @@
    this splicing engine is reusable for ANY compile-time-constant-indexed
    prefix, e.g. an EXP_K-style combinator (raw register ->
    K^(register)) would be expected to be another instance, not a
-   variant that needs its own copy of this reasoning. *)
+   variant that needs its own copy of this reasoning.
+
+   Like SMN_MM2.v (its one consumer), this file is genuinely reusable,
+   CKA-content-free MM2 infrastructure -- specialize/specialize_correct
+   below are stated for an ARBITRARY prefix program and its own abstract
+   input/output spec, no reference to red_lb/red_ub/mm2_R anywhere. It
+   isn't on the critical path for the same reason SMN_MM2.v isn't: see
+   that file's header for the full account of why (it needs a separate,
+   harder ingredient -- a universal MM2 machine -- that this splicing
+   engine doesn't provide and that MM2's own instruction set was confirmed
+   unable to supply via elementary composition). *)
 
 From Stdlib Require Import Arith List Lia.
 From Stdlib Require Import Relations.Relation_Operators.

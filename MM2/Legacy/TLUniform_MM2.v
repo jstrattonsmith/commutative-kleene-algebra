@@ -7,7 +7,8 @@
    family (no choice/Sigma-unraveling needed, since there is exactly one
    program, not one per (c,x) pair).
 
-   Kept despite being unused by the main Theorem17-19 argument: this is
+   Kept despite being unused by the main argument
+   (CKAUndec.KMComplete/CKAUndec.BinaryAlphabetMComplete): this is
    the direct, intended predecessor to CKAUndec.Glue.TLToRTarget.v's own pinned
    re-derivation of the same fact. The reason it went unused is itself
    informative -- R_TL_MM2_computable's MM2_computable/MMA2_computable
@@ -18,7 +19,15 @@
    strengthen this proof to expose it, CKAUndec.Glue.TLToRTarget.v re-derives the
    fact directly with the stop position pinned from the start. Kept
    around as a candidate for a simpler fix and as a possible paper
-   narrative beat about this specific opacity trap. *)
+   narrative beat about this specific opacity trap.
+
+   NOTE this is a different KIND of limitation from the other three files
+   in this directory (SMN_MM2.v/MM2_PrefixSplice.v/
+   EffectiveInseparability_MM2_Race.v): those hit a genuine structural gap
+   in MM2's own instruction set (no way to hand-build a universal MM2
+   machine); this file's issue is a one-lemma engineering opacity problem
+   with a known, straightforward fix (expose the stop position), not a
+   structural limitation of the MM2 model itself. *)
 
 From Undecidability Require Import
   L_computable_closed_to_MMA_computable

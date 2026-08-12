@@ -8,9 +8,23 @@
    program realizing the whole family of races, avoiding any need to
    extract a witness program per (i,j) pair (which would need choice,
    since MM2_computable/L_computable_closed are Prop-level `exists`, not
-   Sigma types). This is the S-M-N-style construction MM2/Legacy/SMN_MM2.v builds
-   on (via raceVal_MM2), predating and superseded by the T_L-based route
-   used by the main Theorem17-19 argument. *)
+   Sigma types). This is the S-M-N-style construction MM2/Legacy/SMN_MM2.v
+   builds on (via raceVal_MM2), predating and superseded by the T_L-based
+   route used by the main argument (CKAUndec/KMComplete.v/
+   CKAUndec/BinaryAlphabetMComplete.v).
+
+   raceVal_MM2 itself implements a genuine, reusable CLASSICAL PATTERN --
+   run two candidate deciders in parallel and report whichever halts
+   first, the standard building block behind creative-set constructions
+   (Rogers-style) -- at the MM2 level, with zero reference to red_lb/
+   red_ub/mm2_R or anything else CKA-specific. It isn't superseded because
+   the pattern is wrong; it's unused because it was built specifically to
+   feed SMN_MM2.v's `eta` combinator, which needed a universal MM2
+   machine that construction never supplied (see SMN_MM2.v's header for
+   the full account, including why MM2's own instruction set was
+   confirmed structurally unable to provide one via elementary
+   composition) -- so this file inherited that route's gap rather than
+   having a gap of its own. *)
 
 From Stdlib Require Import Unicode.Utf8.
 From Stdlib Require Import Lia.
