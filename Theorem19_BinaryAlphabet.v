@@ -308,6 +308,74 @@ have [f Hf] := @slice_enumerable Tm_bin _ _ Tm_bin_leibniz
 exists f. intros z. rewrite /K_bin /K_of red_leq'_shape. exact: Hf z.
 Qed.
 
+(* --- 4. GENERALIZATION of Theorem17_Full.v: eff_insep_shape_superset
+   (EffectiveInseparabilityTransport.v, sibling project) is already
+   generic over any A'/enumerability witness -- the only CKA-specific
+   content is bundling K_of Pred's own enumerability in. *)
+
+Theorem eff_insep_shape_K_of_B1_L (Pred : nat -> Prop)
+    (Hc : forall (v : Vector.t nat 2) (m : nat),
+      (m <= 1)%nat -> T_L_Uniform.R_TL v m -> (m = 1 <-> Pred (ps 1 * enc 2 v)))
+    (Henum : enumerable (K_of Pred)) :
+  eff_insep_shape W_L (K_of Pred) B1_L.
+Proof.
+eapply EffectiveInseparabilityTransport.eff_insep_shape_superset.
+- exact eff_insep_A0_B1_L_via_generic.
+- exact Henum.
+- exact (A0_L_subset_K_of Hc).
+- exact (K_of_B1_L_disjoint Hc).
+Qed.
+
+Theorem eff_insep_shape_K_bin_B1_L :
+  exists (c k : nat) (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+    (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat),
+  eff_insep_shape W_L (K_bin (c := c) Hlen Hk_pos) B1_L.
+Proof.
+destruct R_TL_R_target_connection_bin as [c [k [bEnc [Hlen [Hk_pos Hc]]]]].
+exists c, k, bEnc, Hlen, Hk_pos.
+exact (eff_insep_shape_K_of_B1_L Hc (K_bin_enumerable Hlen Hk_pos)).
+Qed.
+
+(* --- 5. GENERALIZATION of EA_L.v/Theorem19_MComplete.v: everything
+   from eff_insep_to_creative onward is already generic over an
+   arbitrary Prop family with the eff_insep_shape property -- the only
+   CKA-specific step is which set (K or K_bin) supplies that shape. *)
+
+Section GenericCreative.
+
+Variable ct : CT_L.
+Local Instance EA_inst_bin : EA := EA_L ct.
+
+Theorem creative_of_eff_insep_shape (P : nat -> Prop) (MP_assm : MP) :
+  eff_insep_shape W_L P B1_L -> creative P.
+Proof.
+intros Hshape.
+eapply (eff_insep_to_creative MP_assm).
+apply eff_insep_iff_shape.
+eapply eff_insep_shape_W_iff; [| exact Hshape].
+intros i x. symmetry. exact (W_psi_L_iff i x).
+Qed.
+
+End GenericCreative.
+
+Theorem m_complete_of_eff_insep_shape (P : nat -> Prop) :
+  CT_L -> MP -> eff_insep_shape W_L P B1_L -> m-complete P.
+Proof.
+intros ct MP_assm Hshape.
+exact (creative_to_m_complete MP_assm _ (creative_of_eff_insep_shape ct MP_assm Hshape)).
+Qed.
+
+Theorem K_bin_m_complete :
+  CT_L -> MP ->
+  exists (c k : nat) (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+    (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat),
+  m-complete (K_bin (c := c) Hlen Hk_pos).
+Proof.
+intros ct MP_assm.
+destruct eff_insep_shape_K_bin_B1_L as [c [k [bEnc [Hlen [Hk_pos Hshape]]]]].
+exists c, k, bEnc, Hlen, Hk_pos.
+exact (m_complete_of_eff_insep_shape ct MP_assm Hshape).
+Qed.
 
 
 
