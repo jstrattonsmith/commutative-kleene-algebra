@@ -1060,3 +1060,19 @@ elim: e => /=.
 Qed.
 
 End FSAKATerm.
+
+(* Boolean (decidable, syntactic) analogue of finite_state_join_list
+   above -- needed by callers that transport along the syntactic
+   finite_stateb check (e.g. BoundedOutputTransport.v's
+   finite_stateb_transport) rather than the abstract finite_state
+   notion. *)
+Lemma finite_stateb_join_list {T : monoid} `{!IsOne T} {I}
+    (P : I → ka_term (monoid_car T)) (xs : list I) :
+  (∀ x, x ∈ xs → finite_stateb (P x) = true) →
+  finite_stateb (join_list P xs) = true.
+Proof.
+elim: xs => [|x xs IH] //= H.
+apply/andb_true_iff; split.
+- apply: H. exact: elem_of_list_here.
+- apply: IH => y Hy. apply: H. exact: elem_of_list_further.
+Qed.

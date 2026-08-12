@@ -87,25 +87,17 @@ Definition Mm2RMonoid : monoid :=
   prod_monoid (list_monoid (@Encoding.mm_sym_setoid QF))
               (list_monoid (@Encoding.mm_sym_setoid QF)).
 
-(* Boolean (decidable, syntactic) analogue of automata.v's
-   finite_state_join_list -- needed since BoundedOutputTransport.v's
+(* finite_stateb_join_list (the boolean analogue of automata.v's
+   finite_state_join_list, needed since BoundedOutputTransport.v's
    finite_stateb_transport operates on the syntactic finite_stateb
    check, not the abstract finite_state notion Encoding.v itself uses to
-   establish finite_state (mm2_R Prog). bounded_output, by contrast,
-   is transported abstractly (bounded_output_transport takes the
-   abstract Sigma-type witness directly), so bounded_output_join_list
-   (already generic, bounded_output.v:94-101) is reused as-is below
-   with no boolean intermediate needed. *)
-Lemma finite_stateb_join_list {T : monoid} `{!IsOne T} {I}
-    (P : I → ka_term (monoid_car T)) (xs : list I) :
-  (∀ x, x ∈ xs → finite_stateb (P x) = true) →
-  finite_stateb (join_list P xs) = true.
-Proof.
-elim: xs => [|x xs IH] //= H.
-apply/andb_true_iff; split.
-- apply: H. exact: elem_of_list_here.
-- apply: IH => y Hy. apply: H. exact: elem_of_list_further.
-Qed.
+   establish finite_state (mm2_R Prog)) now lives in automata.v itself
+   -- it is generic over any finite alphabet, not tied to mm2_R/CKA at
+   all. bounded_output, by contrast, is transported abstractly
+   (bounded_output_transport takes the abstract Sigma-type witness
+   directly), so bounded_output_join_list (already generic,
+   bounded_output.v:94-101) is reused as-is below with no boolean
+   intermediate needed. *)
 
 Lemma finite_stateb_mm2_R : @finite_stateb Mm2RMonoid _ (Encoding.mm2_R Prog) = true.
 Proof.
