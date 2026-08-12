@@ -30,6 +30,7 @@ From kacc Require Import BinaryAlphabetTransport BoundedOutputTransport.
 From Undecidability.MinskyMachines Require Import MM2.
 Require Import SyntheticComputability.Shared.partial.
 Require kacc.mm.
+Require kacc.MM2.Stepper.
 From kacc Require Import EffectiveInseparability_MM2.
 From kacc Require Import Theorem17_KATerm K_Enumerable.
 From kacc Require Import Theorem19_MComplete Theorem19_Full.
@@ -206,7 +207,7 @@ apply: repr_rel_iter_final xs_ys.
   rewrite x1_s in Hin1 Hin2.
   case/mm.encoding_sound: Hin1 => s1' [] y1_s1' s_s1'.
   case/mm.encoding_sound: Hin2 => s2' [] y2_s2' s_s2'.
-  have Es : s1' = s2' by exact: mm.mm2_step_det s_s1' s_s2'.
+  have Es : s1' = s2' by exact: Stepper.mm2_step_det s_s1' s_s2'.
   by rewrite Ey1 Ey2 y1_s1' y2_s2' Es.
 - move=> ys' Hys'.
   have [x0 [y0 [Ex0 [Ey0 Hin0]]]] :=
@@ -266,7 +267,7 @@ Lemma mm2_R_soundness' (s1 s2 : nat * (nat * nat)) :
     ⊔ repr_rel_rtc_error repr_rel_embedded →
   s2 = (0, (0, 0)).
 Proof.
-move=> s1_s2 /mm.mm2_stop_spec s2_stop red_leq.
+move=> s1_s2 /(Stepper.mm2_stop_spec Prog) s2_stop red_leq.
 have [//|] := mm2_R_soundness_aux' s1_s2 red_leq.
 congruence.
 Qed.
@@ -315,9 +316,9 @@ assert (Hrtc : rtc (mm2_step Prog) (1%nat, (y, 0%nat)) (mm2_iter Prog n (1%nat, 
   by apply mm2_iter_rtc.
 unfold mm2_outcome_at in Hn.
 destruct (mm2_haltedAt Prog n (1%nat, (y, 0%nat))) eqn:Ehalt; [| discriminate].
-assert (Hstop_fun : mm.mm2_step_fun Prog (mm2_iter Prog n (1%nat, (y, 0%nat))) = None).
+assert (Hstop_fun : Stepper.mm2_step_fun Prog (mm2_iter Prog n (1%nat, (y, 0%nat))) = None).
 { unfold mm2_haltedAt in Ehalt.
-  destruct (mm.mm2_step_fun Prog (mm2_iter Prog n (1%nat, (y, 0%nat))));
+  destruct (Stepper.mm2_step_fun Prog (mm2_iter Prog n (1%nat, (y, 0%nat))));
     [discriminate | reflexivity]. }
 assert (Hstop : mm2_stop Prog (mm2_iter Prog n (1%nat, (y, 0%nat))))
   by exact (mm2_stop_of_step_fun_none _ _ Hstop_fun).

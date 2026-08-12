@@ -21,6 +21,7 @@ From Stdlib Require Import Relations.Relation_Operators.
 From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.
 
+From kacc.MM2 Require Import Stepper.
 From kacc Require Import mm.
 From kacc Require Import EffectiveInseparability_MM2.
 

@@ -37,6 +37,7 @@ From stdpp Require relations.
 From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.
 
+From kacc.MM2 Require Import Stepper.
 From kacc Require Import mm.
 
 Require Import SyntheticComputability.Shared.partial.

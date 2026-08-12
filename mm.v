@@ -13,6 +13,7 @@ Unset Printing Implicit Defensive.
 
 From kacc Require Import utils algebra pre_ka lang automata.
 From kacc Require Import repr_rel bounded_output.
+From kacc.MM2 Require Import Stepper.
 From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.
 
@@ -260,76 +261,19 @@ Definition translate_state (q : nat) : Q :=
 Definition next_state (q : Q) : Q :=
   translate_state q.
 
-Definition mm2_atom_fun (ρ : mm2_instr) (s : mm2_state) :=
-  let '(i,(a,b)) := s in
-  match ρ with
-  | mm2_inc_a => (1+i,(S a,b))
-  | mm2_inc_b => (1+i,(a,S b))
-  | mm2_dec_a j =>
-    match a with
-    | 0 => (1+i,(0,b))
-    | S a => (j,(a,b))
-    end
-  | mm2_dec_b j =>
-    match b with
-    | 0 => (1+i,(a,0))
-    | S b => (j,(a,b))
-    end
-  end.
+(* mm2_atom_fun/mm2_step_fun and their correctness lemmas w.r.t. the
+   library's own relational mm2_atom/mm2_step, plus mm2_step_det and
+   mm2_stop_spec (further down this section) now live in MM2/Stepper.v
+   -- pure MM2 execution-model facts, no KA content, extracted so
+   they're reusable independent of this file's own KA-term encoding.
+   Notation aliases below let the rest of this section keep calling
+   them bare, as if still section-local. *)
 
-Lemma mm2_atom_fun_spec ρ s1 s2 :
-  mm2_atom ρ s1 s2 ↔ mm2_atom_fun ρ s1 = s2.
-Proof.
-split.
-- by case.
-- case: ρ => [||j|j].
-  1,2: case: s1 => [i [a b]] /= <-; constructor.
-  + case: s1 => [i [[|a] b]] /= <-; constructor.
-  + case: s1 => [i [a [|b]]] /= <-; constructor.
-Qed.
-
-Arguments mm2_atom_fun_spec {_ _ _}.
-
-Definition mm2_step_fun s :=
-  match s.1 with
-  | 0 => None
-  | S i => match nth_error P i with
-           | Some ρ => Some (mm2_atom_fun ρ s)
-           | None => None
-           end
-  end.
-
-Lemma mm2_instr_at_nth_error ρ i :
-  mm2_instr_at ρ (S i) P ↔ nth_error P i = Some ρ.
-Proof.
-split.
-- case=> l [r [HP Hlen]].
-  have -> : i = length l by lia.
-  by rewrite HP nth_error_app2 // Nat.sub_diag.
-- move=> Hnth.
-  have [l [r [HP Hlen]]] :=
-    nth_error_split _ _ Hnth.
-  by exists l, r; split; first done; lia.
-Qed.
-
-Lemma mm2_step_fun_spec s1 s2 :
-  mm2_step P s1 s2 ↔ mm2_step_fun s1 = Some s2.
-Proof.
-split.
-- case=> ρ [Hinstr /mm2_atom_fun_spec <-].
-  rewrite /mm2_step_fun /=.
-  case: s1 Hinstr => [[|i] [a b]] /= Hinstr.
-  { case: Hinstr => l [r [_ /=]]; lia. }
-  by rewrite (iffLR (mm2_instr_at_nth_error _ _) Hinstr).
-- rewrite /mm2_step_fun.
-  case: s1 => [[|i] [a b]] //=.
-  case Hnth: (nth_error P i) => [ρ|] //= [<-].
-  exists ρ; split.
-  + by apply/mm2_instr_at_nth_error.
-  + by apply/mm2_atom_fun_spec.
-Qed.
-
-Arguments mm2_step_fun_spec {_ _}.
+Notation mm2_atom_fun := Stepper.mm2_atom_fun.
+Notation mm2_atom_fun_spec := Stepper.mm2_atom_fun_spec.
+Notation mm2_step_fun := (Stepper.mm2_step_fun P).
+Notation mm2_step_fun_spec := (@Stepper.mm2_step_fun_spec P).
+Notation mm2_instr_at_nth_error := (Stepper.mm2_instr_at_nth_error P).
 
 Definition mm2_to_instr (instr : mm2_instr) : mm_instr Q :=
   match instr with
@@ -1345,22 +1289,7 @@ right; move/leibniz_equiv_iff: pa; rewrite /mm2_config /config_word /=.
 by case: (s2) => [[|?] [[|?] [|?]]] //=.
 Qed.
 
-Lemma mm2_stop_spec s : mm2_stop P s ↔ ¬ (0 < index s ≤ n).
-Proof.
-case: s=> [i [a b]]; split.
-- move=> s_stop s_bounds; case e: (mm2_step_fun (i,(a,b))) => [s'|].
-  + by apply: (s_stop s'); apply/mm2_step_fun_spec.
-  + rewrite /mm2_step_fun /mm2_atom_fun /= in e s_bounds.
-    case: i {s_stop} => [|i] in e s_bounds; first lia.
-    case P_i: nth_error => [ρ|] //= in e *.
-    move/nth_error_None in P_i; lia.
-- move=> /= s_bounds s' /mm2_step_fun_spec.
-  rewrite /mm2_step_fun /mm2_atom_fun /=.
-  case: i => [|i] //= in s_bounds *.
-  case P_i: nth_error => [ρ|] //.
-  have: i < n by apply/nth_error_Some; congruence.
-  lia.
-Qed.
+Notation mm2_stop_spec := (Stepper.mm2_stop_spec P).
 
 Lemma mm2_R_soundness s1 s2 :
   rtc (mm2_step P) s1 s2 →
@@ -1370,15 +1299,10 @@ Lemma mm2_R_soundness s1 s2 :
 Proof.
 move=> s1_s2 /mm2_stop_spec s2_stop red_leq.
 have [//|] := mm2_R_soundness_aux s1_s2 red_leq.
-congruence.
+rewrite /n. congruence.
 Qed.
 
-Lemma mm2_step_det s s1 s2 :
-  mm2_step P s s1 → mm2_step P s s2 → s1 = s2.
-Proof.
-move/mm2_step_fun_spec => H1 /mm2_step_fun_spec.
-by rewrite H1; case.
-Qed.
+Notation mm2_step_det := (@Stepper.mm2_step_det P).
 
 Lemma no_step_from_halt w :
   ¬ Unit (mm2_config (0,(0,0)), w) ⊑ mm2_R.
