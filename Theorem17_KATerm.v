@@ -32,11 +32,10 @@
    this to the fully bundled eff_insep_shape) is picked up in
    K_Enumerable.v/Theorem17_Full.v.
 
-   File structure: sections 0-1 (eff_insep_core, eff_insep_core_superset)
-   are fully generic -- parametrized over an arbitrary numbering W and
-   sets A/B/A', reusable for any effective-inseparability argument that
-   wants the unbundled (no-enumerability-required) notion. Sections 2-3
-   are the CKA-specific instantiation: K itself, and its effective
+   The generic unbundled machinery (eff_insep_core,
+   eff_insep_shape_to_core, eff_insep_core_superset) has been extracted
+   to Computability/InseparabilityCore.v -- this file is now the
+   CKA-specific instantiation: K itself, and its effective
    inseparability from B1_L. *)
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia.
@@ -46,7 +45,7 @@ From Undecidability.Shared.Libs.DLW Require Import vec.
 Import vec_notations.
 From kacc Require Import TLUniform_Bridge.
 From kacc Require Import EffectiveInseparability_MM2.
-From kacc Require Import Computability.TL_Bridge.
+From kacc Require Import Computability.TL_Bridge Computability.InseparabilityCore.
 
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.T_L_Uniform.
@@ -54,45 +53,6 @@ Require Import SyntheticComputability.Models.EffectiveInseparability_L.
 Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityGeneric.
 Require Import SyntheticComputability.Shared.partial.
 Require Import SyntheticComputability.Shared.embed_nat.
-
-(* --- 0. The unbundled notion of effective inseparability (Kuznetsov's
-   Definition 5 / Azevedo de Amorim et al.'s Theorem 17 statement,
-   verbatim): disjointness plus a witness function, no enumerability. *)
-
-Definition eff_insep_core (W : nat -> nat -> Prop) (A B : nat -> Prop) : Prop :=
-  (forall x, A x -> ~ B x) /\
-  exists f : nat -> nat -> part nat,
-    forall i j,
-    (forall x, A x -> W i x) ->
-    (forall x, B x -> W j x) ->
-    (forall x, W i x -> ~ W j x) ->
-    exists k, hasvalue (f i j) k /\ ~ W i k /\ ~ W j k.
-
-Lemma eff_insep_shape_to_core (W : nat -> nat -> Prop) (A B : nat -> Prop) :
-  eff_insep_shape W A B -> eff_insep_core W A B.
-Proof.
-intros [_ [_ [Hdisj [f Hf]]]]. split; [exact Hdisj |]. exists f. exact Hf.
-Qed.
-
-(* --- 1. Proposition 9 / eff_insep_shape_superset, unbundled: no
-   enumerability hypothesis on the new superset A'. Same proof shape as
-   EffectiveInseparabilityTransport.v's eff_insep_shape_superset, just
-   without the enumerable A' plumbing. GENERIC. *)
-
-Lemma eff_insep_core_superset (W : nat -> nat -> Prop) (A B A' : nat -> Prop) :
-  eff_insep_core W A B ->
-  (forall x, A x -> A' x) ->
-  (forall x, A' x -> ~ B x) ->
-  eff_insep_core W A' B.
-Proof.
-intros [Hdisj [f Hf]] Hsub Hdisj'.
-split; [exact Hdisj' |].
-exists f. intros i j Hi Hj Hij.
-apply Hf.
-- intros x Hx. apply Hi, Hsub, Hx.
-- exact Hj.
-- exact Hij.
-Qed.
 
 (* --- 2. K: the actual KA-term-level set, via R_target/red_leq -- a
    genuine red_lb ⊑ red_ub statement (mm.v), not a detour through

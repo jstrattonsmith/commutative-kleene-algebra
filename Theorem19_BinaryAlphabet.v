@@ -45,6 +45,7 @@ From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
 From stdpp Require base decidable.
 From kacc Require Import algebra pre_ka enumerable.
 From kacc Require Import TLUniform_Bridge Computability.TL_Bridge.
+From kacc Require Import Computability.InseparabilityCore.
 From kacc Require Import MM2.Simulator MM2.Splice.
 From kacc Require Import EffectiveInseparability_MM2.
 From kacc Require Import Theorem18_BinaryAlphabet.
