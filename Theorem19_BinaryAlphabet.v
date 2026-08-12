@@ -377,5 +377,50 @@ exists c, k, bEnc, Hlen, Hk_pos.
 exact (m_complete_of_eff_insep_shape ct MP_assm Hshape).
 Qed.
 
+(* --- 6. GENERALIZATION of Theorem19_Full.v: red_m_transitive is
+   generic (pure many-one reduction composition, no enumerability
+   side-condition on the target). The only CKA-specific content is the
+   trivial (reflexivity) reduction witnessing that a Pred-slice is a
+   slice of KA_ineq_over.
+
+   Unlike K_bin (existentially quantified over c/k/bEnc/...), the
+   FINAL statement KA_ineq_bin needs no such existential: Tm_bin is a
+   single, FIXED carrier (the canonical two-symbol alphabet), the same
+   regardless of which machine c is being encoded -- matching exactly
+   how the source paper's own Theorem 18 states undecidability of a
+   single, fixed T{0,1}/K{0,1}/L{0,1}, not one instance per machine.
+   The existentials over c/k/bEnc/Hlen/Hk_pos are used only INSIDE the
+   proof, to witness the reduction -- KA_ineq_bin itself doesn't
+   mention them. This is the paper's Theorem 18/19 for the actual
+   KA-term inequality relation, over the canonical binary alphabet,
+   Sigma^0_1-complete, closing Arthur's comment 2 in full. *)
+
+Definition KA_ineq_bin : ka_term (monoid_car Tm_bin) * ka_term (monoid_car Tm_bin) -> Prop :=
+  @KA_ineq_over Tm_bin.
+
+Definition K_to_KA_ineq_bin (c k : nat)
+    (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+    (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat) (z : nat) :
+    ka_term (monoid_car Tm_bin) * ka_term (monoid_car Tm_bin) :=
+  (red_lb' (c := c) bEnc (1, (ps 1 * enc 2 (Theorem17_KATerm.z_vec z), 0))%nat,
+   red_ub' (c := c) Hlen Hk_pos).
+
+Lemma K_to_KA_ineq_bin_spec (c k : nat)
+    (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+    (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat) (z : nat) :
+  K_bin (c := c) Hlen Hk_pos z <-> KA_ineq_bin (K_to_KA_ineq_bin (bEnc := bEnc) Hlen Hk_pos z).
+Proof. rewrite /K_bin /K_of /K_to_KA_ineq_bin /KA_ineq_bin /=. exact: red_leq'_shape. Qed.
+
+Theorem KA_ineq_bin_m_complete : CT_L -> MP -> m-complete KA_ineq_bin.
+Proof.
+intros ct MP_assm.
+destruct (K_bin_m_complete ct MP_assm) as [c [k [bEnc [Hlen [Hk_pos Hc]]]]].
+intros q Hq.
+apply (red_m_transitive (K_bin (c := c) Hlen Hk_pos) KA_ineq_bin).
+- exact (Hc q Hq).
+- exists (K_to_KA_ineq_bin (bEnc := bEnc) Hlen Hk_pos).
+  exact (K_to_KA_ineq_bin_spec Hlen Hk_pos).
+Qed.
+
 
 
