@@ -171,9 +171,7 @@ Qed.
 (* --- 3. Splice mm2_prefix in front of a shifted copy of progOf c, via
    the generic specialization interface (MM2_PrefixSplice.v) ------------- *)
 
-From kacc Require Import CKA.Encoding.
 From kacc Require Import MM2.Simulator.
-From kacc Require Import CKA.Glue.MM2ToKATerm.
 From kacc Require Import MM2_PrefixSplice.
 
 Definition SMN_S (c x : nat) : nat := specialize (mm2_prefix x) c.
