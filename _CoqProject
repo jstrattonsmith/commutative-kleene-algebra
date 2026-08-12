@@ -13,6 +13,7 @@ automata.v
 repr_rel.v
 BinaryAlphabetTransport.v
 bounded_output.v
+BoundedOutputTransport.v
 mm.v
 
 EffectiveInseparability_MM2.v
