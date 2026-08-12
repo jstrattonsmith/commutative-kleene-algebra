@@ -1,6 +1,6 @@
 (* Generic Myhill's-theorem-style machinery, extracted from
    CKA.KMComplete.v (eff_insep_shape_W_iff) and
-   Theorem19_BinaryAlphabet.v's GenericCreative section
+   CKA.BinaryAlphabetMComplete.v (formerly its GenericCreative section)
    (creative_of_eff_insep_shape/m_complete_of_eff_insep_shape). Zero
    MM2/KA content: everything here is stated over an arbitrary Prop
    family P, not K or K_bin -- the only CKA-specific step left to the

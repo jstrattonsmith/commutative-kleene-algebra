@@ -1,31 +1,35 @@
-(* Closes task #40 (Arthur's comment 2, fully): mirrors
-   CKA.Glue.TLToRTarget.v / CKA.K.v / CKA.KEnumerable.v /
-   CKA.KMComplete.v's SUPERSET-transport
-   strategy at the embedded (binary-alphabet) level, substituting
-   Theorem18_BinaryAlphabet.v's mm2_R_completeness'/mm2_R_soundness'
-   (halting-case only, exactly mirroring Encoding.mm2_R_completeness/
-   mm2_R_soundness's own restriction) for the unembedded originals.
+(* Closes task #40 (Arthur's comment 2, fully): mirrors CKA/Glue/
+   TLToRTarget.v / CKA/K.v / CKA/KEnumerable.v / CKA/KMComplete.v's
+   SUPERSET-transport strategy at the embedded (binary-alphabet) level,
+   using CKA/Glue/BinaryAlphabetConnection.v's R_TL_R_target_connection_bin
+   in place of the unembedded R_TL_R_target_connection.
 
    Per the Azevedo de Amorim et al. paper's own Theorem 18/19 proof
-   (checked directly): their reduction never characterizes a
-   divergent run either -- A/B (Theorem 17) are BOTH defined only over
-   HALTING computations, and their A' superset (Theorem 19's proof)
-   only ever needs "A subset A'" (halting-and-accepting) and
-   "A' disjoint from B" (halting-and-rejecting), never anything about
-   inputs outside A u B. This is the SAME strategy this project's own
-   Computability/TL_Bridge.v/CKA.K.v already use for the
-   unembedded K.
-   So this file needs NO new completeness argument beyond what's
-   already proven -- it strictly mirrors the existing chain, plugging
-   in the embedded halting-case lemmas in place of the unembedded
-   ones. The genuinely-unprovable divergent-run gap documented in
-   Theorem18_BinaryAlphabet.v is real but not on this critical path.
+   (checked directly): their reduction never characterizes a divergent
+   run either -- A/B (Theorem 17) are BOTH defined only over HALTING
+   computations, and their A' superset (Theorem 19's proof) only ever
+   needs "A subset A'" (halting-and-accepting) and "A' disjoint from B"
+   (halting-and-rejecting), never anything about inputs outside A u B.
+   This is the SAME strategy this project's own Computability/TL_Bridge.v/
+   CKA/K.v already use for the unembedded K. So this file needs NO new
+   completeness argument beyond what's already proven -- it strictly
+   mirrors the existing chain, plugging in the embedded halting-case
+   lemmas in place of the unembedded ones. The genuinely-unprovable
+   divergent-run gap documented in CKA/BinaryAlphabet.v is real but not
+   on this critical path.
 
-   Naming note: the binary-alphabet character encoding is named `bEnc`
-   throughout (NOT `enc`) to avoid shadowing prime_seq.enc, which this
-   file also uses pervasively (`ps 1 * enc 2 v`, from the Psplice
-   construction) -- a real name collision caught while drafting this
-   file, not a style choice. *)
+   Sections 2-3 below (GenericK, GenericEnumerable) are GENERALIZATIONS
+   of CKA/K.v's Section Splice6 and CKA/KEnumerable.v respectively --
+   parametrized over an arbitrary Pred/carrier monoid T rather than the
+   specific K/TmMonoid, so both the original (unembedded) K and this
+   file's K_bin are ONE-LINE instantiations of the SAME proofs instead
+   of two copies. They are kept here rather than pushed further into
+   Computability/ (where their genericity would in principle belong,
+   matching InseparabilityCore.v/enumerable.v's own content) -- a
+   scoped judgment call, not an oversight: K_of depends on z_vec/A0_L/
+   B1_L/T_L_Uniform.R_TL (CKA/K.v-adjacent, not yet separately housed),
+   and splitting them out would touch CKA/K.v's own z_vec too. Flagged
+   as a possible future refinement, not attempted here. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia.
 From Undecidability Require Import FRACTRAN.
@@ -48,7 +52,8 @@ From kacc Require Import CKA.Glue.TLToRTarget Computability.TL_Bridge.
 From kacc Require Import Computability.InseparabilityCore.
 From kacc Require Import MM2.Simulator MM2.Splice.
 From kacc Require Import CKA.Glue.MM2ToKATerm.
-From kacc Require Import Theorem18_BinaryAlphabet.
+From kacc Require Import CKA.BinaryAlphabet.
+From kacc Require Import CKA.Glue.BinaryAlphabetConnection.
 From kacc Require Import CKA.K CKA.KEnumerable.
 From kacc Require Import Computability.EA_L Computability.Myhill.
 From kacc Require Import CKA.KMComplete.
@@ -73,92 +78,6 @@ Require Import SyntheticComputability.Shared.embed_nat.
    single occurrence. *)
 Open Scope nat_scope.
 
-(* --- 1. Mirror CKA.Glue.TLToRTarget.v's Psplice_R_target_divides/
-   _not_divides/R_TL_R_target_connection, substituting
-   mm2_R_completeness'/mm2_R_soundness' for the unembedded originals.
-   Reuses MM2/Splice.v's Psplice_mm2_divides/Psplice_mm2_not_divides
-   UNCHANGED (correction: these are defined in MM2/Splice.v itself,
-   not A0_L_Prime.v/Computability.TL_Bridge.v as an earlier version of
-   this comment claimed -- checked directly) -- those are pure MM2-level
-   (rtc) facts, no KA terms involved, so nothing about the embedding
-   touches them. *)
-
-Section SpliceBin.
-
-Variable (Q : list (nat * nat)).
-Notation QF := (Fin.t (S (S (length (progOf (c_P Q)))))).
-Variable (k : nat).
-Variable (bEnc : setoid_car (@Encoding.mm_sym_setoid QF) → list bool).
-Variable (HbEnc : ∀ x y, bEnc x = bEnc y → x = y).
-Variable (Hlen : ∀ x, length (bEnc x) = k).
-Variable (Hk_pos : (0 < k)%nat).
-
-Lemma Psplice_red_leq_bin_divides (v : Vector.t nat 2) (b : nat) :
-  sss_compute (@mma_sss 2) (1, P0 Q) (1, (ps 1 * enc 2 v) ## 0 ## vec_nil)
-    (i0 Q, b ## 0 ## vec_nil) ->
-  divides (qs 1) b ->
-  red_leq' (c := c_P Q) Hlen Hk_pos (1, (ps 1 * enc 2 v, 0))%nat.
-Proof.
-intros Hc Hd.
-apply (mm2_R_completeness' HbEnc Hlen Hk_pos).
-apply crt_to_rtc.
-apply (@Psplice_mm2_divides Q v b Hc Hd).
-Qed.
-
-Lemma Psplice_red_leq_bin_not_divides (v : Vector.t nat 2) (b : nat) :
-  sss_compute (@mma_sss 2) (1, P0 Q) (1, (ps 1 * enc 2 v) ## 0 ## vec_nil)
-    (i0 Q, b ## 0 ## vec_nil) ->
-  ~ divides (qs 1) b ->
-  ~ red_leq' (c := c_P Q) Hlen Hk_pos (1, (ps 1 * enc 2 v, 0))%nat.
-Proof.
-intros Hc Hnd Hred.
-assert (Hbad : ~ (progOf (c_P Q)) // (1, (ps 1 * enc 2 v, 0)) ↠ (0, (0, 0)))
-  by (apply Psplice_mm2_not_divides with (b := b); [exact Hc | exact Hnd]).
-assert (Hout : sss_output (@mma_sss 2) (1, Psplice Q)
-                 (1, (ps 1 * enc 2 v) ## 0 ## vec_nil) (q_target Q, 0 ## b ## vec_nil))
-  by (apply Psplice_progress_not_divides with (b := b); [exact Hc | exact Hnd]).
-assert (Hterm : sss_terminates (@mma_sss 2) (1, Psplice Q) (1, (ps 1 * enc 2 v) ## 0 ## vec_nil))
-  by (exists (q_target Q, 0 ## b ## vec_nil); exact Hout).
-apply (mma_mma2_reduction (Psplice Q) (1, (ps 1 * enc 2 v) ## 0 ## vec_nil)) in Hterm.
-destruct Hterm as [s2 [Hreach Hstop]].
-assert (Hs2 : s2 <> (0, (0, 0))).
-{ intros ->. apply Hbad. rewrite progOf_c_P. exact Hreach. }
-rewrite <- progOf_c_P in Hreach, Hstop.
-apply crt_to_rtc in Hreach.
-assert (Hred' : red_leq' (c := c_P Q) Hlen Hk_pos
-    (mma_mm2_state (1, (ps 1 * enc 2 v) ## 0 ## vec_nil))).
-{ rewrite mma_mm2_state_22. exact Hred. }
-assert (Hsound : s2 = (0, (0, 0))).
-{ eapply (mm2_R_soundness' HbEnc); [exact Hreach | exact Hstop | exact Hred']. }
-exact (Hs2 Hsound).
-Qed.
-
-End SpliceBin.
-
-Theorem R_TL_R_target_connection_bin :
-  exists (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
-    (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat),
-  forall (v : Vector.t nat 2) (m : nat),
-    (m <= 1)%nat -> T_L_Uniform.R_TL v m ->
-    (m = 1 <-> red_leq' (c := c) Hlen Hk_pos (1, (ps 1 * enc 2 v, 0))%nat).
-Proof.
-destruct R_TL_MMA2_pinned as [Q HQ].
-destruct (binary_encoding_exists (c_P Q)) as [k [bEnc [HbEnc [Hlen Hk_pos]]]].
-exists (c_P Q), k, bEnc, Hlen, Hk_pos.
-intros v m Hm1 HR.
-apply HQ in HR.
-destruct HR as [b [Hcompute [Hdiv1 Hdiv2]]].
-split.
-- intros ->.
-  assert (Hdb : divides (qs 1) b) by (rewrite <- (Nat.pow_1_r (qs 1)); exact Hdiv1).
-  exact (Psplice_red_leq_bin_divides HbEnc Hlen Hk_pos Hcompute Hdb).
-- intros HRt.
-  destruct (Nat.eq_dec m 0) as [-> | Hne]; [| lia].
-  exfalso.
-  assert (Hndb : ~ divides (qs 1) b) by (rewrite <- (Nat.pow_1_r (qs 1)); exact Hdiv2).
-  exact (Psplice_red_leq_bin_not_divides HbEnc Hcompute Hndb HRt).
-Qed.
-
 (* --- 2. GENERALIZATION of CKA.K.v's Section Splice6: the
    "connection -> eff_insep_core" argument (A0_L_subset_K/
    K_B1_L_disjoint/eff_insep_K_B1_L there) never actually touches
@@ -167,8 +86,8 @@ Qed.
    that out as a lemma over an ARBITRARY Pred : nat -> Prop makes both
    the original (unembedded) K and this file's K_bin ONE-LINE
    instantiations of the SAME proof, instead of two copies of it.
-   eff_insep_core_superset (CKA.K.v) is itself already
-   fully generic and reused unchanged underneath. *)
+   eff_insep_core_superset (Computability/InseparabilityCore.v) is
+   itself already fully generic and reused unchanged underneath. *)
 
 Section GenericK.
 
@@ -348,7 +267,7 @@ Qed.
    arbitrary Prop family with the eff_insep_shape property -- the only
    CKA-specific step is which set (K or K_bin) supplies that shape. This
    machinery (creative_of_eff_insep_shape/m_complete_of_eff_insep_shape)
-   now lives in Computability/Myhill.v and is reused unchanged here. *)
+   lives in Computability/Myhill.v and is reused unchanged here. *)
 
 Theorem K_bin_m_complete :
   CT_L -> MP ->
@@ -406,6 +325,3 @@ apply (red_m_transitive (K_bin (c := c) Hlen Hk_pos) KA_ineq_bin).
 - exists (K_to_KA_ineq_bin (bEnc := bEnc) Hlen Hk_pos).
   exact (K_to_KA_ineq_bin_spec Hlen Hk_pos).
 Qed.
-
-
-

@@ -60,7 +60,7 @@ Require Import SyntheticComputability.Shared.embed_nat.
 
 (* Gödel-pairing packing of a single nat into a 2-vector, used to index
    z_vec-shaped pairs uniformly throughout this file and its
-   generalization (Theorem19_BinaryAlphabet.v's GenericK section). *)
+   generalization (CKA.BinaryAlphabetMComplete.v's GenericK section). *)
 Definition z_vec (z : nat) : Vector.t nat 2 :=
   fst (unembed z) ## snd (unembed z) ## vec_nil.
 

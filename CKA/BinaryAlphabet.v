@@ -280,7 +280,7 @@ Definition red_leq' (s1 : nat * (nat * nat)) : Prop :=
         match t with _ -> ?B => exact B end).
 
 (* Named left/right sides of red_leq', added purely so later files
-   (Theorem19_BinaryAlphabet.v) have explicit KA-terms to hand to the
+   (CKA.BinaryAlphabetMComplete.v) have explicit KA-terms to hand to the
    generic enumerability machinery (ka_sqsubseteq_enumerable) -- red_leq'
    itself is kept as-is (Ltac-extracted) to avoid touching anything
    that already builds on it. red_leq'_shape confirms the two agree,

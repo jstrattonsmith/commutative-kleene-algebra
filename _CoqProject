@@ -31,8 +31,9 @@ CKA/Glue/TLToRTarget.v
 CKA/K.v
 CKA/KEnumerable.v
 CKA/KMComplete.v
-Theorem18_BinaryAlphabet.v
-Theorem19_BinaryAlphabet.v
+CKA/BinaryAlphabet.v
+CKA/Glue/BinaryAlphabetConnection.v
+CKA/BinaryAlphabetMComplete.v
 
 MM2_PrefixSplice.v
 EffectiveInseparability_MM2_Race.v
