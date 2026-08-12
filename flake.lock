@@ -28,8 +28,8 @@
         "rocq-mcp": "rocq-mcp"
       },
       "locked": {
-        "lastModified": 1786576140,
-        "narHash": "sha256-23SaZkzWsuU7Zwr54mapOCCb8ZgROYl7tzQC9DRnNnI=",
+        "lastModified": 1786576535,
+        "narHash": "sha256-dfOKQmnhBYKUImKf+10GK1uCn3RQOx9hAHp/Aqw1kLI=",
         "path": "/Users/Jeremy/Documents/College/RIT/PhD/CKA_Undec/coq-synthetic-computability",
         "type": "path"
       },
