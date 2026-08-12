@@ -10,7 +10,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-From kacc Require Import utils algebra.
+From kacc Require Import KA.utils KA.algebra.
 
 (** Pre Kleene Algebras *)
 

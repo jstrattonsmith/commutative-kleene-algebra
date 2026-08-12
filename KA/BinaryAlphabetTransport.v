@@ -37,7 +37,7 @@
 From Stdlib Require Import Unicode.Utf8.
 Require Import ssreflect.
 From stdpp Require Import base list finite.
-From kacc Require Import utils algebra pre_ka lang repr_rel.
+From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang KA.repr_rel.
 
 Section BinaryEncoding.
 

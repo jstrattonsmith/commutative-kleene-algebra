@@ -28,17 +28,18 @@ Computability/TL_Bridge.v
 Computability/EA_L.v
 Computability/Myhill.v
 
-# Algebraic core: the paper's own pre-Kleene-algebra framework.
-utils.v
-algebra.v
-pre_ka.v
-enumerable.v
-lang.v
-automata.v
-repr_rel.v
-BinaryAlphabetTransport.v
-bounded_output.v
-BoundedOutputTransport.v
+# KA/: the paper's own pre-Kleene-algebra framework. Independent of
+# MM2/Computability/CKA -- touches none of them.
+KA/utils.v
+KA/algebra.v
+KA/pre_ka.v
+KA/enumerable.v
+KA/lang.v
+KA/automata.v
+KA/repr_rel.v
+KA/BinaryAlphabetTransport.v
+KA/bounded_output.v
+KA/BoundedOutputTransport.v
 
 # CKA/: the actual encoding of MM2 as pre-Kleene-algebra terms and
 # everything built on red_lb/red_ub/mm2_R. CKA/Glue/ files are thin

@@ -10,8 +10,8 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-From kacc Require Import utils algebra pre_ka lang automata.
-From kacc Require Import repr_rel.
+From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang KA.automata.
+From kacc Require Import KA.repr_rel.
 
 Section BoundedOutput.
 

@@ -15,7 +15,7 @@ From Undecidability Require Import FRACTRAN.
 From Undecidability.FRACTRAN Require Import prime_seq.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
-From kacc Require Import algebra pre_ka enumerable.
+From kacc Require Import KA.algebra KA.pre_ka KA.enumerable.
 Require kacc.CKA.Encoding.
 From kacc Require Import MM2.Simulator.
 From kacc Require Import CKA.Glue.MM2ToKATerm.

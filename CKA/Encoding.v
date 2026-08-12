@@ -11,8 +11,8 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-From kacc Require Import utils algebra pre_ka lang automata.
-From kacc Require Import repr_rel bounded_output.
+From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang KA.automata.
+From kacc Require Import KA.repr_rel KA.bounded_output.
 From kacc.MM2 Require Import Stepper.
 From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.

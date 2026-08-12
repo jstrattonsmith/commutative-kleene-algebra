@@ -36,9 +36,9 @@ Require Import ssreflect.
 From stdpp Require Import base list finite.
 From Stdlib Require Import Lia.
 From Stdlib Require Import Bool.
-From kacc Require Import utils algebra pre_ka lang automata repr_rel
-  bounded_output.
-From kacc Require Import BinaryAlphabetTransport.
+From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang KA.automata
+  KA.repr_rel KA.bounded_output.
+From kacc Require Import KA.BinaryAlphabetTransport.
 
 Section BoundedOutputTransport.
 

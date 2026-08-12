@@ -3,7 +3,7 @@ From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts.
 From Undecidability.Synthetic Require Import DecidabilityFacts.
 From Undecidability.Synthetic Require Import MoreReducibilityFacts.
 From stdpp Require Import base countable.
-From kacc Require Import utils algebra pre_ka.
+From kacc Require Import KA.utils KA.algebra KA.pre_ka.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

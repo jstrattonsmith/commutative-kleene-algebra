@@ -24,9 +24,9 @@
 From Stdlib Require Import Unicode.Utf8 Arith Lia Bool.
 Require Import ssreflect.
 From stdpp Require Import base list finite relations.
-From kacc Require Import utils algebra pre_ka lang automata repr_rel
-  bounded_output.
-From kacc Require Import BinaryAlphabetTransport BoundedOutputTransport.
+From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang KA.automata
+  KA.repr_rel KA.bounded_output.
+From kacc Require Import KA.BinaryAlphabetTransport KA.BoundedOutputTransport.
 From Undecidability.MinskyMachines Require Import MM2.
 Require Import SyntheticComputability.Shared.partial.
 Require kacc.CKA.Encoding.

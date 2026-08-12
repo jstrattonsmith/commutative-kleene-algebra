@@ -28,7 +28,7 @@ From Undecidability.Shared.Libs.DLW Require Import utils sss subcode.
 From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.
 
 From stdpp Require base decidable.
-From kacc Require Import algebra pre_ka enumerable.
+From kacc Require Import KA.algebra KA.pre_ka KA.enumerable.
 From kacc Require Import CKA.Glue.TLToRTarget Computability.TL_Bridge.
 From kacc Require Import MM2.Simulator MM2.Splice.
 From kacc Require Import CKA.Glue.MM2ToKATerm.

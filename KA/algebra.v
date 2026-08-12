@@ -10,7 +10,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-From kacc Require Import utils.
+From kacc Require Import KA.utils.
 
 Declare Scope ka_scope.
 Delimit Scope ka_scope with ka.
