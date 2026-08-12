@@ -11,6 +11,7 @@ enumerable.v
 lang.v
 automata.v
 repr_rel.v
+BinaryAlphabetTransport.v
 bounded_output.v
 mm.v
 
