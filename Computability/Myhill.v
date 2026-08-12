@@ -72,7 +72,6 @@ Theorem creative_of_eff_insep_shape (P : nat -> Prop) (MP_assm : MP) :
 Proof.
 intros Hshape.
 eapply (eff_insep_to_creative MP_assm).
-apply eff_insep_iff_shape.
 eapply eff_insep_shape_W_iff; [| exact Hshape].
 intros i x. symmetry. exact (W_psi_L_iff i x).
 Qed.
