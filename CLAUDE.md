@@ -84,6 +84,16 @@ not yet been `git add`ed will not be picked up (it fails with "No rule to
 make target"), even though a direct `coqc` compile of it succeeds. Stage new
 files before running `nix build` to verify them.
 
+The sibling `coq-synthetic-computability` project is consumed as a `path:`
+flake input, but `flake.lock` still pins a content hash (`narHash`) for it
+just like a git input -- `nix build`/`nix develop` do NOT automatically
+re-lock a `path:` input against live filesystem content, even after
+committing changes there. If you edit that sibling repo and a subsequent
+`nix build` here fails with an error that looks like it's using stale
+content (e.g. "variable X was not found" for something you just added),
+run `nix flake lock --update-input coq-synthetic-computability` first,
+then rebuild. `--refresh` does not help here; only an explicit relock does.
+
 After building, make sure you always report what lemmas were left admitted.
 
 ## Dependencies
