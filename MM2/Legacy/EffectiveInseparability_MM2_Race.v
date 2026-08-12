@@ -8,7 +8,7 @@
    program realizing the whole family of races, avoiding any need to
    extract a witness program per (i,j) pair (which would need choice,
    since MM2_computable/L_computable_closed are Prop-level `exists`, not
-   Sigma types). This is the S-M-N-style construction SMN_MM2.v builds
+   Sigma types). This is the S-M-N-style construction MM2/Legacy/SMN_MM2.v builds
    on (via raceVal_MM2), predating and superseded by the T_L-based route
    used by the main Theorem17-19 argument. *)
 

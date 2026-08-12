@@ -169,10 +169,10 @@ exact Hfwd.
 Qed.
 
 (* --- 3. Splice mm2_prefix in front of a shifted copy of progOf c, via
-   the generic specialization interface (MM2_PrefixSplice.v) ------------- *)
+   the generic specialization interface (MM2/Legacy/MM2_PrefixSplice.v) ------------- *)
 
 From kacc Require Import MM2.Simulator.
-From kacc Require Import MM2_PrefixSplice.
+From kacc Require Import MM2.Legacy.MM2_PrefixSplice.
 
 Definition SMN_S (c x : nat) : nat := specialize (mm2_prefix x) c.
 
@@ -208,7 +208,7 @@ Qed.
    below for the precise obligation. *)
 
 Require Import SyntheticComputability.Shared.partial.
-From kacc Require Import EffectiveInseparability_MM2_Race.
+From kacc Require Import MM2.Legacy.EffectiveInseparability_MM2_Race.
 
 Definition eta (U i j : nat) : nat := SMN_S (SMN_S U i) j.
 

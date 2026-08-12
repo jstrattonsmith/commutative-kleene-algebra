@@ -11,6 +11,15 @@ MM2/Simulator.v
 MM2/FractranCompiler.v
 MM2/Splice.v
 
+# MM2/Legacy/: an earlier, self-contained axiom-free S-M-N-style
+# construction directly at the MM2 level, predating the T_L-based route
+# above (which superseded it for the main argument). Not on the
+# critical path. Genuinely MM2-generic (no CKA content, confirmed).
+MM2/Legacy/TLUniform_MM2.v
+MM2/Legacy/MM2_PrefixSplice.v
+MM2/Legacy/EffectiveInseparability_MM2_Race.v
+MM2/Legacy/SMN_MM2.v
+
 # Computability/: pure effective-inseparability/creative/m-complete
 # theory over an abstract numbering, plus T_L/CT_L/EA bridging. Zero
 # MM2 or KA content; genuinely upstreamable to coq-synthetic-computability.
@@ -43,9 +52,3 @@ CKA/KMComplete.v
 CKA/BinaryAlphabet.v
 CKA/Glue/BinaryAlphabetConnection.v
 CKA/BinaryAlphabetMComplete.v
-
-# Not on the critical path, kept for their own interest (see CLAUDE.md).
-TLUniform_MM2.v
-MM2_PrefixSplice.v
-EffectiveInseparability_MM2_Race.v
-SMN_MM2.v

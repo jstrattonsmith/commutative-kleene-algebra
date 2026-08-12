@@ -9,7 +9,7 @@
    code right after the compiled program. The existing MMA2_computable/
    MM2_computable theorems don't expose this pinned fact even though
    their own proofs establish it internally (Qed-opacity, see
-   TLUniform_MM2.v's header for the fuller story of why that file
+   MM2/Legacy/TLUniform_MM2.v's header for the fuller story of why that file
    doesn't just reuse that packaged form); this re-derives it directly
    from the same underlying lemmas (fractran_mma_sound, eval_iff,
    sss_output_fun) the library's own proof already uses. Parametric in

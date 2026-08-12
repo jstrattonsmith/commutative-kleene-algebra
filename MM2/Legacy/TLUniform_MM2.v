@@ -2,7 +2,7 @@
    L_computable_closed_R_TL (a SINGLE L term taking (c,x) as RUNTIME
    bound variables, realizing "T_L c x eventually outputs m" for ANY
    c,x -- not a per-instance construction) through the same axiom-free
-   chain used by EffectiveInseparability_MM2_Race.v's R_race, producing
+   chain used by MM2/Legacy/EffectiveInseparability_MM2_Race.v's R_race, producing
    ONE genuine, fully-packaged MM2_computable witness for the whole T_L
    family (no choice/Sigma-unraveling needed, since there is exactly one
    program, not one per (c,x) pair).
