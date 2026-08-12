@@ -50,7 +50,8 @@ From kacc Require Import MM2.Simulator MM2.Splice.
 From kacc Require Import EffectiveInseparability_MM2.
 From kacc Require Import Theorem18_BinaryAlphabet.
 From kacc Require Import Theorem17_KATerm K_Enumerable.
-From kacc Require Import Theorem17_Full Computability.EA_L Theorem19_MComplete Theorem19_Full.
+From kacc Require Import Theorem17_Full Computability.EA_L Computability.Myhill.
+From kacc Require Import Theorem19_MComplete Theorem19_Full.
 Require kacc.mm.
 
 Require Import SyntheticComputability.Models.CT.
@@ -345,31 +346,9 @@ Qed.
 (* --- 5. GENERALIZATION of EA_L.v/Theorem19_MComplete.v: everything
    from eff_insep_to_creative onward is already generic over an
    arbitrary Prop family with the eff_insep_shape property -- the only
-   CKA-specific step is which set (K or K_bin) supplies that shape. *)
-
-Section GenericCreative.
-
-Variable ct : CT_L.
-Local Instance EA_inst_bin : EA := EA_L ct.
-
-Theorem creative_of_eff_insep_shape (P : nat -> Prop) (MP_assm : MP) :
-  eff_insep_shape W_L P B1_L -> creative P.
-Proof.
-intros Hshape.
-eapply (eff_insep_to_creative MP_assm).
-apply eff_insep_iff_shape.
-eapply eff_insep_shape_W_iff; [| exact Hshape].
-intros i x. symmetry. exact (W_psi_L_iff i x).
-Qed.
-
-End GenericCreative.
-
-Theorem m_complete_of_eff_insep_shape (P : nat -> Prop) :
-  CT_L -> MP -> eff_insep_shape W_L P B1_L -> m-complete P.
-Proof.
-intros ct MP_assm Hshape.
-exact (creative_to_m_complete MP_assm _ (creative_of_eff_insep_shape ct MP_assm Hshape)).
-Qed.
+   CKA-specific step is which set (K or K_bin) supplies that shape. This
+   machinery (creative_of_eff_insep_shape/m_complete_of_eff_insep_shape)
+   now lives in Computability/Myhill.v and is reused unchanged here. *)
 
 Theorem K_bin_m_complete :
   CT_L -> MP ->

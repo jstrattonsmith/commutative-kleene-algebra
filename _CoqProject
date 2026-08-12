@@ -11,6 +11,7 @@ MM2/Splice.v
 Computability/InseparabilityCore.v
 Computability/TL_Bridge.v
 Computability/EA_L.v
+Computability/Myhill.v
 
 utils.v
 algebra.v
