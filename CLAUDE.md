@@ -10,42 +10,49 @@ algebras with partial commutativity of concatenation (cf. ["Kleene algebra with
 commutativity conditions is undecidable" by Azevedo de Amorim et al.,
 2025][KACC]). Several references here are relative to the paper.
 
-The development is organized into three reusable libraries plus the
+The development is organized into four reusable libraries plus the
 CKA-specific payoff that combines them:
 
 - **`MM2/`** (~1,040 lines, 4 files): pure two-counter (MM2) Minsky-machine
   simulation, Godel-coding, and the FRACTRAN-to-MM2 compiler. Zero
   Kleene-algebra content -- reusable in any other MM2-based undecidability
-  project.
+  project. `MM2/Legacy/` (~975 lines, 4 files) holds an earlier,
+  self-contained axiom-free S-M-N-style construction directly at the MM2
+  level, predating the `T_L`-based route below (which superseded it for the
+  main argument) -- not on the critical path, kept for its own interest.
 - **`Computability/`** (~330 lines, 4 files): pure effective-inseparability/
   creative/m-complete theory over an abstract numbering, plus `T_L`/`CT_L`/
   `EA` bridging. Zero MM2 or KA content -- genuinely upstreamable to the
   sibling `coq-synthetic-computability` project as-is.
-- **Algebraic core** (`utils.v` through `BoundedOutputTransport.v`, ~6,360
-  lines, 10 files): the paper's own pre-Kleene-algebra framework, plus a
-  binary-alphabet embedding (`BinaryAlphabetTransport.v`,
-  `BoundedOutputTransport.v`) transporting representable-relation facts along
-  a fixed-length injective character encoding. This half is admit-free; one
-  file (`BinaryAlphabetTransport.v`) keeps a single committed `Admitted`
-  lemma documenting a genuine dead end (needs star-monotonicity, which this
-  project's pre-KA deliberately does not axiomatize) rather than papering
-  over it -- see its header comment.
-- **`CKA/` and `CKA/Glue/`** (~2,740 lines, 9 files): the actual payoff --
-  encodes MM2 as KA terms (Definitions 11-13, `CKA/Encoding.v`), proves the
-  soundness/completeness pair connecting MM2 reachability to a KA-term
-  inequality (Theorems 15-16), and builds up effective inseparability
-  (Theorem 17, admit- and axiom-free) and Sigma^0_1-completeness of the
-  KA-term inequality (matching the paper's own closing remark that it
-  adapted Kuznetsov's ICTAC 2023 completeness argument) both over the
-  machine-specific alphabet and over the paper's own canonical, minimal
-  2-symbol alphabet (`CKA/BinaryAlphabet.v`/`CKA/BinaryAlphabetMComplete.v`,
-  closing the source paper's actual Theorem 18/19 statement rather than a
+- **`KA/`** (~6,360 lines, 10 files): the paper's own pre-Kleene-algebra
+  framework, plus a binary-alphabet embedding
+  (`BinaryAlphabetTransport.v`, `BoundedOutputTransport.v`) transporting
+  representable-relation facts along a fixed-length injective character
+  encoding. Independent of `MM2/`/`Computability/`/`CKAUndec/` -- touches
+  none of them, the most foundational library in the repo. Admit-free
+  except one file (`BinaryAlphabetTransport.v`), which keeps a single
+  committed `Admitted` lemma documenting a genuine dead end (needs
+  star-monotonicity, which this project's pre-KA deliberately does not
+  axiomatize) rather than papering over it -- see its header comment.
+- **`CKAUndec/` and `CKAUndec/Glue/`** (~2,740 lines, 9 files): the actual
+  payoff -- encodes MM2 as KA terms (Definitions 11-13,
+  `CKAUndec/Encoding.v`), proves the soundness/completeness pair connecting
+  MM2 reachability to a KA-term inequality (Theorems 15-16), and builds up
+  effective inseparability (Theorem 17, admit- and axiom-free) and
+  Sigma^0_1-completeness of the KA-term inequality (matching the paper's own
+  closing remark that it adapted Kuznetsov's ICTAC 2023 completeness
+  argument) both over the machine-specific alphabet and over the paper's own
+  canonical, minimal 2-symbol alphabet
+  (`CKAUndec/BinaryAlphabet.v`/`CKAUndec/BinaryAlphabetMComplete.v`, closing
+  the source paper's actual Theorem 18/19 statement rather than a
   machine-specific analogue of it) -- conditional on two named, standard
   hypotheses (`CT_L`, Church's Thesis for Rocq's `L` language; `MP`, Markov's
-  Principle) -- see `CKA/KMComplete.v`'s header comment for exactly why each
-  is needed and where. `CKA/Glue/*.v` files are thin connective code wiring
-  `MM2/` and `Computability/` into `CKA/` (e.g. splicing an MM2-generic
-  halting convention into `CKA/Encoding.v`'s exact halting convention).
+  Principle) -- see `CKAUndec/KMComplete.v`'s header comment for exactly why
+  each is needed and where. `CKAUndec/Glue/*.v` files are thin connective
+  code wiring `MM2/` and `Computability/` into `CKAUndec/` (e.g. splicing an
+  MM2-generic halting convention into `CKAUndec/Encoding.v`'s exact halting
+  convention). Named `CKAUndec/` rather than `CKA/` to stay visually
+  distinct from `KA/` in a file tree.
 
 This whole development depends heavily on the sibling
 `coq-synthetic-computability` project (see Dependencies below) -- in
@@ -105,13 +112,13 @@ Declared in `flake.nix` via Nix overlay:
 Files are listed in dependency order (`_CoqProject`, which groups them into
 the same sections used below with one-line comments). All files are
 admit-free except one deliberately-documented `Admitted` in
-`BinaryAlphabetTransport.v` (see its entry below); no axioms appear anywhere
-except the two hypotheses named above (`CT_L`, `MP`), both isolated to
-`CKA/KMComplete.v`.
+`KA/BinaryAlphabetTransport.v` (see its entry below); no axioms appear
+anywhere except the two hypotheses named above (`CT_L`, `MP`), both isolated
+to `CKAUndec/KMComplete.v`.
 
 ### `MM2/`: pure two-counter-machine (MM2) machinery, zero KA content
 
-1. **`MM2/Stepper.v`** (~130 lines): extracted from `CKA/Encoding.v`'s own
+1. **`MM2/Stepper.v`** (~130 lines): extracted from `CKAUndec/Encoding.v`'s own
    `Section MM2Adapter`. `mm2_atom_fun`(+spec), `mm2_instr_at_nth_error`,
    `mm2_step_fun`(+spec), `mm2_step_det`, `mm2_stop_spec` -- the single-step
    MM2 interpreter fragment, parametrized by a program `P`. Zero KA content.
@@ -134,7 +141,7 @@ except the two hypotheses named above (`CT_L`, `MP`), both isolated to
    runs a compiled FRACTRAN program then tests/redirects on the output
    register's divisibility by `qs 1`, restated at MM2 level
    (`Psplice_mm2_divides`/`not_divides`). Entirely MM2-generic, no mention of
-   KA terms or `CKA/Encoding.v`'s `R_target`/`red_leq`.
+   KA terms or `CKAUndec/Encoding.v`'s `R_target`/`red_leq`.
 
 ### `Computability/`: generic effective-inseparability / `T_L` bridging, zero MM2/KA content
 
@@ -167,38 +174,38 @@ except the two hypotheses named above (`CT_L`, `MP`), both isolated to
    theorem-style machinery stated over an arbitrary Prop family `P`, not tied
    to `K`/`K_bin`.
 
-### Algebraic core (framework, MM2-as-KA-terms encoding groundwork, binary embedding machinery)
+### `KA/`: the pre-Kleene-algebra framework, groundwork for the MM2-as-KA-terms encoding, binary embedding machinery
 
-9. **`utils.v`** (~280 lines): Finite enumeration of gmaps, gsets, list pairs,
-   and lists of bounded length.
+9. **`KA/utils.v`** (~280 lines): Finite enumeration of gmaps, gsets, list
+   pairs, and lists of bounded length.
 
-10. **`algebra.v`** (~900 lines): Custom algebraic hierarchy built on stdpp's
-    `Equiv`/`SqSubsetEq` typeclasses: `setoid` -> `monoid` (with
+10. **`KA/algebra.v`** (~900 lines): Custom algebraic hierarchy built on
+    stdpp's `Equiv`/`SqSubsetEq` typeclasses: `setoid` -> `monoid` (with
     `MonoidMixin`) -> `semi_lattice` (with `SemiLatticeMixin`). Morphism
     classes (`MonoidMorphism`, `SemiLatticeMorphism`) at each level. Concrete
     instances: `bool`, `option`, `list`, product monoids/setoids.
     `MonoidGen`/`SizedMonoid` typeclasses for generator structures.
 
-11. **`pre_ka.v`** (~900 lines): Pre-Kleene algebra (`PreKAMixin` adding
+11. **`KA/pre_ka.v`** (~900 lines): Pre-Kleene algebra (`PreKAMixin` adding
     star/distribution/idempotency). `PreKAMorphism` class. `ka_term T` free KA
     term AST (`Unit`, `ka_term_bottom`, `ka_term_join`, `ka_term_mul`,
     `ka_term_star`). Key operations: `ka_term_elim`, `count_term`, `has_one`,
     `pseudo_top`. Concrete instances: `count`, `lang`.
 
-12. **`enumerable.v`** (~310 lines): Given the carrier monoid `T`'s own `≡` is
-    enumerable, `ka_eq`/`⊑` on `ka_term T` is too -- via a reified,
+12. **`KA/enumerable.v`** (~310 lines): Given the carrier monoid `T`'s own `≡`
+    is enumerable, `ka_eq`/`⊑` on `ka_term T` is too -- via a reified,
     sound-and-complete syntactic derivation system over the 12 pre-KA axiom
     schemes (`D`, `check`/`check_sound`/`check_complete`) with computable
     proof search. This is the "finitary axiomatization gives r.e." argument
-    `CKA/KEnumerable.v` (below) instantiates for the MM2 encoding's own
+    `CKAUndec/KEnumerable.v` (below) instantiates for the MM2 encoding's own
     carrier.
 
-13. **`lang.v`** (~400 lines): `lang` record (formal languages over word
+13. **`KA/lang.v`** (~400 lines): `lang` record (formal languages over word
     monoids) with `l : ka_term T -> lang` interpreting terms as languages.
     Includes `l_alt` (Theorem 5: string membership <-> term ordering),
     `l_inj_finite` (Corollary 7), `either_empty_or_nonzero` (Corollary 8).
 
-14. **`automata.v`** (~1080 lines): FSA/NFA definitions: `fsa` record with
+14. **`KA/automata.v`** (~1080 lines): FSA/NFA definitions: `fsa` record with
     `fsa_elem`, `fsa_state`, `fsa_interp`, `fsa_initial`, `fsa_trans`,
     `fsa_trans_s`. Product (`fsa_mul'`) and star (`fsa_star'`) constructions.
     `finite_state` predicate and its boolean analogue `finite_stateb` (+
@@ -206,14 +213,14 @@ except the two hypotheses named above (`CT_L`, `MP`), both isolated to
     `fsa_elem_k_decomp_gen` (Lemma 27). `ka_term_proj1`, `ka_term_proj2`,
     `ka_term_diag`. `string_match` / `string_match_complete_sized`.
 
-15. **`repr_rel.v`** (~855 lines): Representable relations (`repr_rel` record
-    with `next`, `residue`, `expand_rel`). `diff` term. Iteration lemmas
-    (`repr_rel_iter`, Lemma 21; `repr_rel_iter_empty`, Theorem 22). Also
-    `pad_lang`/`pad_rel` and `repr_rel_iter_final` -- padding/termination
-    combinators added specifically to support `CKA/Encoding.v`'s MM2 encoding
-    below.
+15. **`KA/repr_rel.v`** (~855 lines): Representable relations (`repr_rel`
+    record with `next`, `residue`, `expand_rel`). `diff` term. Iteration
+    lemmas (`repr_rel_iter`, Lemma 21; `repr_rel_iter_empty`, Theorem 22).
+    Also `pad_lang`/`pad_rel` and `repr_rel_iter_final` -- padding/
+    termination combinators added specifically to support
+    `CKAUndec/Encoding.v`'s MM2 encoding below.
 
-16. **`BinaryAlphabetTransport.v`** (~555 lines): route 2 of the
+16. **`KA/BinaryAlphabetTransport.v`** (~555 lines): route 2 of the
     binary-alphabet embedding (closing the source paper's Theorem 18, stated
     over the canonical, minimal 2-symbol alphabet `{0,1}`, not an arbitrary
     machine-specific alphabet) -- a generic algebraic transport theorem for
@@ -223,29 +230,30 @@ except the two hypotheses named above (`CT_L`, `MP`), both isolated to
     not axiomatized): it needs star-monotonicity
     (`Proper ((⊑) ==> (⊑)) star`), which this pre-KA deliberately does not
     provide (see its header comment for the full argument). Kept as a
-    committed, self-contained artifact; superseded by `BoundedOutputTransport.v`
-    (route 1) for the embedding actually used downstream.
+    committed, self-contained artifact; superseded by
+    `KA/BoundedOutputTransport.v` (route 1) for the embedding actually used
+    downstream.
 
-17. **`bounded_output.v`** (~815 lines): Bounded-output terms (Definition
+17. **`KA/bounded_output.v`** (~815 lines): Bounded-output terms (Definition
     28). Closure under join, mul, star (Lemma 30). `bounded_outputb` boolean
     check. Prefix-free terms (Definition 32). `list_diverge` (Lemma 33). Lemma
     31 (paper version): `lemma_31_paper` restricts the expansion to
     output-bounded suffix terms. Lemma 34 (`bounded_output_repr_rel`, plus a
-    primed variant `bounded_output_repr_rel'` used by `CKA/Encoding.v`) is
-    fully proved, admit-free.
+    primed variant `bounded_output_repr_rel'` used by `CKAUndec/Encoding.v`)
+    is fully proved, admit-free.
 
-18. **`BoundedOutputTransport.v`** (~275 lines): route 1 of the
+18. **`KA/BoundedOutputTransport.v`** (~275 lines): route 1 of the
     binary-alphabet embedding, and the one actually used downstream
-    (`CKA/BinaryAlphabet.v`). Reuses `bounded_output.v`'s Lemma 34 directly
-    (already generic over any finite alphabet) by transporting its four
-    hypotheses (`finite_state`, `bounded_output`, domain/codomain
+    (`CKAUndec/BinaryAlphabet.v`). Reuses `KA/bounded_output.v`'s Lemma 34
+    directly (already generic over any finite alphabet) by transporting its
+    four hypotheses (`finite_state`, `bounded_output`, domain/codomain
     containment, `prefix_free`) through the fixed-length character encoding
-    from `BinaryAlphabetTransport.v`. `repr_rel_via_bounded_output` is the
+    from `KA/BinaryAlphabetTransport.v`. `repr_rel_via_bounded_output` is the
     payoff theorem, fully proved, admit- and axiom-free.
 
-### `CKA/` and `CKA/Glue/`: the actual MM2-as-KA-terms payoff, plus the glue wiring `MM2/`/`Computability/` into it
+### `CKAUndec/` and `CKAUndec/Glue/`: the actual MM2-as-KA-terms payoff, plus the glue wiring `MM2/`/`Computability/` into it
 
-19. **`CKA/Encoding.v`** (~1335 lines): encodes two-counter (MM2) Minsky
+19. **`CKAUndec/Encoding.v`** (~1335 lines): encodes two-counter (MM2) Minsky
     machines as KA terms over a doubled/commutable alphabet (Definitions
     11-13): `mm_sym`, `encode_instr`, `transition_rel` (`R_M`), `config_set`
     (`C_M`). Connects to `coq-library-undecidability`'s `MM2` library via
@@ -258,39 +266,40 @@ except the two hypotheses named above (`CT_L`, `MP`), both isolated to
     `red_lb`/`red_ub`/`red_leq` are the KA-term-level objects the
     computability argument builds on.
 
-20. **`CKA/Glue/MM2ToKATerm.v`** (~80 lines): bridges `MM2/Simulator.v`'s
-    step-indexed evaluator (`Θ_ours_MM2`) to `CKA/Encoding.v`'s own KA-term
-    encoding: `red_leq`, `R_target c y := red_leq (progOf c) (1,(y,0))` (the
-    KA-term-level decision problem the whole argument is ultimately about),
-    and `R_target_iff_outcome`. This bridging needs no axiom -- a
-    straightforward consequence of `CKA/Encoding.v`'s
+20. **`CKAUndec/Glue/MM2ToKATerm.v`** (~80 lines): bridges `MM2/Simulator.v`'s
+    step-indexed evaluator (`Θ_ours_MM2`) to `CKAUndec/Encoding.v`'s own
+    KA-term encoding: `red_leq`, `R_target c y := red_leq (progOf c) (1,(y,0))`
+    (the KA-term-level decision problem the whole argument is ultimately
+    about), and `R_target_iff_outcome`. This bridging needs no axiom -- a
+    straightforward consequence of `CKAUndec/Encoding.v`'s
     `mm2_R_soundness`/`mm2_R_completeness`.
 
-21. **`CKA/Glue/TLToRTarget.v`** (~130 lines): builds a single uniform MM2
-    program for `T_L` via `MM2/FractranCompiler.v`, then splices its
+21. **`CKAUndec/Glue/TLToRTarget.v`** (~130 lines): builds a single uniform
+    MM2 program for `T_L` via `MM2/FractranCompiler.v`, then splices its
     divisibility-encoded output convention (`MM2/Splice.v`'s `Psplice`) into
-    `CKA/Encoding.v`'s exact `(0,(0,0))`-halting convention, connecting all
-    the way to `R_target` (`R_TL_R_target_connection`).
+    `CKAUndec/Encoding.v`'s exact `(0,(0,0))`-halting convention, connecting
+    all the way to `R_target` (`R_TL_R_target_connection`).
 
-22. **`CKA/K.v`** (~105 lines): closes Theorem 17. Defines `z_vec`, `K z :=
-    R_target c (...)` -- a genuine `red_lb ⊑ red_ub` KA-term-level statement
-    -- and proves it's effectively inseparable from `B1_L` (in the unbundled
-    sense both source papers state their own Theorem 17 in: disjointness plus
-    a witness function, no enumerability required), via
+22. **`CKAUndec/K.v`** (~105 lines): closes Theorem 17. Defines `z_vec`,
+    `K z := R_target c (...)` -- a genuine `red_lb ⊑ red_ub` KA-term-level
+    statement -- and proves it's effectively inseparable from `B1_L` (in the
+    unbundled sense both source papers state their own Theorem 17 in:
+    disjointness plus a witness function, no enumerability required), via
     `Computability/InseparabilityCore.v`'s superset-transport lemma
     (Kuznetsov's Proposition 9).
 
-23. **`CKA/KEnumerable.v`** (~110 lines): shows `K` is genuinely enumerable,
-    by identifying `CKA/Encoding.v`'s carrier monoid (a product of free
-    monoids over an `option`-padded, finite, decidable-equality alphabet) and
-    applying `enumerable.v`'s generic finitary-axiomatization argument to it.
-    Also defines `KA_ineq`, the full `{(x,y) | x ⊑ y}` relation over that
-    carrier (`K` is one fixed-rhs slice of it), via `ka_sqsubseteq_enumerable`.
+23. **`CKAUndec/KEnumerable.v`** (~110 lines): shows `K` is genuinely
+    enumerable, by identifying `CKAUndec/Encoding.v`'s carrier monoid (a
+    product of free monoids over an `option`-padded, finite, decidable-
+    equality alphabet) and applying `KA/enumerable.v`'s generic finitary-
+    axiomatization argument to it. Also defines `KA_ineq`, the full
+    `{(x,y) | x ⊑ y}` relation over that carrier (`K` is one fixed-rhs slice
+    of it), via `ka_sqsubseteq_enumerable`.
 
-24. **`CKA/KMComplete.v`** (~135 lines): the full chain from `K`'s bundled
-    effective inseparability (`eff_insep_shape_K_B1_L`, upgrading `CKA/K.v`'s
-    unbundled result now that enumerability is in hand) through Myhill's
-    theorem (`K_creative`, `K_m_complete`, instantiating
+24. **`CKAUndec/KMComplete.v`** (~135 lines): the full chain from `K`'s
+    bundled effective inseparability (`eff_insep_shape_K_B1_L`, upgrading
+    `CKAUndec/K.v`'s unbundled result now that enumerability is in hand)
+    through Myhill's theorem (`K_creative`, `K_m_complete`, instantiating
     `Computability/Myhill.v`'s generic machinery at `P := K c`, conditional on
     `CT_L`/`MP`) to full Sigma^0_1-completeness of the actual KA-term
     inequality relation, not just its `K`-slice (`KA_ineq_m_complete`,
@@ -298,12 +307,12 @@ except the two hypotheses named above (`CT_L`, `MP`), both isolated to
     `red_m_transitive` -- closes a gap Arthur, the advisor, flagged after
     reviewing the proof).
 
-25. **`CKA/BinaryAlphabet.v`** (~390 lines): the CKA-specific wiring that
-    actually closes the source paper's Theorem 18/19 (undecidability/
+25. **`CKAUndec/BinaryAlphabet.v`** (~390 lines): the CKA-specific wiring
+    that actually closes the source paper's Theorem 18/19 (undecidability/
     completeness stated over the canonical, minimal 2-symbol alphabet
-    `{0,1}`, not `mm_sym Q`) -- applies `BoundedOutputTransport.v`'s
-    machinery directly to `CKA/Encoding.v`'s own `mm2_R`/`T`, then re-runs
-    `CKA/Encoding.v`'s own soundness/completeness argument
+    `{0,1}`, not `mm_sym Q`) -- applies `KA/BoundedOutputTransport.v`'s
+    machinery directly to `CKAUndec/Encoding.v`'s own `mm2_R`/`T`, then
+    re-runs `CKAUndec/Encoding.v`'s own soundness/completeness argument
     (`mm2_R_completeness'`/`mm2_R_soundness'`) at the embedded level to get
     order-*reflection* for `red_lb`/`red_ub`, not just preservation -- having
     a `repr_rel` for the embedded term alone would not have been enough.
@@ -311,22 +320,22 @@ except the two hypotheses named above (`CT_L`, `MP`), both isolated to
     non-blocking gap remains (see the file's own comment): `red_leq'` is only
     characterized for *halting* MM2 runs, matching how `red_leq` itself is
     only ever used -- tracing to the same missing star-induction axiom as
-    `BinaryAlphabetTransport.v`'s gap.
+    `KA/BinaryAlphabetTransport.v`'s gap.
 
-26. **`CKA/Glue/BinaryAlphabetConnection.v`** (~120 lines): the
-    binary-alphabet analogue of `CKA/Glue/TLToRTarget.v` -- mirrors
+26. **`CKAUndec/Glue/BinaryAlphabetConnection.v`** (~120 lines): the
+    binary-alphabet analogue of `CKAUndec/Glue/TLToRTarget.v` -- mirrors
     `Psplice_R_target_divides`/`_not_divides`/`R_TL_R_target_connection`,
-    substituting `CKA/BinaryAlphabet.v`'s `mm2_R_completeness'`/
+    substituting `CKAUndec/BinaryAlphabet.v`'s `mm2_R_completeness'`/
     `mm2_R_soundness'` for the unembedded originals, closing with
     `R_TL_R_target_connection_bin`.
 
-27. **`CKA/BinaryAlphabetMComplete.v`** (~325 lines): the binary-alphabet
-    analogue of `CKA/KMComplete.v`, generalized over an abstract Prop
-    family/carrier monoid wherever the original argument only used `K`/
-    `red_leq` as an opaque interface (verified faithful to the original via a
-    reflexivity-level check, `K_eq_K_of_R_target`) -- so `K`'s and the new
-    `K_bin`'s properties are proven by the SAME lemmas, not two copies.
-    Closes with `KA_ineq_bin_m_complete : CT_L -> MP -> m-complete
+27. **`CKAUndec/BinaryAlphabetMComplete.v`** (~325 lines): the
+    binary-alphabet analogue of `CKAUndec/KMComplete.v`, generalized over an
+    abstract Prop family/carrier monoid wherever the original argument only
+    used `K`/`red_leq` as an opaque interface (verified faithful to the
+    original via a reflexivity-level check, `K_eq_K_of_R_target`) -- so `K`'s
+    and the new `K_bin`'s properties are proven by the SAME lemmas, not two
+    copies. Closes with `KA_ineq_bin_m_complete : CT_L -> MP -> m-complete
     KA_ineq_bin` -- unlike `KA_ineq_m_complete` (one instance per machine
     `c`), this needs no existential over `c`: the embedded carrier `Tm_bin`
     is a single, fixed algebra (the canonical two-symbol alphabet),
@@ -336,16 +345,21 @@ except the two hypotheses named above (`CT_L`, `MP`), both isolated to
     comment documents a scoped decision to keep this file's `GenericK`/
     `GenericEnumerable` sections here (rather than pushing them further into
     `Computability/`, where their genericity would in principle belong)
-    since doing so would also require relocating `CKA/K.v`'s `z_vec`.
+    since doing so would also require relocating `CKAUndec/K.v`'s `z_vec`.
 
-### Not on the critical path, kept for their own interest
+### `MM2/Legacy/`, not on the critical path, kept for their own interest
 
-- **`TLUniform_MM2.v`** (~45 lines), **`MM2_PrefixSplice.v`** (~265 lines),
-  **`EffectiveInseparability_MM2_Race.v`** (~415 lines), **`SMN_MM2.v`**
-  (~250 lines): an earlier, self-contained axiom-free S-M-N-style
-  construction directly at the MM2 level (predating the `T_L`-based route
-  above, which superseded it for the main argument). Still compiles and is
-  still in `_CoqProject`.
+- **`MM2/Legacy/TLUniform_MM2.v`** (~45 lines), **`MM2/Legacy/MM2_PrefixSplice.v`**
+  (~265 lines), **`MM2/Legacy/EffectiveInseparability_MM2_Race.v`**
+  (~415 lines), **`MM2/Legacy/SMN_MM2.v`** (~250 lines): an earlier,
+  self-contained axiom-free S-M-N-style construction directly at the MM2
+  level (predating the `T_L`-based route above, which superseded it for the
+  main argument). Still compiles and is still in `_CoqProject`. Three of the
+  four originally carried stale `CKAUndec.Encoding`/`CKAUndec.Glue.MM2ToKATerm`
+  imports left over from before the `MM2/Simulator.v` split -- confirmed
+  vestigial (the files compile identically without them) and pruned when
+  this group was moved here, so despite predating the `MM2/`/`CKAUndec/`
+  split, all four are genuinely, purely MM2-generic.
 
 ## Style Guidelines
 
@@ -360,8 +374,8 @@ naming.
   aim to fully utilize the 80 character limit. Avoid short lines if possible.
 - Use **ssreflect** tactics (`move=>`, `rewrite`, `apply/`, `case/`, `elim:`,
   `/=`) extensively.  Avoid `destruct`, `induction`, `exfalso`, etc.  This
-  applies to the algebraic core (files 9-18 above). The `MM2/`, `Computability/`,
-  and `CKA/` files deliberately use plain Coq tactics instead (`intros`,
+  applies to `KA/` (files 9-18 above). The `MM2/`, `Computability/`, and
+  `CKAUndec/` files deliberately use plain Coq tactics instead (`intros`,
   `destruct`, `apply`) -- they interface directly with
   `coq-synthetic-computability`'s own plain-tactic style, and mixing
   ssreflect in at that boundary wasn't worth the friction.
@@ -377,7 +391,7 @@ naming.
   `stdpp_scope`) AND `coq-library-undecidability`'s `vec_notations` (`##` for
   vector cons, used by MMA/FRACTRAN code) cannot `Import` both -- `##` is
   declared at conflicting precedence levels in the two modules, a hard
-  notation-grammar clash, not a scope-priority ambiguity. `CKA/
+  notation-grammar clash, not a scope-priority ambiguity. `CKAUndec/
   BinaryAlphabetMComplete.v` is the precedent: it `Require`s (never
   `Import`s) `stdpp.base`/`stdpp.decidable`/`stdpp.countable` and spells
   everything out via qualified names (`base.equiv`, `base.sqsubseteq`,
@@ -389,12 +403,12 @@ naming.
   (`countable.Countable`, not bare `Countable`) in any file that can't
   `Import` the defining module.
 - A file that `Require`s (bare, not `Import`) another file for QUALIFIED
-  access (e.g. `Require kacc.CKA.Encoding.` to write `Encoding.mm2_R`) may
-  separately need `From kacc Require Import ...` (an actual `Import`) of the
-  SAME file if it also needs some of that file's names BARE (e.g. inside a
-  `Notation` that must resolve unqualified) -- these are two different needs
-  that can both apply to one file; see `CKA/BinaryAlphabet.v` for an example
-  of both being necessary simultaneously.
+  access (e.g. `Require kacc.CKAUndec.Encoding.` to write `Encoding.mm2_R`)
+  may separately need `From kacc Require Import ...` (an actual `Import`) of
+  the SAME file if it also needs some of that file's names BARE (e.g. inside
+  a `Notation` that must resolve unqualified) -- these are two different
+  needs that can both apply to one file; see `CKAUndec/BinaryAlphabet.v` for
+  an example of both being necessary simultaneously.
 
   [KACC]: https://arxiv.org/pdf/2411.15979
   [ssreflect-tutorial]: https://inria.hal.science/inria-00407778v1/document
