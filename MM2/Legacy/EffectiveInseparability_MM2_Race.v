@@ -36,6 +36,7 @@ Require Import Undecidability.L.Util.L_facts.
 Require Import Undecidability.L.Tactics.LTactics.
 Require Import SyntheticComputability.Shared.partial.
 Require Import SyntheticComputability.Shared.embed_nat.
+Require Import SyntheticComputability.Shared.mu_nat.
 
 Require Import ssreflect.
 Unset Implicit Arguments.
@@ -178,17 +179,6 @@ pose proof (proc_ext raceBit_MM2_computable).
 unfold raceP_MM2. Lproc.
 Qed.
 
-Lemma minimal_unique_MM2 (P : nat -> bool) (n1 n2 : nat) :
-  P n1 = true -> (forall m, m < n1 -> P m = false) ->
-  P n2 = true -> (forall m, m < n2 -> P m = false) ->
-  n1 = n2.
-Proof.
-intros H1 Hm1 H2 Hm2.
-destruct (Compare_dec.lt_eq_lt_dec n1 n2) as [[Hlt|Heq]|Hgt]; auto.
-- specialize (Hm2 n1 Hlt). congruence.
-- specialize (Hm1 n2 Hgt). congruence.
-Qed.
-
 Lemma s_race_full_reduce i j y v :
   L.app (L.app (L.app s_race (enc i)) (enc j)) (enc y) == enc v
   <-> exists n, L.app LMuRecursion.mu (raceP_MM2 i j y) == enc n
@@ -316,7 +306,7 @@ split.
   { intros m Hm. specialize (Hmin0 m Hm). unfold raceP_MM2 in Hmin0.
     LsimplHypo. Lrewrite in Hmin0. symmetry in Hmin0.
     now apply enc_extinj in Hmin0. }
-  assert (Hn0n : n0 = n) by (eapply minimal_unique_MM2; eauto).
+  assert (Hn0n : n0 = n) by (eapply minimal_unique; eauto).
   subst n0. exists n. split; [exact Hn0 | exact Hv].
 Qed.
 
