@@ -82,7 +82,7 @@ Qed.
    paper's own Theorem 18/19 are stated over. K_to_KA_ineq below is
    the reduction witnessing that slice relationship; it is used twice,
    in opposite directions: here, to import enumerability FROM KA_ineq
-   INTO K, and in Theorem19_Full.v, to transport m-completeness the
+   INTO K, and in CKA.KMComplete.v, to transport m-completeness the
    other way, OUT of K and into KA_ineq (composed with
    red_m_transitive). *)
 

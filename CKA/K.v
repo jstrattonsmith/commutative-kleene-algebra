@@ -30,7 +30,7 @@
    that instead. This delivers exactly the paper's Theorem 17 statement
    for the KA-term-level set K; K's enumerability (needed to strengthen
    this to the fully bundled eff_insep_shape) is picked up in
-   CKA.KEnumerable.v/Theorem17_Full.v.
+   CKA.KEnumerable.v/CKA.KMComplete.v.
 
    The generic unbundled machinery (eff_insep_core,
    eff_insep_shape_to_core, eff_insep_core_superset) has been extracted

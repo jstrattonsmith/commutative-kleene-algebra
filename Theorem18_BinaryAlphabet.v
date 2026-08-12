@@ -34,7 +34,6 @@ Require kacc.MM2.Stepper.
 From kacc Require Import MM2.Simulator.
 From kacc Require Import CKA.Glue.MM2ToKATerm.
 From kacc Require Import CKA.K CKA.KEnumerable.
-From kacc Require Import Theorem19_MComplete Theorem19_Full.
 
 Section BinaryAlphabet.
 

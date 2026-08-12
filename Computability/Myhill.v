@@ -1,5 +1,5 @@
 (* Generic Myhill's-theorem-style machinery, extracted from
-   Theorem19_MComplete.v (eff_insep_shape_W_iff) and
+   CKA.KMComplete.v (eff_insep_shape_W_iff) and
    Theorem19_BinaryAlphabet.v's GenericCreative section
    (creative_of_eff_insep_shape/m_complete_of_eff_insep_shape). Zero
    MM2/KA content: everything here is stated over an arbitrary Prop

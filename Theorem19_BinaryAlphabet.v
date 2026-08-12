@@ -1,6 +1,6 @@
 (* Closes task #40 (Arthur's comment 2, fully): mirrors
    CKA.Glue.TLToRTarget.v / CKA.K.v / CKA.KEnumerable.v /
-   Theorem19_MComplete.v / Theorem19_Full.v's SUPERSET-transport
+   CKA.KMComplete.v's SUPERSET-transport
    strategy at the embedded (binary-alphabet) level, substituting
    Theorem18_BinaryAlphabet.v's mm2_R_completeness'/mm2_R_soundness'
    (halting-case only, exactly mirroring Encoding.mm2_R_completeness/
@@ -50,8 +50,8 @@ From kacc Require Import MM2.Simulator MM2.Splice.
 From kacc Require Import CKA.Glue.MM2ToKATerm.
 From kacc Require Import Theorem18_BinaryAlphabet.
 From kacc Require Import CKA.K CKA.KEnumerable.
-From kacc Require Import Theorem17_Full Computability.EA_L Computability.Myhill.
-From kacc Require Import Theorem19_MComplete Theorem19_Full.
+From kacc Require Import Computability.EA_L Computability.Myhill.
+From kacc Require Import CKA.KMComplete.
 Require kacc.CKA.Encoding.
 
 Require Import SyntheticComputability.Models.CT.
@@ -315,7 +315,7 @@ have [f Hf] := @slice_enumerable Tm_bin _ _ Tm_bin_leibniz
 exists f. intros z. rewrite /K_bin /K_of red_leq'_shape. exact: Hf z.
 Qed.
 
-(* --- 4. GENERALIZATION of Theorem17_Full.v: eff_insep_shape_superset
+(* --- 4. GENERALIZATION of CKA.KMComplete.v: eff_insep_shape_superset
    (EffectiveInseparabilityTransport.v, sibling project) is already
    generic over any A'/enumerability witness -- the only CKA-specific
    content is bundling K_of Pred's own enumerability in. *)
@@ -343,7 +343,7 @@ exists c, k, bEnc, Hlen, Hk_pos.
 exact (eff_insep_shape_K_of_B1_L Hc (K_bin_enumerable Hlen Hk_pos)).
 Qed.
 
-(* --- 5. GENERALIZATION of EA_L.v/Theorem19_MComplete.v: everything
+(* --- 5. GENERALIZATION of EA_L.v/CKA.KMComplete.v: everything
    from eff_insep_to_creative onward is already generic over an
    arbitrary Prop family with the eff_insep_shape property -- the only
    CKA-specific step is which set (K or K_bin) supplies that shape. This
@@ -362,7 +362,7 @@ exists c, k, bEnc, Hlen, Hk_pos.
 exact (m_complete_of_eff_insep_shape ct MP_assm Hshape).
 Qed.
 
-(* --- 6. GENERALIZATION of Theorem19_Full.v: red_m_transitive is
+(* --- 6. GENERALIZATION of CKA.KMComplete.v: red_m_transitive is
    generic (pure many-one reduction composition, no enumerability
    side-condition on the target). The only CKA-specific content is the
    trivial (reflexivity) reduction witnessing that a Pred-slice is a
