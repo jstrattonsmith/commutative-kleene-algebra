@@ -319,34 +319,60 @@ destruct (mm2_state_eqb (mm2_iter Prog n (1%nat, (y, 0%nat))) (0, (0, 0))) eqn:E
   + discriminate.
 Qed.
 
-(* --- GENUINE OPEN GAP, discovered while trying to close this, not a
-   Coq-mechanics issue: R_target_iff_outcome'/R_target_iff_outcome
-   only characterize red_leq/red_leq' CONDITIONALLY on Theta_ours_MM2
-   c y actually having a value (i.e. the underlying MM2 execution
-   halting within some finite step bound n). They say nothing about
-   the case where the execution diverges forever.
+(* --- GENUINE OPEN GAP, now traced to the SAME root cause as
+   BinaryAlphabetTransport.v's dpseudo_top_mismatch_transport gap
+   (star-monotonicity), not a separate, unrelated issue.
 
-   This matters because mm2_R_soundness_aux's own conclusion (s2 =
-   (0,(0,0)) \/ 0 < s2.1 <= length Prog, for EVERY s2 reached via rtc,
-   not just a halted one) is satisfiable by a NEVER-HALTING run: the
-   "in bounds" disjunct only constrains the program-counter component
-   of the state (0 < index <= n), not the two counters, so a program
-   that loops forever incrementing a counter while staying in bounds
-   satisfies red_leq without ever halting. mm.v has no
-   "mm2_R_completeness_aux"-style lemma covering this general
-   (possibly-infinite) case -- mm2_R_completeness only ever proves
-   completeness for the SPECIFIC halt-at-(0,0) case, matching how it's
-   actually used elsewhere in this project (R_target_iff_outcome
-   itself is only ever invoked WITH a Theta_ours_MM2 witness in hand,
-   e.g. for A0_MM2/B1_MM2, never unconditionally).
+   Restated precisely: elem_of_C (mm.v:504) gives Unit(config s) ⊑ C
+   <-> 0 < s.1 <= n, i.e. C's membership is exactly "not yet halted",
+   so partially_accepted = C ⊔ Unit(config(0,0,0)) means:
 
-   Consequently: K c z <-> KA_ineq_bin(...) -- a genuine many-one
-   reduction, needed for EVERY z, including ones where the underlying
-   program diverges -- does not follow from what mm.v/this file
-   provide. Closing it would need a new completeness lemma
-   characterizing red_leq (and red_leq') for divergent runs too, which
-   is new mathematical content, not a restatement of existing pieces.
-   Left unaddressed here; flagged for Jeremy rather than guessed past. *)
+     Unit(config s2) ⊑ partially_accepted  <->  ¬mm2_stop s2 ∨ s2=(0,0,0)
+
+   i.e. "s2 is not a WRONG halt". So red_lb s1 ⊑ red_ub (via
+   mm2_R_soundness_aux's proof, which is already fully general -- it
+   places no halting assumption on s2) is EQUIVALENT in spirit to "the
+   run from s1 never halts anywhere except (0,(0,0))" -- true both
+   when it halts correctly AND when it diverges forever, false only
+   for a wrong halt. Divergence is therefore not a hypothetical edge
+   case to worry about -- it is a real, common case the completeness
+   direction must handle for K c z <-> KA_ineq_bin(...) to be a valid
+   total many-one reduction (m-reductions must be correct for every
+   z, and by construction z's underlying Theta_ours_MM2 run genuinely
+   can diverge -- if it couldn't, K would be decidable).
+
+   Attempted concretely (not just reasoned abstractly): the only
+   existing machinery for proving a Unit(x) ⋅ star(e) ⊑ Z fact is
+   repr_rel_iter_final / repr_rel_iter_empty' (repr_rel.v:815,798),
+   and BOTH require an explicit, already-known finite witness baked
+   into their own statement -- a terminal state `ys` with a proof
+   no step leaves it (_final), or a search depth `n` with
+   next_iter n [...] = [] (_empty'). mm.v's own mm2_R_completeness
+   supplies this witness via the GIVEN halting path's own length
+   (rtc_nsteps s1 (0,0,0) gives a concrete n). For a divergent run
+   there is no such n or ys to supply -- confirmed by directly trying
+   `apply: (repr_rel_iter_empty' xs_L)` against the general goal,
+   which fails to unify (its conclusion is inherently n-parameterized,
+   whereas red_ub is a fixed closed term; mm.v's own proof bridges
+   this ONLY by simplifying against the known n, which isn't available
+   here). This is exactly the shape of gap that needs Kleene algebra's
+   standard star-INDUCTION rule (x ⊔ e⋅z ⊑ z -> x⋅star(e) ⊑ z), which
+   pre_ka.v's PreKAMixin (pre_ka.v:21-30) deliberately does not
+   axiomatize -- only the unfold equation and Properness w.r.t. ≡ are
+   given, no induction/least-fixpoint/monotonicity rule. Same missing
+   ingredient as route 2's star-monotonicity wall, arising here
+   through the completeness direction instead of algebraic transport.
+
+   Consequently: K c z <-> KA_ineq_bin(...), needed for EVERY z
+   including divergent ones, does not follow from what mm.v/this file
+   provide, and cannot be derived from the existing pre-KA axioms as
+   given -- closing it would require either (a) adding a star-
+   induction axiom to pre_ka.v itself (a framework-level change,
+   whose soundness against this project's own intended semantics
+   would need separate justification), or (b) a genuinely different
+   argument not going through red_lb/red_ub's star structure at all.
+   Left unaddressed here; flagged for Jeremy/Arthur as a real
+   mathematical question, not guessed past. *)
 
 End WithEncoding.
 
