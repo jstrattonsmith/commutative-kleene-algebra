@@ -50,7 +50,6 @@ From Undecidability.FRACTRAN Require Import fractran_utils prime_seq mm_fractran
 From Undecidability.Shared.Libs.DLW Require Import utils sss subcode.
 
 From kacc Require Import FRACTRAN_computable_to_MM2_computable.
-From kacc Require Import TLUniform_MM2.
 From kacc Require Import EffectiveInseparability_MM2.
 Require kacc.mm.
 From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.
@@ -118,6 +117,7 @@ Qed.
 
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.T_L_Extract.
+Require Import SyntheticComputability.Models.T_L_Uniform.
 From Undecidability Require Import
   L_computable_closed_to_MMA_computable
   MMA_computable_to_TM_computable

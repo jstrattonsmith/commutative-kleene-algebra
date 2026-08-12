@@ -44,7 +44,6 @@ From Undecidability Require Import FRACTRAN.
 From Undecidability.FRACTRAN Require Import prime_seq.
 From Undecidability.Shared.Libs.DLW Require Import vec.
 Import vec_notations.
-From kacc Require Import TLUniform_MM2.
 From kacc Require Import TLUniform_Bridge.
 From kacc Require Import EffectiveInseparability_MM2.
 From kacc Require Import A0_L_Prime.

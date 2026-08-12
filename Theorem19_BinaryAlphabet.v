@@ -43,7 +43,7 @@ From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
 From stdpp Require base decidable.
 From kacc Require Import algebra pre_ka enumerable.
-From kacc Require Import TLUniform_MM2 TLUniform_Bridge A0_L_Prime.
+From kacc Require Import TLUniform_Bridge A0_L_Prime.
 From kacc Require Import EffectiveInseparability_MM2.
 From kacc Require Import Theorem18_BinaryAlphabet.
 From kacc Require Import Theorem17_KATerm K_Enumerable.
