@@ -49,7 +49,7 @@ From Undecidability.MinskyMachines Require Import mm_defs mma_defs fractran_mma 
 From Undecidability.FRACTRAN Require Import fractran_utils prime_seq mm_fractran.
 From Undecidability.Shared.Libs.DLW Require Import utils sss subcode.
 
-From kacc Require Import FRACTRAN_computable_to_MM2_computable.
+From kacc Require Import MM2.FractranCompiler.
 From kacc Require Import EffectiveInseparability_MM2.
 Require kacc.mm.
 From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.
@@ -303,7 +303,7 @@ Definition c_P : nat := codeOf (List.map mma_mm2_instr Psplice).
 (* Explicit type ascription matters here: without it, the inferred type
    would state progOf (codeOf (...)) = ... with codeOf left unfolded,
    rather than folded to c_P -- which then makes `rewrite progOf_c_P`
-   fail downstream (A0_L_Prime.v) since the goal mentions c_P, not its
+   fail downstream (Computability/TL_Bridge.v) since the goal mentions c_P, not its
    unfolded codeOf form, and rewrite's matching doesn't delta-unfold to
    find it. *)
 Definition progOf_c_P : progOf c_P = List.map mma_mm2_instr Psplice :=
@@ -393,7 +393,7 @@ Definition R_TL_MMA2_pinned := FRACTRAN_computable_to_MMA2_pinned R_TL_FRACTRAN_
    The `m <= 1` hypothesis is not a limitation of the splice construction
    itself (Psplice/the divides-test above works for any m, distinguishing
    "m = 0" from "m > 0" via a single divisibility check) -- it's here
-   because it's all A0_L/B1_L (Theorem17_KATerm.v, A0_L_Prime.v) ever
+   because it's all A0_L/B1_L (Theorem17_KATerm.v, Computability/TL_Bridge.v) ever
    need: those sets only ever ask about R_TL's outputs 0 and 1, never
    larger m. Stating the connection only for m <= 1 keeps this theorem's
    proof from having to characterize what happens for m >= 2 (which the

@@ -13,7 +13,8 @@
    only ever needs "A subset A'" (halting-and-accepting) and
    "A' disjoint from B" (halting-and-rejecting), never anything about
    inputs outside A u B. This is the SAME strategy this project's own
-   A0_L_Prime.v/Theorem17_KATerm.v already use for the unembedded K.
+   Computability/TL_Bridge.v/Theorem17_KATerm.v already use for the
+   unembedded K.
    So this file needs NO new completeness argument beyond what's
    already proven -- it strictly mirrors the existing chain, plugging
    in the embedded halting-case lemmas in place of the unembedded
@@ -43,11 +44,11 @@ From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
 From stdpp Require base decidable.
 From kacc Require Import algebra pre_ka enumerable.
-From kacc Require Import TLUniform_Bridge A0_L_Prime.
+From kacc Require Import TLUniform_Bridge Computability.TL_Bridge.
 From kacc Require Import EffectiveInseparability_MM2.
 From kacc Require Import Theorem18_BinaryAlphabet.
 From kacc Require Import Theorem17_KATerm K_Enumerable.
-From kacc Require Import Theorem17_Full EA_L Theorem19_MComplete Theorem19_Full.
+From kacc Require Import Theorem17_Full Computability.EA_L Theorem19_MComplete Theorem19_Full.
 Require kacc.mm.
 
 Require Import SyntheticComputability.Models.CT.
@@ -72,9 +73,12 @@ Open Scope nat_scope.
 (* --- 1. Mirror TLUniform_Bridge.v's Psplice_R_target_divides/
    _not_divides/R_TL_R_target_connection, substituting
    mm2_R_completeness'/mm2_R_soundness' for the unembedded originals.
-   Reuses A0_L_Prime.v's Psplice_mm2_divides/Psplice_mm2_not_divides
-   UNCHANGED -- those are pure MM2-level (rtc) facts, no KA terms
-   involved, so nothing about the embedding touches them. *)
+   Reuses TLUniform_Bridge.v's Psplice_mm2_divides/Psplice_mm2_not_divides
+   UNCHANGED (correction: these are defined in TLUniform_Bridge.v itself,
+   not A0_L_Prime.v/Computability.TL_Bridge.v as an earlier version of
+   this comment claimed -- checked directly) -- those are pure MM2-level
+   (rtc) facts, no KA terms involved, so nothing about the embedding
+   touches them. *)
 
 Section SpliceBin.
 

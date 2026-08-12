@@ -14,7 +14,7 @@
 
 From Stdlib Require Import Unicode.Utf8.
 Require Import ssreflect.
-From kacc Require Import EA_L.
+From kacc Require Import Computability.EA_L.
 From kacc Require Import Theorem17_KATerm.
 From kacc Require Import Theorem17_Full.
 

@@ -400,7 +400,7 @@ From Undecidability Require Import
   BSM_computable_to_MM_computable
   MM_computable_to_FRACTRAN_computable.
 
-From kacc Require Import FRACTRAN_computable_to_MM2_computable.
+From kacc Require Import MM2.FractranCompiler.
 
 Lemma R_race_MM2_computable : MM2_computable R_race.
 Proof.

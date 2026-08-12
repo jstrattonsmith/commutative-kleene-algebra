@@ -27,7 +27,7 @@ From Undecidability Require Import
   BSM_computable_to_MM_computable
   MM_computable_to_FRACTRAN_computable.
 
-From kacc Require Import FRACTRAN_computable_to_MM2_computable.
+From kacc Require Import MM2.FractranCompiler.
 
 Require Import SyntheticComputability.Models.T_L_Uniform.
 

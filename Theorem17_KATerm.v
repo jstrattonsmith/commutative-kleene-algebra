@@ -46,7 +46,7 @@ From Undecidability.Shared.Libs.DLW Require Import vec.
 Import vec_notations.
 From kacc Require Import TLUniform_Bridge.
 From kacc Require Import EffectiveInseparability_MM2.
-From kacc Require Import A0_L_Prime.
+From kacc Require Import Computability.TL_Bridge.
 
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.T_L_Uniform.
@@ -98,8 +98,9 @@ Qed.
    genuine red_lb ⊑ red_ub statement (mm.v), not a detour through
    Theta_ours_MM2. Fixed once via R_TL_R_target_connection's witness c. *)
 
-(* A0_L_Prime.v's own z_vec is `Let`-scoped inside its Section Splice3
-   and does not survive past it; redefine identically here. *)
+(* Gödel-pairing packing of a single nat into a 2-vector, used to index
+   z_vec-shaped pairs uniformly throughout this file and its
+   generalization (Theorem19_BinaryAlphabet.v's GenericK section). *)
 Definition z_vec (z : nat) : Vector.t nat 2 :=
   fst (unembed z) ## snd (unembed z) ## vec_nil.
 

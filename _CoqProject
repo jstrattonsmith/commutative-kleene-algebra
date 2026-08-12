@@ -5,6 +5,9 @@
 -R . kacc
 
 MM2/Stepper.v
+MM2/FractranCompiler.v
+Computability/TL_Bridge.v
+Computability/EA_L.v
 
 utils.v
 algebra.v
@@ -19,14 +22,11 @@ BoundedOutputTransport.v
 mm.v
 
 EffectiveInseparability_MM2.v
-FRACTRAN_computable_to_MM2_computable.v
 TLUniform_MM2.v
 TLUniform_Bridge.v
-A0_L_Prime.v
 Theorem17_KATerm.v
 K_Enumerable.v
 Theorem17_Full.v
-EA_L.v
 Theorem19_MComplete.v
 Theorem19_Full.v
 Theorem18_BinaryAlphabet.v
