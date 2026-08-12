@@ -1,4 +1,4 @@
-(* Follow-up to Theorem17_KATerm.v, prompted by the observation that
+(* Follow-up to CKA.K.v, prompted by the observation that
    Undecidability/enumerable.v (already in _CoqProject) proves exactly
    the "provability from a finite axiomatisation is r.e." bridge needed
    to show K enumerable: ka_sqsubseteq_enumerable shows that ⊑ on
@@ -18,8 +18,8 @@ From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
 From kacc Require Import algebra pre_ka enumerable.
 Require kacc.CKA.Encoding.
 From kacc Require Import MM2.Simulator.
-From kacc Require Import EffectiveInseparability_MM2.
-From kacc Require Import Theorem17_KATerm.
+From kacc Require Import CKA.Glue.MM2ToKATerm.
+From kacc Require Import CKA.K.
 
 Section KEnumerable.
 

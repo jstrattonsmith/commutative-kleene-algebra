@@ -1,5 +1,5 @@
 (* Closes task #40 (Arthur's comment 2, fully): mirrors
-   TLUniform_Bridge.v / Theorem17_KATerm.v / K_Enumerable.v /
+   CKA.Glue.TLToRTarget.v / CKA.K.v / CKA.KEnumerable.v /
    Theorem19_MComplete.v / Theorem19_Full.v's SUPERSET-transport
    strategy at the embedded (binary-alphabet) level, substituting
    Theorem18_BinaryAlphabet.v's mm2_R_completeness'/mm2_R_soundness'
@@ -13,7 +13,7 @@
    only ever needs "A subset A'" (halting-and-accepting) and
    "A' disjoint from B" (halting-and-rejecting), never anything about
    inputs outside A u B. This is the SAME strategy this project's own
-   Computability/TL_Bridge.v/Theorem17_KATerm.v already use for the
+   Computability/TL_Bridge.v/CKA.K.v already use for the
    unembedded K.
    So this file needs NO new completeness argument beyond what's
    already proven -- it strictly mirrors the existing chain, plugging
@@ -44,12 +44,12 @@ From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
 From stdpp Require base decidable.
 From kacc Require Import algebra pre_ka enumerable.
-From kacc Require Import TLUniform_Bridge Computability.TL_Bridge.
+From kacc Require Import CKA.Glue.TLToRTarget Computability.TL_Bridge.
 From kacc Require Import Computability.InseparabilityCore.
 From kacc Require Import MM2.Simulator MM2.Splice.
-From kacc Require Import EffectiveInseparability_MM2.
+From kacc Require Import CKA.Glue.MM2ToKATerm.
 From kacc Require Import Theorem18_BinaryAlphabet.
-From kacc Require Import Theorem17_KATerm K_Enumerable.
+From kacc Require Import CKA.K CKA.KEnumerable.
 From kacc Require Import Theorem17_Full Computability.EA_L Computability.Myhill.
 From kacc Require Import Theorem19_MComplete Theorem19_Full.
 Require kacc.CKA.Encoding.
@@ -73,7 +73,7 @@ Require Import SyntheticComputability.Shared.embed_nat.
    single occurrence. *)
 Open Scope nat_scope.
 
-(* --- 1. Mirror TLUniform_Bridge.v's Psplice_R_target_divides/
+(* --- 1. Mirror CKA.Glue.TLToRTarget.v's Psplice_R_target_divides/
    _not_divides/R_TL_R_target_connection, substituting
    mm2_R_completeness'/mm2_R_soundness' for the unembedded originals.
    Reuses MM2/Splice.v's Psplice_mm2_divides/Psplice_mm2_not_divides
@@ -159,7 +159,7 @@ split.
   exact (Psplice_red_leq_bin_not_divides HbEnc Hcompute Hndb HRt).
 Qed.
 
-(* --- 2. GENERALIZATION of Theorem17_KATerm.v's Section Splice6: the
+(* --- 2. GENERALIZATION of CKA.K.v's Section Splice6: the
    "connection -> eff_insep_core" argument (A0_L_subset_K/
    K_B1_L_disjoint/eff_insep_K_B1_L there) never actually touches
    R_target/red_leq's own definition -- it only uses the abstract
@@ -167,7 +167,7 @@ Qed.
    that out as a lemma over an ARBITRARY Pred : nat -> Prop makes both
    the original (unembedded) K and this file's K_bin ONE-LINE
    instantiations of the SAME proof, instead of two copies of it.
-   eff_insep_core_superset (Theorem17_KATerm.v) is itself already
+   eff_insep_core_superset (CKA.K.v) is itself already
    fully generic and reused unchanged underneath. *)
 
 Section GenericK.
@@ -177,23 +177,23 @@ Hypothesis Hc : forall (v : Vector.t nat 2) (m : nat),
   (m <= 1)%nat -> T_L_Uniform.R_TL v m -> (m = 1 <-> Pred (ps 1 * enc 2 v)).
 
 Definition K_of (z : nat) : Prop :=
-  Pred (ps 1 * enc 2 (Theorem17_KATerm.z_vec z)).
+  Pred (ps 1 * enc 2 (CKA.K.z_vec z)).
 
 Lemma A0_L_subset_K_of (z : nat) : A0_L z -> K_of z.
 Proof.
 intros HA. apply theta_ours_L_iff in HA.
-assert (HR1 : T_L_Uniform.R_TL (Theorem17_KATerm.z_vec z) 1)
+assert (HR1 : T_L_Uniform.R_TL (CKA.K.z_vec z) 1)
   by (apply R_TL_iff; exact HA).
-exact (proj1 (@Hc (Theorem17_KATerm.z_vec z) 1 (Nat.le_refl 1) HR1) eq_refl).
+exact (proj1 (@Hc (CKA.K.z_vec z) 1 (Nat.le_refl 1) HR1) eq_refl).
 Qed.
 
 Lemma K_of_B1_L_disjoint (z : nat) : K_of z -> ~ B1_L z.
 Proof.
 intros HK HB. apply theta_ours_L_iff in HB.
-assert (HR0 : T_L_Uniform.R_TL (Theorem17_KATerm.z_vec z) 0)
+assert (HR0 : T_L_Uniform.R_TL (CKA.K.z_vec z) 0)
   by (apply R_TL_iff; exact HB).
 assert (Heq : 0 = 1)
-  by (apply (@Hc (Theorem17_KATerm.z_vec z) 0 (Nat.le_0_l 1) HR0); exact HK).
+  by (apply (@Hc (CKA.K.z_vec z) 0 (Nat.le_0_l 1) HR0); exact HK).
 discriminate Heq.
 Qed.
 
@@ -208,9 +208,9 @@ Qed.
 End GenericK.
 
 (* Sanity check: the generalization above is faithful to what
-   Theorem17_KATerm.v already proves for the unembedded K, not a
+   CKA.K.v already proves for the unembedded K, not a
    different/weaker claim -- K c is DEFINITIONALLY K_of (R_target c). *)
-Lemma K_eq_K_of_R_target (c : nat) : Theorem17_KATerm.K c = K_of (R_target c).
+Lemma K_eq_K_of_R_target (c : nat) : CKA.K.K c = K_of (R_target c).
 Proof. reflexivity. Qed.
 
 Definition K_bin (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
@@ -227,10 +227,10 @@ exists c, k, bEnc, Hlen, Hk_pos.
 exact (eff_insep_K_of_B1_L Hc).
 Qed.
 
-(* --- 3. GENERALIZATION of K_Enumerable.v: ka_sqsubseteq_enumerable
+(* --- 3. GENERALIZATION of CKA.KEnumerable.v: ka_sqsubseteq_enumerable
    (enumerable.v) is already generic over ANY carrier monoid with
    countable, Leibniz-equal ≡. The only CKA-specific content in
-   K_Enumerable.v is "K is a fixed-rhs slice of ⊑", a reflexivity-level
+   CKA.KEnumerable.v is "K is a fixed-rhs slice of ⊑", a reflexivity-level
    fact -- pulling THAT out generically makes both K and K_bin's
    enumerability one-line instantiations of the same lemma, instead of
    two copies of TmMonoid/Tm_equiv_enumerable/K_to_KA_ineq. *)
@@ -310,7 +310,7 @@ Theorem K_bin_enumerable (c k : nat)
 Proof.
 have [f Hf] := @slice_enumerable Tm_bin _ _ Tm_bin_leibniz
   (fun z => red_lb' (c := c) bEnc
-    (1, (ps 1 * enc 2 (Theorem17_KATerm.z_vec z), 0))%nat)
+    (1, (ps 1 * enc 2 (CKA.K.z_vec z), 0))%nat)
   (red_ub' Hlen Hk_pos).
 exists f. intros z. rewrite /K_bin /K_of red_leq'_shape. exact: Hf z.
 Qed.
@@ -387,7 +387,7 @@ Definition K_to_KA_ineq_bin (c k : nat)
     (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat) (z : nat) :
     ka_term (monoid_car Tm_bin) * ka_term (monoid_car Tm_bin) :=
-  (red_lb' (c := c) bEnc (1, (ps 1 * enc 2 (Theorem17_KATerm.z_vec z), 0))%nat,
+  (red_lb' (c := c) bEnc (1, (ps 1 * enc 2 (CKA.K.z_vec z), 0))%nat,
    red_ub' (c := c) Hlen Hk_pos).
 
 Lemma K_to_KA_ineq_bin_spec (c k : nat)

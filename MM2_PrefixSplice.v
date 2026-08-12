@@ -24,7 +24,7 @@ Import MM2Notations.
 From kacc.MM2 Require Import Stepper.
 From kacc Require Import CKA.Encoding.
 From kacc Require Import MM2.Simulator.
-From kacc Require Import EffectiveInseparability_MM2.
+From kacc Require Import CKA.Glue.MM2ToKATerm.
 
 (* --- 0. Splicing a prefix in front of a program, with jump targets
    shifted accordingly. -------------------------------------------------- *)

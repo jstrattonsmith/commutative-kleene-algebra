@@ -30,7 +30,7 @@
    that instead. This delivers exactly the paper's Theorem 17 statement
    for the KA-term-level set K; K's enumerability (needed to strengthen
    this to the fully bundled eff_insep_shape) is picked up in
-   K_Enumerable.v/Theorem17_Full.v.
+   CKA.KEnumerable.v/Theorem17_Full.v.
 
    The generic unbundled machinery (eff_insep_core,
    eff_insep_shape_to_core, eff_insep_core_superset) has been extracted
@@ -43,8 +43,8 @@ From Undecidability Require Import FRACTRAN.
 From Undecidability.FRACTRAN Require Import prime_seq.
 From Undecidability.Shared.Libs.DLW Require Import vec.
 Import vec_notations.
-From kacc Require Import TLUniform_Bridge.
-From kacc Require Import EffectiveInseparability_MM2.
+From kacc Require Import CKA.Glue.TLToRTarget.
+From kacc Require Import CKA.Glue.MM2ToKATerm.
 From kacc Require Import Computability.TL_Bridge Computability.InseparabilityCore.
 
 Require Import SyntheticComputability.Models.CT.

@@ -32,8 +32,8 @@ Require Import SyntheticComputability.Shared.partial.
 Require kacc.CKA.Encoding.
 Require kacc.MM2.Stepper.
 From kacc Require Import MM2.Simulator.
-From kacc Require Import EffectiveInseparability_MM2.
-From kacc Require Import Theorem17_KATerm K_Enumerable.
+From kacc Require Import CKA.Glue.MM2ToKATerm.
+From kacc Require Import CKA.K CKA.KEnumerable.
 From kacc Require Import Theorem19_MComplete Theorem19_Full.
 
 Section BinaryAlphabet.
@@ -81,8 +81,8 @@ Proof. exact: Henc. Qed.
 (* mm2_R's type is the bare product `list (mm_sym QF) * list (mm_sym QF)`,
    which does not syntactically unify with `monoid_car ?T` during
    typeclass search without help (same issue flagged in
-   EffectiveInseparability_MM2.v's own comment on red_leq) -- name the
-   monoid explicitly, mirroring K_Enumerable.v's TmMonoid but WITHOUT
+   CKA.Glue.MM2ToKATerm.v's own comment on red_leq) -- name the
+   monoid explicitly, mirroring CKA.KEnumerable.v's TmMonoid but WITHOUT
    the option-padding (mm2_R itself is unpadded). *)
 Definition Mm2RMonoid : monoid :=
   prod_monoid (list_monoid (@Encoding.mm_sym_setoid QF))
@@ -274,7 +274,7 @@ congruence.
 Qed.
 
 (* --- Final step: mirror R_target_iff_outcome
-   (EffectiveInseparability_MM2.v:289-320) at the embedded level,
+   (CKA.Glue.MM2ToKATerm.v:289-320) at the embedded level,
    substituting mm2_R_completeness'/mm2_R_soundness' for the
    originals -- everything else in that proof (mm2_iter_rtc,
    mm2_haltedAt, mm2_stop_of_step_fun_none, mm2_state_eqb) is a plain

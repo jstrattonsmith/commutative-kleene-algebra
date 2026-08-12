@@ -1,6 +1,6 @@
-(* Upgrades Theorem17_KATerm.v's eff_insep_core result to the fully
-   bundled eff_insep_shape: K is now genuinely enumerable (K_Enumerable.v
-   closes the gap Theorem17_KATerm.v flagged), so this is real,
+(* Upgrades CKA.K.v's eff_insep_core result to the fully
+   bundled eff_insep_shape: K is now genuinely enumerable (CKA.KEnumerable.v
+   closes the gap CKA.K.v flagged), so this is real,
    axiom-free effective inseparability of K (the actual KA-term/red_leq
    level set) from B1_L, over the SAME numbering W_L throughout --
    Kuznetsov's Proposition 9 applied once more, this time with its
@@ -23,9 +23,9 @@
    than attempted. *)
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia.
-From kacc Require Import TLUniform_Bridge.
-From kacc Require Import Theorem17_KATerm.
-From kacc Require Import K_Enumerable.
+From kacc Require Import CKA.Glue.TLToRTarget.
+From kacc Require Import CKA.K.
+From kacc Require Import CKA.KEnumerable.
 
 Require Import SyntheticComputability.Models.EffectiveInseparability_L.
 Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityGeneric.

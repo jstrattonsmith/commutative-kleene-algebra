@@ -1,7 +1,7 @@
 (* Bridges T_L/Theta_ours_L (Rocq's own L-interpreter, from the sibling
    coq-synthetic-computability project) to T_L_Uniform.R_TL, the
    mu-search-shaped uniform relation used throughout the CKA-specific
-   binary-alphabet argument (TLUniform_Bridge.v and beyond).
+   binary-alphabet argument (CKA.Glue.TLToRTarget.v and beyond).
 
    NOTE 2026-08-14: this file used to also contain (a) an MM2/Theta_ours_MM2
    -level splice construction (Psplice_theta_divides/not_divides, A0_L',
@@ -9,7 +9,7 @@
    A0_L'_B1_L_disjoint, A0_L_prime_exists). Both were confirmed, by a
    full-codebase dependency check, to be dead: nothing downstream ever
    consumes A0_L_prime_exists or any of the lemmas feeding only into it --
-   Theorem17_KATerm.v and (what was) Theorem19_BinaryAlphabet.v only ever
+   CKA.K.v and (what was) Theorem19_BinaryAlphabet.v only ever
    used theta_ours_L_iff/R_TL_iff, i.e. exactly what's left in this file.
    Removed rather than kept as a "not on critical path" artifact, since
    unlike those (which are self-contained explorations), this dead code

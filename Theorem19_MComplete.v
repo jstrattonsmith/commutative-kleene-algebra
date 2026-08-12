@@ -12,7 +12,7 @@
 From Stdlib Require Import Unicode.Utf8.
 Require Import ssreflect.
 From kacc Require Import Computability.EA_L Computability.Myhill.
-From kacc Require Import Theorem17_KATerm.
+From kacc Require Import CKA.K.
 From kacc Require Import Theorem17_Full.
 
 Require Import SyntheticComputability.Models.CT.

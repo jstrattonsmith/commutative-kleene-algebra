@@ -23,7 +23,7 @@ From Undecidability.FRACTRAN Require Import fractran_utils prime_seq mm_fractran
 From Undecidability.Shared.Libs.DLW Require Import utils sss subcode.
 
 From kacc Require Import MM2.FractranCompiler MM2.Simulator MM2.Splice.
-From kacc Require Import EffectiveInseparability_MM2.
+From kacc Require Import CKA.Glue.MM2ToKATerm.
 Require kacc.CKA.Encoding.
 From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.
 
@@ -98,7 +98,7 @@ Definition R_TL_MMA2_pinned := FRACTRAN_computable_to_MMA2_pinned R_TL_FRACTRAN_
    The `m <= 1` hypothesis is not a limitation of the splice construction
    itself (Psplice/the divides-test in MM2/Splice.v works for any m,
    distinguishing "m = 0" from "m > 0" via a single divisibility check)
-   -- it's here because it's all A0_L/B1_L (Theorem17_KATerm.v,
+   -- it's here because it's all A0_L/B1_L (CKA.K.v,
    Computability/TL_Bridge.v) ever need: those sets only ever ask about
    R_TL's outputs 0 and 1, never larger m. Stating the connection only
    for m <= 1 keeps this theorem's proof from having to characterize

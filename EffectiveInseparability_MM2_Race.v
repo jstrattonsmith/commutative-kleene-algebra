@@ -15,7 +15,7 @@
 From Stdlib Require Import Unicode.Utf8.
 From Stdlib Require Import Lia.
 From kacc Require Import MM2.Simulator.
-From kacc Require Import EffectiveInseparability_MM2.
+From kacc Require Import CKA.Glue.MM2ToKATerm.
 
 Require Import SyntheticComputability.Models.CT.
 Require Import Undecidability.L.L.
@@ -29,7 +29,7 @@ Unset Implicit Arguments.
 
 (* --- 0. The race, as plain Gallina functions over MM2 program codes ---- *)
 
-(* semidec_of_MM2 is already defined+computable in EffectiveInseparability_MM2.v
+(* semidec_of_MM2 is already defined+computable in CKA.Glue.MM2ToKATerm.v
    (it is literally mm2_haltedAt (progOf c) n (1,(y,0))); register its
    computable instance here since it wasn't needed for that file's own
    goals. *)

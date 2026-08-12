@@ -6,7 +6,7 @@
    here is about the MM2 execution model and its L-extractability,
    reusable by any other MM2-based project.
 
-   Extracted 2026-08-14 from EffectiveInseparability_MM2.v, whose
+   Extracted 2026-08-14 from CKA.Glue.MM2ToKATerm.v, whose
    remaining content (red_leq, R_target, R_target_iff_outcome) is
    genuine glue bridging THIS simulator to Encoding.v's own KA-term
    encoding, not simulator content itself -- that glue now lives in
@@ -237,7 +237,7 @@ Qed.
 
 (* --- 2. Plain MM2-execution-model facts, still no KA content. These used
    to sit alongside CKA/Glue/MM2ToKATerm.v's red_leq/R_target/
-   R_target_iff_outcome (same source position, EffectiveInseparability_MM2.v's
+   R_target_iff_outcome (same source position, CKA.Glue.MM2ToKATerm.v's
    old Section 2) purely by accident of file layout -- none of them actually
    mention Encoding.v/red_lb/red_ub, so they belong here, not with the glue. *)
 

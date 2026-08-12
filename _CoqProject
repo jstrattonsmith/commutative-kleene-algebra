@@ -25,11 +25,11 @@ bounded_output.v
 BoundedOutputTransport.v
 CKA/Encoding.v
 
-EffectiveInseparability_MM2.v
+CKA/Glue/MM2ToKATerm.v
 TLUniform_MM2.v
-TLUniform_Bridge.v
-Theorem17_KATerm.v
-K_Enumerable.v
+CKA/Glue/TLToRTarget.v
+CKA/K.v
+CKA/KEnumerable.v
 Theorem17_Full.v
 Theorem19_MComplete.v
 Theorem19_Full.v

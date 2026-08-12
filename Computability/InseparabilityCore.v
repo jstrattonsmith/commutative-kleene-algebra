@@ -1,5 +1,5 @@
 (* Generic effective-inseparability machinery, extracted from
-   Theorem17_KATerm.v. Zero MM2/KA content -- parametrized over an
+   CKA.K.v. Zero MM2/KA content -- parametrized over an
    arbitrary numbering W and sets A/B/A', reusable for any effective-
    inseparability argument that wants the unbundled (no-enumerability-
    required) notion. Genuinely upstreamable to the sibling

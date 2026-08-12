@@ -173,7 +173,7 @@ Qed.
 
 From kacc Require Import CKA.Encoding.
 From kacc Require Import MM2.Simulator.
-From kacc Require Import EffectiveInseparability_MM2.
+From kacc Require Import CKA.Glue.MM2ToKATerm.
 From kacc Require Import MM2_PrefixSplice.
 
 Definition SMN_S (c x : nat) : nat := specialize (mm2_prefix x) c.

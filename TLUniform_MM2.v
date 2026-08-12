@@ -8,14 +8,14 @@
    program, not one per (c,x) pair).
 
    Kept despite being unused by the main Theorem17-19 argument: this is
-   the direct, intended predecessor to TLUniform_Bridge.v's own pinned
+   the direct, intended predecessor to CKA.Glue.TLToRTarget.v's own pinned
    re-derivation of the same fact. The reason it went unused is itself
    informative -- R_TL_MM2_computable's MM2_computable/MMA2_computable
    conclusion is an opaque existential (Qed-opaque about exactly where
-   the compiled program stops), and TLUniform_Bridge.v's splice
+   the compiled program stops), and CKA.Glue.TLToRTarget.v's splice
    construction needs that stop position exposed, not just known to
    exist, to know where to append its divides-test code. Rather than
-   strengthen this proof to expose it, TLUniform_Bridge.v re-derives the
+   strengthen this proof to expose it, CKA.Glue.TLToRTarget.v re-derives the
    fact directly with the stop position pinned from the start. Kept
    around as a candidate for a simpler fix and as a possible paper
    narrative beat about this specific opacity trap. *)
