@@ -4,15 +4,22 @@
 
 -R . kacc
 
+# MM2/: pure two-counter-machine simulation, Godel-coding, and the
+# FRACTRAN-to-MM2 compiler. Zero Kleene-algebra content.
 MM2/Stepper.v
 MM2/Simulator.v
 MM2/FractranCompiler.v
 MM2/Splice.v
+
+# Computability/: pure effective-inseparability/creative/m-complete
+# theory over an abstract numbering, plus T_L/CT_L/EA bridging. Zero
+# MM2 or KA content; genuinely upstreamable to coq-synthetic-computability.
 Computability/InseparabilityCore.v
 Computability/TL_Bridge.v
 Computability/EA_L.v
 Computability/Myhill.v
 
+# Algebraic core: the paper's own pre-Kleene-algebra framework.
 utils.v
 algebra.v
 pre_ka.v
@@ -23,10 +30,12 @@ repr_rel.v
 BinaryAlphabetTransport.v
 bounded_output.v
 BoundedOutputTransport.v
-CKA/Encoding.v
 
+# CKA/: the actual encoding of MM2 as pre-Kleene-algebra terms and
+# everything built on red_lb/red_ub/mm2_R. CKA/Glue/ files are thin
+# connective code wiring MM2/ and Computability/ into CKA/.
+CKA/Encoding.v
 CKA/Glue/MM2ToKATerm.v
-TLUniform_MM2.v
 CKA/Glue/TLToRTarget.v
 CKA/K.v
 CKA/KEnumerable.v
@@ -35,6 +44,8 @@ CKA/BinaryAlphabet.v
 CKA/Glue/BinaryAlphabetConnection.v
 CKA/BinaryAlphabetMComplete.v
 
+# Not on the critical path, kept for their own interest (see CLAUDE.md).
+TLUniform_MM2.v
 MM2_PrefixSplice.v
 EffectiveInseparability_MM2_Race.v
 SMN_MM2.v
