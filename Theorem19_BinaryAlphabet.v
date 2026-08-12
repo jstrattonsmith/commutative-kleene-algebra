@@ -39,6 +39,9 @@ From Undecidability.FRACTRAN Require Import fractran_utils prime_seq mm_fractran
 From Undecidability.Shared.Libs.DLW Require Import utils sss subcode.
 From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.
 
+From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
+  DecidabilityFacts MoreReducibilityFacts.
+From stdpp Require base decidable.
 From kacc Require Import algebra pre_ka enumerable.
 From kacc Require Import TLUniform_MM2 TLUniform_Bridge A0_L_Prime.
 From kacc Require Import EffectiveInseparability_MM2.
@@ -216,6 +219,95 @@ destruct R_TL_R_target_connection_bin as [c [k [bEnc [Hlen [Hk_pos Hc]]]]].
 exists c, k, bEnc, Hlen, Hk_pos.
 exact (eff_insep_K_of_B1_L Hc).
 Qed.
+
+(* --- 3. GENERALIZATION of K_Enumerable.v: ka_sqsubseteq_enumerable
+   (enumerable.v) is already generic over ANY carrier monoid with
+   countable, Leibniz-equal ≡. The only CKA-specific content in
+   K_Enumerable.v is "K is a fixed-rhs slice of ⊑", a reflexivity-level
+   fact -- pulling THAT out generically makes both K and K_bin's
+   enumerability one-line instantiations of the same lemma, instead of
+   two copies of TmMonoid/Tm_equiv_enumerable/K_to_KA_ineq. *)
+
+Section GenericEnumerable.
+
+Context (T : monoid).
+
+(* NOTE: sqsubseteq/equiv are spelled out (not written via the ⊑/≡
+   notations) throughout this section -- those notations live in
+   stdpp_scope, which conflicts (hard notation-level clash, not just
+   ambiguity) with vec_notations' `##` needed elsewhere in this file
+   for the MMA/FRACTRAN Psplice machinery; both can't be Import-opened
+   in the same file. `Countable`'s own precondition (EqDecision) must
+   already be resolvable BEFORE `Countable` itself is declared below,
+   hence HeqT coming first. *)
+
+Context `{HeqT : !base.RelDecision (@Logic.eq (monoid_car T))}.
+Context `{!countable.Countable (monoid_car T)}
+  (HLeibniz : base.LeibnizEquiv (monoid_car T)).
+
+Instance T_equiv_dec (x y : monoid_car T) : base.Decision (base.equiv x y).
+Proof.
+destruct (HeqT x y) as [-> | Hne].
+- left. reflexivity.
+- right. intros Heq. apply Hne.
+  exact (@base.leibniz_equiv (monoid_car T) _ HLeibniz x y Heq).
+Defined.
+
+Lemma T_equiv_enumerable :
+  enumerable (fun p : monoid_car T * monoid_car T => base.equiv (fst p) (snd p)).
+Proof.
+apply: dec_count_enum.
+2: exact (@countable_enumerableT (monoid_car T * monoid_car T) _ _).
+exists (fun p => decidable.bool_decide (base.equiv (fst p) (snd p))).
+intros p. unfold Undecidability.Synthetic.Definitions.reflects.
+symmetry. apply decidable.bool_decide_eq_true.
+Qed.
+
+Definition KA_ineq_over : ka_term (monoid_car T) * ka_term (monoid_car T) -> Prop :=
+  fun p => base.sqsubseteq (fst p) (snd p).
+
+Theorem KA_ineq_over_enumerable : enumerable KA_ineq_over.
+Proof. exact: ka_sqsubseteq_enumerable T_equiv_enumerable. Qed.
+
+Theorem slice_enumerable
+    (lhs : nat -> ka_term (monoid_car T)) (rhs : ka_term (monoid_car T)) :
+  enumerable (fun z => base.sqsubseteq (lhs z) rhs).
+Proof.
+apply: (@enumerable_red nat (ka_term (monoid_car T) * ka_term (monoid_car T))
+  (fun z => base.sqsubseteq (lhs z) rhs) KA_ineq_over).
+- exists (fun z => (lhs z, rhs)). intros z. reflexivity.
+- exists (fun n => Some n). intros n. exists n. reflexivity.
+- apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
+- exact: KA_ineq_over_enumerable.
+Qed.
+
+End GenericEnumerable.
+
+Definition Tm_bin : monoid :=
+  prod_monoid (list_monoid (option_setoid bool_setoid))
+              (list_monoid (option_setoid bool_setoid)).
+
+Instance Tm_bin_eqdec : base.RelDecision (@Logic.eq (monoid_car Tm_bin)).
+Proof. apply _. Defined.
+
+Instance Tm_bin_countable : countable.Countable (monoid_car Tm_bin).
+Proof. apply _. Defined.
+
+Instance Tm_bin_leibniz : base.LeibnizEquiv (monoid_car Tm_bin).
+Proof. apply _. Defined.
+
+Theorem K_bin_enumerable (c k : nat)
+    (bEnc : setoid_car (@mm.mm_sym_setoid _) → list bool)
+    (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat) :
+  enumerable (K_bin (c := c) Hlen Hk_pos).
+Proof.
+have [f Hf] := @slice_enumerable Tm_bin _ _ Tm_bin_leibniz
+  (fun z => red_lb' (c := c) bEnc
+    (1, (ps 1 * enc 2 (Theorem17_KATerm.z_vec z), 0))%nat)
+  (red_ub' Hlen Hk_pos).
+exists f. intros z. rewrite /K_bin /K_of red_leq'_shape. exact: Hf z.
+Qed.
+
 
 
 

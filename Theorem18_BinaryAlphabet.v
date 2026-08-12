@@ -286,6 +286,25 @@ Definition red_leq' (s1 : nat * (nat * nat)) : Prop :=
   ltac:(let t := type of (@mm2_R_completeness' s1) in
         match t with _ -> ?B => exact B end).
 
+(* Named left/right sides of red_leq', added purely so later files
+   (Theorem19_BinaryAlphabet.v) have explicit KA-terms to hand to the
+   generic enumerability machinery (ka_sqsubseteq_enumerable) -- red_leq'
+   itself is kept as-is (Ltac-extracted) to avoid touching anything
+   that already builds on it. red_leq'_shape confirms the two agree,
+   by reflexivity: this is a naming convenience, not a new fact. *)
+
+Definition red_lb' (s1 : nat * (nat * nat)) :=
+  Unit (1, (Some <$> enc_word enc (mm.mm2_config Prog s1)) ⋅ [None])
+    ⋅ star (pad_rel (Embed_pair enc (mm.mm2_R Prog))).
+
+Definition red_ub' :=
+  dpseudo_top ⋅ ka_term_inj2 (pad_lang (Embed_word enc (mm.partially_accepted Prog)))
+    ⊔ repr_rel_rtc_error repr_rel_embedded.
+
+Lemma red_leq'_shape (s1 : nat * (nat * nat)) :
+  red_leq' s1 <-> red_lb' s1 ⊑ red_ub'.
+Proof. reflexivity. Qed.
+
 Lemma R_target_iff_outcome' y v :
   Θ_ours_MM2 c y =! v -> (red_leq' (1%nat, (y, 0%nat)) ↔ v = 1%nat).
 Proof.
