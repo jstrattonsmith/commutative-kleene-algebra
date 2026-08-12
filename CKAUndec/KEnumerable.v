@@ -1,4 +1,4 @@
-(* Follow-up to CKA.K.v, prompted by the observation that
+(* Follow-up to CKAUndec.K.v, prompted by the observation that
    Undecidability/enumerable.v (already in _CoqProject) proves exactly
    the "provability from a finite axiomatisation is r.e." bridge needed
    to show K enumerable: ka_sqsubseteq_enumerable shows that ⊑ on
@@ -16,10 +16,10 @@ From Undecidability.FRACTRAN Require Import prime_seq.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
 From kacc Require Import KA.algebra KA.pre_ka KA.enumerable.
-Require kacc.CKA.Encoding.
+Require kacc.CKAUndec.Encoding.
 From kacc Require Import MM2.Simulator.
-From kacc Require Import CKA.Glue.MM2ToKATerm.
-From kacc Require Import CKA.K.
+From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
+From kacc Require Import CKAUndec.K.
 
 Section KEnumerable.
 
@@ -82,7 +82,7 @@ Qed.
    paper's own Theorem 18/19 are stated over. K_to_KA_ineq below is
    the reduction witnessing that slice relationship; it is used twice,
    in opposite directions: here, to import enumerability FROM KA_ineq
-   INTO K, and in CKA.KMComplete.v, to transport m-completeness the
+   INTO K, and in CKAUndec.KMComplete.v, to transport m-completeness the
    other way, OUT of K and into KA_ineq (composed with
    red_m_transitive). *)
 

@@ -57,9 +57,9 @@
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia.
 Require Import ssreflect.
-From kacc Require Import CKA.Glue.TLToRTarget.
-From kacc Require Import CKA.K.
-From kacc Require Import CKA.KEnumerable.
+From kacc Require Import CKAUndec.Glue.TLToRTarget.
+From kacc Require Import CKAUndec.K.
+From kacc Require Import CKAUndec.KEnumerable.
 From kacc Require Import Computability.EA_L Computability.Myhill.
 
 Require Import SyntheticComputability.Models.CT.
@@ -73,7 +73,7 @@ Require Import SyntheticComputability.CRM.principles.
 Require Import SyntheticComputability.Synthetic.reductions.
 
 Theorem eff_insep_shape_K_B1_L :
-  exists c : nat, eff_insep_shape W_L (CKA.K.K c) B1_L.
+  exists c : nat, eff_insep_shape W_L (CKAUndec.K.K c) B1_L.
 Proof.
 destruct R_TL_R_target_connection as [c Hc].
 exists c.
@@ -99,7 +99,7 @@ Qed.
    argument unresolved even with EA_L ct sitting right there in scope.
    Local Instance forces the registration explicitly; it gets
    substituted away (not re-generalized) when the section closes,
-   giving exactly `CT_L -> MP -> exists c, creative (CKA.K.K c)`, with the EA
+   giving exactly `CT_L -> MP -> exists c, creative (CKAUndec.K.K c)`, with the EA
    instance silently EA_L ct throughout. *)
 
 Section KCreative.
@@ -107,7 +107,7 @@ Section KCreative.
 Variable ct : CT_L.
 Local Instance EA_inst : EA := EA_L ct.
 
-Theorem K_creative (MP_assm : MP) : exists c : nat, creative (CKA.K.K c).
+Theorem K_creative (MP_assm : MP) : exists c : nat, creative (CKAUndec.K.K c).
 Proof.
 destruct eff_insep_shape_K_B1_L as [c Hc].
 exists c.
@@ -116,7 +116,7 @@ Qed.
 
 End KCreative.
 
-Theorem K_m_complete : CT_L -> MP -> exists c : nat, m-complete (CKA.K.K c).
+Theorem K_m_complete : CT_L -> MP -> exists c : nat, m-complete (CKAUndec.K.K c).
 Proof.
 intros ct MP_assm.
 destruct (K_creative ct MP_assm) as [c Hc].
@@ -130,7 +130,7 @@ intros ct MP_assm.
 destruct (K_m_complete ct MP_assm) as [c Hc].
 exists c.
 intros q Hq.
-apply (red_m_transitive (CKA.K.K c) (@KA_ineq c)).
+apply (red_m_transitive (CKAUndec.K.K c) (@KA_ineq c)).
 - exact (Hc q Hq).
 - exists (K_to_KA_ineq c). exact (K_to_KA_ineq_spec c).
 Qed.

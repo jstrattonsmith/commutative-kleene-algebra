@@ -12,7 +12,7 @@
    GENERIC / reusable throughout: everything in this file is stated for
    an arbitrary finite alphabet T, not specific to mm_sym or this
    project's own encoding. CKA-specific instantiation (applying this to
-   Encoding.v's repr_rel_mm2_R and composing with CKA.KMComplete.v's
+   Encoding.v's repr_rel_mm2_R and composing with CKAUndec.KMComplete.v's
    KA_ineq_m_complete) is deliberately NOT in this file -- that belongs
    in a follow-up file once this transport theorem itself is fully
    discharged.

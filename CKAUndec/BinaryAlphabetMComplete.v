@@ -48,16 +48,16 @@ From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
 From stdpp Require base decidable.
 From kacc Require Import KA.algebra KA.pre_ka KA.enumerable.
-From kacc Require Import CKA.Glue.TLToRTarget Computability.TL_Bridge.
+From kacc Require Import CKAUndec.Glue.TLToRTarget Computability.TL_Bridge.
 From kacc Require Import Computability.InseparabilityCore.
 From kacc Require Import MM2.Simulator MM2.Splice.
-From kacc Require Import CKA.Glue.MM2ToKATerm.
-From kacc Require Import CKA.BinaryAlphabet.
-From kacc Require Import CKA.Glue.BinaryAlphabetConnection.
-From kacc Require Import CKA.K CKA.KEnumerable.
+From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
+From kacc Require Import CKAUndec.BinaryAlphabet.
+From kacc Require Import CKAUndec.Glue.BinaryAlphabetConnection.
+From kacc Require Import CKAUndec.K CKAUndec.KEnumerable.
 From kacc Require Import Computability.EA_L Computability.Myhill.
-From kacc Require Import CKA.KMComplete.
-Require kacc.CKA.Encoding.
+From kacc Require Import CKAUndec.KMComplete.
+Require kacc.CKAUndec.Encoding.
 
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.EffectiveInseparability_L.
@@ -78,7 +78,7 @@ Require Import SyntheticComputability.Shared.embed_nat.
    single occurrence. *)
 Open Scope nat_scope.
 
-(* --- 2. GENERALIZATION of CKA.K.v's Section Splice6: the
+(* --- 2. GENERALIZATION of CKAUndec.K.v's Section Splice6: the
    "connection -> eff_insep_core" argument (A0_L_subset_K/
    K_B1_L_disjoint/eff_insep_K_B1_L there) never actually touches
    R_target/red_leq's own definition -- it only uses the abstract
@@ -96,23 +96,23 @@ Hypothesis Hc : forall (v : Vector.t nat 2) (m : nat),
   (m <= 1)%nat -> T_L_Uniform.R_TL v m -> (m = 1 <-> Pred (ps 1 * enc 2 v)).
 
 Definition K_of (z : nat) : Prop :=
-  Pred (ps 1 * enc 2 (CKA.K.z_vec z)).
+  Pred (ps 1 * enc 2 (CKAUndec.K.z_vec z)).
 
 Lemma A0_L_subset_K_of (z : nat) : A0_L z -> K_of z.
 Proof.
 intros HA. apply theta_ours_L_iff in HA.
-assert (HR1 : T_L_Uniform.R_TL (CKA.K.z_vec z) 1)
+assert (HR1 : T_L_Uniform.R_TL (CKAUndec.K.z_vec z) 1)
   by (apply R_TL_iff; exact HA).
-exact (proj1 (@Hc (CKA.K.z_vec z) 1 (Nat.le_refl 1) HR1) eq_refl).
+exact (proj1 (@Hc (CKAUndec.K.z_vec z) 1 (Nat.le_refl 1) HR1) eq_refl).
 Qed.
 
 Lemma K_of_B1_L_disjoint (z : nat) : K_of z -> ~ B1_L z.
 Proof.
 intros HK HB. apply theta_ours_L_iff in HB.
-assert (HR0 : T_L_Uniform.R_TL (CKA.K.z_vec z) 0)
+assert (HR0 : T_L_Uniform.R_TL (CKAUndec.K.z_vec z) 0)
   by (apply R_TL_iff; exact HB).
 assert (Heq : 0 = 1)
-  by (apply (@Hc (CKA.K.z_vec z) 0 (Nat.le_0_l 1) HR0); exact HK).
+  by (apply (@Hc (CKAUndec.K.z_vec z) 0 (Nat.le_0_l 1) HR0); exact HK).
 discriminate Heq.
 Qed.
 
@@ -127,9 +127,9 @@ Qed.
 End GenericK.
 
 (* Sanity check: the generalization above is faithful to what
-   CKA.K.v already proves for the unembedded K, not a
+   CKAUndec.K.v already proves for the unembedded K, not a
    different/weaker claim -- K c is DEFINITIONALLY K_of (R_target c). *)
-Lemma K_eq_K_of_R_target (c : nat) : CKA.K.K c = K_of (R_target c).
+Lemma K_eq_K_of_R_target (c : nat) : CKAUndec.K.K c = K_of (R_target c).
 Proof. reflexivity. Qed.
 
 Definition K_bin (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
@@ -146,10 +146,10 @@ exists c, k, bEnc, Hlen, Hk_pos.
 exact (eff_insep_K_of_B1_L Hc).
 Qed.
 
-(* --- 3. GENERALIZATION of CKA.KEnumerable.v: ka_sqsubseteq_enumerable
+(* --- 3. GENERALIZATION of CKAUndec.KEnumerable.v: ka_sqsubseteq_enumerable
    (enumerable.v) is already generic over ANY carrier monoid with
    countable, Leibniz-equal ≡. The only CKA-specific content in
-   CKA.KEnumerable.v is "K is a fixed-rhs slice of ⊑", a reflexivity-level
+   CKAUndec.KEnumerable.v is "K is a fixed-rhs slice of ⊑", a reflexivity-level
    fact -- pulling THAT out generically makes both K and K_bin's
    enumerability one-line instantiations of the same lemma, instead of
    two copies of TmMonoid/Tm_equiv_enumerable/K_to_KA_ineq. *)
@@ -229,12 +229,12 @@ Theorem K_bin_enumerable (c k : nat)
 Proof.
 have [f Hf] := @slice_enumerable Tm_bin _ _ Tm_bin_leibniz
   (fun z => red_lb' (c := c) bEnc
-    (1, (ps 1 * enc 2 (CKA.K.z_vec z), 0))%nat)
+    (1, (ps 1 * enc 2 (CKAUndec.K.z_vec z), 0))%nat)
   (red_ub' Hlen Hk_pos).
 exists f. intros z. rewrite /K_bin /K_of red_leq'_shape. exact: Hf z.
 Qed.
 
-(* --- 4. GENERALIZATION of CKA.KMComplete.v: eff_insep_shape_superset
+(* --- 4. GENERALIZATION of CKAUndec.KMComplete.v: eff_insep_shape_superset
    (EffectiveInseparabilityTransport.v, sibling project) is already
    generic over any A'/enumerability witness -- the only CKA-specific
    content is bundling K_of Pred's own enumerability in. *)
@@ -262,7 +262,7 @@ exists c, k, bEnc, Hlen, Hk_pos.
 exact (eff_insep_shape_K_of_B1_L Hc (K_bin_enumerable Hlen Hk_pos)).
 Qed.
 
-(* --- 5. GENERALIZATION of EA_L.v/CKA.KMComplete.v: everything
+(* --- 5. GENERALIZATION of EA_L.v/CKAUndec.KMComplete.v: everything
    from eff_insep_to_creative onward is already generic over an
    arbitrary Prop family with the eff_insep_shape property -- the only
    CKA-specific step is which set (K or K_bin) supplies that shape. This
@@ -281,7 +281,7 @@ exists c, k, bEnc, Hlen, Hk_pos.
 exact (m_complete_of_eff_insep_shape ct MP_assm Hshape).
 Qed.
 
-(* --- 6. GENERALIZATION of CKA.KMComplete.v: red_m_transitive is
+(* --- 6. GENERALIZATION of CKAUndec.KMComplete.v: red_m_transitive is
    generic (pure many-one reduction composition, no enumerability
    side-condition on the target). The only CKA-specific content is the
    trivial (reflexivity) reduction witnessing that a Pred-slice is a
@@ -306,7 +306,7 @@ Definition K_to_KA_ineq_bin (c k : nat)
     (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat) (z : nat) :
     ka_term (monoid_car Tm_bin) * ka_term (monoid_car Tm_bin) :=
-  (red_lb' (c := c) bEnc (1, (ps 1 * enc 2 (CKA.K.z_vec z), 0))%nat,
+  (red_lb' (c := c) bEnc (1, (ps 1 * enc 2 (CKAUndec.K.z_vec z), 0))%nat,
    red_ub' (c := c) Hlen Hk_pos).
 
 Lemma K_to_KA_ineq_bin_spec (c k : nat)

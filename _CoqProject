@@ -41,15 +41,15 @@ KA/BinaryAlphabetTransport.v
 KA/bounded_output.v
 KA/BoundedOutputTransport.v
 
-# CKA/: the actual encoding of MM2 as pre-Kleene-algebra terms and
-# everything built on red_lb/red_ub/mm2_R. CKA/Glue/ files are thin
-# connective code wiring MM2/ and Computability/ into CKA/.
-CKA/Encoding.v
-CKA/Glue/MM2ToKATerm.v
-CKA/Glue/TLToRTarget.v
-CKA/K.v
-CKA/KEnumerable.v
-CKA/KMComplete.v
-CKA/BinaryAlphabet.v
-CKA/Glue/BinaryAlphabetConnection.v
-CKA/BinaryAlphabetMComplete.v
+# CKAUndec/: the actual encoding of MM2 as pre-Kleene-algebra terms and
+# everything built on red_lb/red_ub/mm2_R. CKAUndec/Glue/ files are thin
+# connective code wiring MM2/ and Computability/ into CKAUndec/.
+CKAUndec/Encoding.v
+CKAUndec/Glue/MM2ToKATerm.v
+CKAUndec/Glue/TLToRTarget.v
+CKAUndec/K.v
+CKAUndec/KEnumerable.v
+CKAUndec/KMComplete.v
+CKAUndec/BinaryAlphabet.v
+CKAUndec/Glue/BinaryAlphabetConnection.v
+CKAUndec/BinaryAlphabetMComplete.v

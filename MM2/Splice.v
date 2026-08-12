@@ -1,5 +1,5 @@
 (* MM2-generic program-splicing machinery, extracted from
-   CKA.Glue.TLToRTarget.v. Zero KA/Encoding.v content: everything here is about
+   CKAUndec.Glue.TLToRTarget.v. Zero KA/Encoding.v content: everything here is about
    MMA2/MM2 programs and the library's own FRACTRAN->MMA2 compiler.
 
    FRACTRAN_computable_to_MMA2_pinned re-derives the library's own
@@ -31,7 +31,7 @@
 
    This file deliberately stops short of connecting to any KA-term-level
    notion (Encoding.v's R_target/red_leq) -- that connection is CKA/T_L-
-   specific glue and stays in CKA.Glue.TLToRTarget.v. *)
+   specific glue and stays in CKAUndec.Glue.TLToRTarget.v. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia Relations.
 From Undecidability Require Import FRACTRAN.
@@ -264,7 +264,7 @@ Definition c_P : nat := codeOf (List.map mma_mm2_instr Psplice).
 (* Explicit type ascription matters here: without it, the inferred type
    would state progOf (codeOf (...)) = ... with codeOf left unfolded,
    rather than folded to c_P -- which then makes `rewrite progOf_c_P`
-   fail downstream (CKA.Glue.TLToRTarget.v) since the goal mentions c_P, not
+   fail downstream (CKAUndec.Glue.TLToRTarget.v) since the goal mentions c_P, not
    its unfolded codeOf form, and rewrite's matching doesn't delta-unfold
    to find it. *)
 Definition progOf_c_P : progOf c_P = List.map mma_mm2_instr Psplice :=

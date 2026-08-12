@@ -30,7 +30,7 @@
    that instead. This delivers exactly the paper's Theorem 17 statement
    for the KA-term-level set K; K's enumerability (needed to strengthen
    this to the fully bundled eff_insep_shape) is picked up in
-   CKA.KEnumerable.v/CKA.KMComplete.v.
+   CKAUndec.KEnumerable.v/CKAUndec.KMComplete.v.
 
    The generic unbundled machinery (eff_insep_core,
    eff_insep_shape_to_core, eff_insep_core_superset) has been extracted
@@ -43,8 +43,8 @@ From Undecidability Require Import FRACTRAN.
 From Undecidability.FRACTRAN Require Import prime_seq.
 From Undecidability.Shared.Libs.DLW Require Import vec.
 Import vec_notations.
-From kacc Require Import CKA.Glue.TLToRTarget.
-From kacc Require Import CKA.Glue.MM2ToKATerm.
+From kacc Require Import CKAUndec.Glue.TLToRTarget.
+From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
 From kacc Require Import Computability.TL_Bridge Computability.InseparabilityCore.
 
 Require Import SyntheticComputability.Models.CT.
@@ -60,7 +60,7 @@ Require Import SyntheticComputability.Shared.embed_nat.
 
 (* Gödel-pairing packing of a single nat into a 2-vector, used to index
    z_vec-shaped pairs uniformly throughout this file and its
-   generalization (CKA.BinaryAlphabetMComplete.v's GenericK section). *)
+   generalization (CKAUndec.BinaryAlphabetMComplete.v's GenericK section). *)
 Definition z_vec (z : nat) : Vector.t nat 2 :=
   fst (unembed z) ## snd (unembed z) ## vec_nil.
 

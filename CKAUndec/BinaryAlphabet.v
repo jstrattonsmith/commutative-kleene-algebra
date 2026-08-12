@@ -29,11 +29,11 @@ From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang KA.automata
 From kacc Require Import KA.BinaryAlphabetTransport KA.BoundedOutputTransport.
 From Undecidability.MinskyMachines Require Import MM2.
 Require Import SyntheticComputability.Shared.partial.
-Require kacc.CKA.Encoding.
+Require kacc.CKAUndec.Encoding.
 Require kacc.MM2.Stepper.
 From kacc Require Import MM2.Simulator.
-From kacc Require Import CKA.Glue.MM2ToKATerm.
-From kacc Require Import CKA.K CKA.KEnumerable.
+From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
+From kacc Require Import CKAUndec.K CKAUndec.KEnumerable.
 
 Section BinaryAlphabet.
 
@@ -80,8 +80,8 @@ Proof. exact: Henc. Qed.
 (* mm2_R's type is the bare product `list (mm_sym QF) * list (mm_sym QF)`,
    which does not syntactically unify with `monoid_car ?T` during
    typeclass search without help (same issue flagged in
-   CKA.Glue.MM2ToKATerm.v's own comment on red_leq) -- name the
-   monoid explicitly, mirroring CKA.KEnumerable.v's TmMonoid but WITHOUT
+   CKAUndec.Glue.MM2ToKATerm.v's own comment on red_leq) -- name the
+   monoid explicitly, mirroring CKAUndec.KEnumerable.v's TmMonoid but WITHOUT
    the option-padding (mm2_R itself is unpadded). *)
 Definition Mm2RMonoid : monoid :=
   prod_monoid (list_monoid (@Encoding.mm_sym_setoid QF))
@@ -265,7 +265,7 @@ congruence.
 Qed.
 
 (* --- Final step: mirror R_target_iff_outcome
-   (CKA.Glue.MM2ToKATerm.v:289-320) at the embedded level,
+   (CKAUndec.Glue.MM2ToKATerm.v:289-320) at the embedded level,
    substituting mm2_R_completeness'/mm2_R_soundness' for the
    originals -- everything else in that proof (mm2_iter_rtc,
    mm2_haltedAt, mm2_stop_of_step_fun_none, mm2_state_eqb) is a plain
@@ -280,7 +280,7 @@ Definition red_leq' (s1 : nat * (nat * nat)) : Prop :=
         match t with _ -> ?B => exact B end).
 
 (* Named left/right sides of red_leq', added purely so later files
-   (CKA.BinaryAlphabetMComplete.v) have explicit KA-terms to hand to the
+   (CKAUndec.BinaryAlphabetMComplete.v) have explicit KA-terms to hand to the
    generic enumerability machinery (ka_sqsubseteq_enumerable) -- red_leq'
    itself is kept as-is (Ltac-extracted) to avoid touching anything
    that already builds on it. red_leq'_shape confirms the two agree,

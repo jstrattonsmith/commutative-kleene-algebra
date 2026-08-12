@@ -24,7 +24,7 @@ From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.
 
 From kacc.MM2 Require Import Stepper Simulator.
-From kacc Require Import CKA.Encoding.
+From kacc Require Import CKAUndec.Encoding.
 
 Require Import SyntheticComputability.Shared.partial.
 
