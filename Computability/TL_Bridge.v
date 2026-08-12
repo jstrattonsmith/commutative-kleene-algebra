@@ -22,16 +22,21 @@
    or L content) and belongs in MM2/Splice.v once that split happens. *)
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia.
+From Undecidability Require Import FRACTRAN.
+From Undecidability.FRACTRAN Require Import prime_seq.
 From Undecidability.MinskyMachines Require Import MM2 MMA.
 From Undecidability.Shared.Libs.DLW Require Import vec.
 Import vec_notations.
 From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.
+From kacc Require Import Computability.InseparabilityCore.
 
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.T_L_Extract.
 Require Import SyntheticComputability.Models.T_L_Uniform.
 Require Import SyntheticComputability.Models.EffectiveInseparability_L.
+Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityGeneric.
 Require Import SyntheticComputability.Shared.partial.
+Require Import SyntheticComputability.Shared.embed_nat.
 
 Lemma mma_mm2_state_22 (i x y : nat) : mma_mm2_state (i, x ## y ## vec_nil) = (i, (x, y)).
 Proof. reflexivity. Qed.
@@ -91,3 +96,55 @@ split.
   + intros k Hk. unfold TL_bit. rewrite (@T_L'_eq i j k), (Hmin k Hk). reflexivity.
   + rewrite (@T_L'_eq i j n). exact Hn.
 Qed.
+
+(* --- Generic "connection -> eff_insep_core" argument, factored out of
+   CKAUndec/K.v's own Section Splice6 once CKAUndec/BinaryAlphabetMComplete.v
+   showed the exact same argument works for ANY Pred : nat -> Prop
+   characterized by an R_TL/mu <= 1 connection, not just the specific
+   K := R_target c. Zero CKA/MM2 content -- only T_L/A0_L/B1_L and
+   Computability/InseparabilityCore.v's generic eff_insep_core machinery.
+   CKAUndec/K.v's K and CKAUndec/BinaryAlphabetMComplete.v's K_bin are both
+   now one-line instantiations of this at Pred := R_target c and
+   Pred := fun y => red_leq' ... respectively, instead of two copies. *)
+
+(* Gödel-pairing packing of a single nat into a 2-vector, used to index
+   z_vec-shaped pairs uniformly by every K/K_bin-style instantiation. *)
+Definition z_vec (z : nat) : Vector.t nat 2 :=
+  fst (unembed z) ## snd (unembed z) ## vec_nil.
+
+Section GenericK.
+
+Variable (Pred : nat -> Prop).
+Hypothesis Hc : forall (v : Vector.t nat 2) (m : nat),
+  (m <= 1)%nat -> T_L_Uniform.R_TL v m -> (m = 1 <-> Pred (ps 1 * enc 2 v)).
+
+Definition K_of (z : nat) : Prop :=
+  Pred (ps 1 * enc 2 (z_vec z)).
+
+Lemma A0_L_subset_K_of (z : nat) : A0_L z -> K_of z.
+Proof.
+intros HA. apply theta_ours_L_iff in HA.
+assert (HR1 : T_L_Uniform.R_TL (z_vec z) 1)
+  by (apply R_TL_iff; exact HA).
+exact (proj1 (@Hc (z_vec z) 1 (Nat.le_refl 1) HR1) eq_refl).
+Qed.
+
+Lemma K_of_B1_L_disjoint (z : nat) : K_of z -> ~ B1_L z.
+Proof.
+intros HK HB. apply theta_ours_L_iff in HB.
+assert (HR0 : T_L_Uniform.R_TL (z_vec z) 0)
+  by (apply R_TL_iff; exact HB).
+assert (Heq : 0 = 1)
+  by (apply (@Hc (z_vec z) 0 (Nat.le_0_l 1) HR0); exact HK).
+discriminate Heq.
+Qed.
+
+Theorem eff_insep_K_of_B1_L : eff_insep_core W_L K_of B1_L.
+Proof.
+apply (eff_insep_core_superset (A := A0_L)).
+- exact (eff_insep_shape_to_core eff_insep_A0_B1_L_via_generic).
+- exact A0_L_subset_K_of.
+- exact K_of_B1_L_disjoint.
+Qed.
+
+End GenericK.

@@ -2,7 +2,7 @@ Require Import ssreflect.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts.
 From Undecidability.Synthetic Require Import DecidabilityFacts.
 From Undecidability.Synthetic Require Import MoreReducibilityFacts.
-From stdpp Require Import base countable.
+From stdpp Require Import base countable decidable.
 From kacc Require Import KA.utils KA.algebra KA.pre_ka.
 
 Set Implicit Arguments.
@@ -305,3 +305,57 @@ apply: (@enumerable_red (ka_term T * ka_term T) (ka_term T * ka_term T)
 Qed.
 
 End KaEqEnumerable.
+
+(** * Enumerability of a fixed-rhs "slice" of [⊑]
+
+    Generic packaging of [ka_sqsubseteq_enumerable] for the common shape
+    every KA-term-inequality undecidability argument in this project
+    needs: a carrier monoid [T] with decidable, countable, Leibniz-equal
+    [≡] gives [⊑] on [ka_term T] enumerable (via [KA_ineq_over]), and
+    hence any fixed-rhs SLICE of it (a family [lhs : nat -> ka_term T]
+    against one fixed [rhs]) enumerable too, via [enumerable_red].
+    Originally proved twice, once each for the machine-specific carrier
+    [TmMonoid] (CKAUndec/KEnumerable.v) and the binary-alphabet carrier
+    [Tm_bin] (CKAUndec/BinaryAlphabetMComplete.v) -- factored out here
+    since neither proof used anything but this file's own machinery. *)
+
+Section SliceEnumerable.
+
+Context (T : monoid).
+Context `{HeqT : !RelDecision (@Logic.eq (monoid_car T))}.
+Context `{!Countable (monoid_car T)} (HLeibniz : LeibnizEquiv (monoid_car T)).
+
+Instance T_equiv_dec (x y : monoid_car T) : Decision (x ≡ y).
+Proof.
+destruct (HeqT x y) as [-> | Hne].
+- left. reflexivity.
+- right. intros Heq. apply Hne. exact (leibniz_equiv x y Heq).
+Defined.
+
+Lemma T_equiv_enumerable : enumerable (fun p : monoid_car T * monoid_car T => p.1 ≡ p.2).
+Proof.
+apply: dec_count_enum.
+2: exact: (@countable_enumerableT (monoid_car T * monoid_car T) _ _).
+exists (fun p => bool_decide (p.1 ≡ p.2)).
+intros p. unfold reflects. symmetry. apply bool_decide_eq_true.
+Qed.
+
+Definition KA_ineq_over : ka_term (monoid_car T) * ka_term (monoid_car T) -> Prop :=
+  fun p => p.1 ⊑ p.2.
+
+Theorem KA_ineq_over_enumerable : enumerable KA_ineq_over.
+Proof. exact: ka_sqsubseteq_enumerable T_equiv_enumerable. Qed.
+
+Theorem slice_enumerable
+    (lhs : nat -> ka_term (monoid_car T)) (rhs : ka_term (monoid_car T)) :
+  enumerable (fun z => lhs z ⊑ rhs).
+Proof.
+apply: (@enumerable_red nat (ka_term (monoid_car T) * ka_term (monoid_car T))
+  (fun z => lhs z ⊑ rhs) KA_ineq_over).
+- exists (fun z => (lhs z, rhs)). intros z. reflexivity.
+- exists (fun n => Some n). intros n. exists n. reflexivity.
+- apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
+- exact: KA_ineq_over_enumerable.
+Qed.
+
+End SliceEnumerable.

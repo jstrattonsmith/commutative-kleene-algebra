@@ -18,18 +18,18 @@
    divergent-run gap documented in CKA/BinaryAlphabet.v is real but not
    on this critical path.
 
-   Sections 2-3 below (GenericK, GenericEnumerable) are GENERALIZATIONS
-   of CKA/K.v's Section Splice6 and CKA/KEnumerable.v respectively --
-   parametrized over an arbitrary Pred/carrier monoid T rather than the
-   specific K/TmMonoid, so both the original (unembedded) K and this
-   file's K_bin are ONE-LINE instantiations of the SAME proofs instead
-   of two copies. They are kept here rather than pushed further into
-   Computability/ (where their genericity would in principle belong,
-   matching InseparabilityCore.v/enumerable.v's own content) -- a
-   scoped judgment call, not an oversight: K_of depends on z_vec/A0_L/
-   B1_L/T_L_Uniform.R_TL (CKA/K.v-adjacent, not yet separately housed),
-   and splitting them out would touch CKA/K.v's own z_vec too. Flagged
-   as a possible future refinement, not attempted here. *)
+   K_bin/K_bin_enumerable below are one-line instantiations of two
+   GENERALIZATIONS -- of CKA/K.v's Section Splice6 and
+   CKA/KEnumerable.v respectively -- that used to live directly in this
+   file as local Sections GenericK/GenericEnumerable, parametrized over
+   an arbitrary Pred/carrier monoid T rather than the specific
+   K/TmMonoid. They have since been relocated to where their genericity
+   actually belongs: GenericK's content (z_vec, K_of,
+   A0_L_subset_K_of/K_of_B1_L_disjoint/eff_insep_K_of_B1_L) now lives in
+   Computability/TL_Bridge.v, and GenericEnumerable's content
+   (T_equiv_dec/T_equiv_enumerable/KA_ineq_over/
+   KA_ineq_over_enumerable/slice_enumerable) now lives in
+   KA/enumerable.v -- both are imported below instead of redefined. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia.
 From Undecidability Require Import FRACTRAN.
@@ -78,59 +78,11 @@ Require Import SyntheticComputability.Shared.embed_nat.
    single occurrence. *)
 Open Scope nat_scope.
 
-(* --- 2. GENERALIZATION of CKAUndec.K.v's Section Splice6: the
-   "connection -> eff_insep_core" argument (A0_L_subset_K/
-   K_B1_L_disjoint/eff_insep_K_B1_L there) never actually touches
-   R_target/red_leq's own definition -- it only uses the abstract
-   Hc-style characterization (m=1 <-> Pred y) as a black box. Pulling
-   that out as a lemma over an ARBITRARY Pred : nat -> Prop makes both
-   the original (unembedded) K and this file's K_bin ONE-LINE
-   instantiations of the SAME proof, instead of two copies of it.
-   eff_insep_core_superset (Computability/InseparabilityCore.v) is
-   itself already fully generic and reused unchanged underneath. *)
-
-Section GenericK.
-
-Variable (Pred : nat -> Prop).
-Hypothesis Hc : forall (v : Vector.t nat 2) (m : nat),
-  (m <= 1)%nat -> T_L_Uniform.R_TL v m -> (m = 1 <-> Pred (ps 1 * enc 2 v)).
-
-Definition K_of (z : nat) : Prop :=
-  Pred (ps 1 * enc 2 (CKAUndec.K.z_vec z)).
-
-Lemma A0_L_subset_K_of (z : nat) : A0_L z -> K_of z.
-Proof.
-intros HA. apply theta_ours_L_iff in HA.
-assert (HR1 : T_L_Uniform.R_TL (CKAUndec.K.z_vec z) 1)
-  by (apply R_TL_iff; exact HA).
-exact (proj1 (@Hc (CKAUndec.K.z_vec z) 1 (Nat.le_refl 1) HR1) eq_refl).
-Qed.
-
-Lemma K_of_B1_L_disjoint (z : nat) : K_of z -> ~ B1_L z.
-Proof.
-intros HK HB. apply theta_ours_L_iff in HB.
-assert (HR0 : T_L_Uniform.R_TL (CKAUndec.K.z_vec z) 0)
-  by (apply R_TL_iff; exact HB).
-assert (Heq : 0 = 1)
-  by (apply (@Hc (CKAUndec.K.z_vec z) 0 (Nat.le_0_l 1) HR0); exact HK).
-discriminate Heq.
-Qed.
-
-Theorem eff_insep_K_of_B1_L : eff_insep_core W_L K_of B1_L.
-Proof.
-apply (eff_insep_core_superset (A := A0_L)).
-- exact (eff_insep_shape_to_core eff_insep_A0_B1_L_via_generic).
-- exact A0_L_subset_K_of.
-- exact K_of_B1_L_disjoint.
-Qed.
-
-End GenericK.
-
-(* Sanity check: the generalization above is faithful to what
-   CKAUndec.K.v already proves for the unembedded K, not a
-   different/weaker claim -- K c is DEFINITIONALLY K_of (R_target c). *)
-Lemma K_eq_K_of_R_target (c : nat) : CKAUndec.K.K c = K_of (R_target c).
-Proof. reflexivity. Qed.
+(* --- 2. K_bin: one-line instantiation of Computability/TL_Bridge.v's
+   generic K_of at Pred := the embedded red_leq' family. K_of itself is
+   DEFINITIONALLY faithful to what CKAUndec.K.v's K does for the
+   unembedded case (K c = K_of (R_target c)), so K and K_bin are proven
+   by the exact same underlying lemmas, not two copies. *)
 
 Definition K_bin (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat) : nat -> Prop :=
@@ -146,68 +98,12 @@ exists c, k, bEnc, Hlen, Hk_pos.
 exact (eff_insep_K_of_B1_L Hc).
 Qed.
 
-(* --- 3. GENERALIZATION of CKAUndec.KEnumerable.v: ka_sqsubseteq_enumerable
-   (enumerable.v) is already generic over ANY carrier monoid with
-   countable, Leibniz-equal ≡. The only CKA-specific content in
-   CKAUndec.KEnumerable.v is "K is a fixed-rhs slice of ⊑", a reflexivity-level
-   fact -- pulling THAT out generically makes both K and K_bin's
-   enumerability one-line instantiations of the same lemma, instead of
-   two copies of TmMonoid/Tm_equiv_enumerable/K_to_KA_ineq. *)
-
-Section GenericEnumerable.
-
-Context (T : monoid).
-
-(* NOTE: sqsubseteq/equiv are spelled out (not written via the ⊑/≡
-   notations) throughout this section -- those notations live in
-   stdpp_scope, which conflicts (hard notation-level clash, not just
-   ambiguity) with vec_notations' `##` needed elsewhere in this file
-   for the MMA/FRACTRAN Psplice machinery; both can't be Import-opened
-   in the same file. `Countable`'s own precondition (EqDecision) must
-   already be resolvable BEFORE `Countable` itself is declared below,
-   hence HeqT coming first. *)
-
-Context `{HeqT : !base.RelDecision (@Logic.eq (monoid_car T))}.
-Context `{!countable.Countable (monoid_car T)}
-  (HLeibniz : base.LeibnizEquiv (monoid_car T)).
-
-Instance T_equiv_dec (x y : monoid_car T) : base.Decision (base.equiv x y).
-Proof.
-destruct (HeqT x y) as [-> | Hne].
-- left. reflexivity.
-- right. intros Heq. apply Hne.
-  exact (@base.leibniz_equiv (monoid_car T) _ HLeibniz x y Heq).
-Defined.
-
-Lemma T_equiv_enumerable :
-  enumerable (fun p : monoid_car T * monoid_car T => base.equiv (fst p) (snd p)).
-Proof.
-apply: dec_count_enum.
-2: exact (@countable_enumerableT (monoid_car T * monoid_car T) _ _).
-exists (fun p => decidable.bool_decide (base.equiv (fst p) (snd p))).
-intros p. unfold Undecidability.Synthetic.Definitions.reflects.
-symmetry. apply decidable.bool_decide_eq_true.
-Qed.
-
-Definition KA_ineq_over : ka_term (monoid_car T) * ka_term (monoid_car T) -> Prop :=
-  fun p => base.sqsubseteq (fst p) (snd p).
-
-Theorem KA_ineq_over_enumerable : enumerable KA_ineq_over.
-Proof. exact: ka_sqsubseteq_enumerable T_equiv_enumerable. Qed.
-
-Theorem slice_enumerable
-    (lhs : nat -> ka_term (monoid_car T)) (rhs : ka_term (monoid_car T)) :
-  enumerable (fun z => base.sqsubseteq (lhs z) rhs).
-Proof.
-apply: (@enumerable_red nat (ka_term (monoid_car T) * ka_term (monoid_car T))
-  (fun z => base.sqsubseteq (lhs z) rhs) KA_ineq_over).
-- exists (fun z => (lhs z, rhs)). intros z. reflexivity.
-- exists (fun n => Some n). intros n. exists n. reflexivity.
-- apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
-- exact: KA_ineq_over_enumerable.
-Qed.
-
-End GenericEnumerable.
+(* --- 3. K_bin_enumerable: one-line instantiation of KA/enumerable.v's
+   generic slice_enumerable (T_equiv_dec/T_equiv_enumerable/
+   KA_ineq_over/KA_ineq_over_enumerable/slice_enumerable), already
+   generic over ANY carrier monoid with countable, Leibniz-equal ≡ --
+   the only CKA-specific content is Tm_bin itself and the "K_bin is a
+   fixed-rhs slice of ⊑" fact below. *)
 
 Definition Tm_bin : monoid :=
   prod_monoid (list_monoid (option_setoid bool_setoid))
@@ -229,7 +125,7 @@ Theorem K_bin_enumerable (c k : nat)
 Proof.
 have [f Hf] := @slice_enumerable Tm_bin _ _ Tm_bin_leibniz
   (fun z => red_lb' (c := c) bEnc
-    (1, (ps 1 * enc 2 (CKAUndec.K.z_vec z), 0))%nat)
+    (1, (ps 1 * enc 2 (z_vec z), 0))%nat)
   (red_ub' Hlen Hk_pos).
 exists f. intros z. rewrite /K_bin /K_of red_leq'_shape. exact: Hf z.
 Qed.
@@ -306,7 +202,7 @@ Definition K_to_KA_ineq_bin (c k : nat)
     (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat) (z : nat) :
     ka_term (monoid_car Tm_bin) * ka_term (monoid_car Tm_bin) :=
-  (red_lb' (c := c) bEnc (1, (ps 1 * enc 2 (CKAUndec.K.z_vec z), 0))%nat,
+  (red_lb' (c := c) bEnc (1, (ps 1 * enc 2 (z_vec z), 0))%nat,
    red_ub' (c := c) Hlen Hk_pos).
 
 Lemma K_to_KA_ineq_bin_spec (c k : nat)

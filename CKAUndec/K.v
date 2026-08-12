@@ -34,8 +34,12 @@
 
    The generic unbundled machinery (eff_insep_core,
    eff_insep_shape_to_core, eff_insep_core_superset) has been extracted
-   to Computability/InseparabilityCore.v -- this file is now the
-   CKA-specific instantiation: K itself, and its effective
+   to Computability/InseparabilityCore.v, and the "connection ->
+   eff_insep_core" argument itself (z_vec, K_of,
+   A0_L_subset_K_of/K_of_B1_L_disjoint/eff_insep_K_of_B1_L, generic over
+   an arbitrary Pred) has been further extracted to
+   Computability/TL_Bridge.v -- this file is now just the CKA-specific
+   instantiation at Pred := R_target c: K itself, and its effective
    inseparability from B1_L. *)
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia.
@@ -56,13 +60,9 @@ Require Import SyntheticComputability.Shared.embed_nat.
 
 (* --- 2. K: the actual KA-term-level set, via R_target/red_leq -- a
    genuine red_lb ⊑ red_ub statement (Encoding.v), not a detour through
-   Theta_ours_MM2. Fixed once via R_TL_R_target_connection's witness c. *)
-
-(* Gödel-pairing packing of a single nat into a 2-vector, used to index
-   z_vec-shaped pairs uniformly throughout this file and its
-   generalization (CKAUndec.BinaryAlphabetMComplete.v's GenericK section). *)
-Definition z_vec (z : nat) : Vector.t nat 2 :=
-  fst (unembed z) ## snd (unembed z) ## vec_nil.
+   Theta_ours_MM2. Fixed once via R_TL_R_target_connection's witness c.
+   One-line instantiation of Computability/TL_Bridge.v's generic K_of at
+   Pred := R_target c. *)
 
 Section Splice6.
 
@@ -70,37 +70,25 @@ Variable (c : nat).
 Hypothesis Hc : forall (v : Vector.t nat 2) (m : nat),
   m <= 1 -> T_L_Uniform.R_TL v m -> (m = 1 <-> R_target c (ps 1 * enc 2 v)).
 
-Definition K (z : nat) : Prop := R_target c (ps 1 * enc 2 (z_vec z)).
+Definition K (z : nat) : Prop := K_of (R_target c) z.
 
 Lemma A0_L_subset_K (z : nat) : A0_L z -> K z.
-Proof.
-intros HA. apply theta_ours_L_iff in HA.
-assert (HR1 : T_L_Uniform.R_TL (z_vec z) 1) by (apply R_TL_iff; exact HA).
-exact (proj1 (@Hc (z_vec z) 1 (Nat.le_refl 1) HR1) eq_refl).
-Qed.
+Proof. intros HA. exact (A0_L_subset_K_of Hc HA). Qed.
 
 Lemma K_B1_L_disjoint (z : nat) : K z -> ~ B1_L z.
-Proof.
-intros HK HB. apply theta_ours_L_iff in HB.
-assert (HR0 : T_L_Uniform.R_TL (z_vec z) 0) by (apply R_TL_iff; exact HB).
-assert (Heq : 0 = 1)
-  by (apply (@Hc (z_vec z) 0 (Nat.le_0_l 1) HR0); exact HK).
-discriminate Heq.
-Qed.
+Proof. intros HK. exact (K_of_B1_L_disjoint Hc HK). Qed.
 
 End Splice6.
 
 (* --- 3. The deliverable: K (the KA-term-level set) is effectively
    inseparable (unbundled sense) from B1_L. This is the project's
-   Theorem 17 analogue at the actual KA-term/red_leq level. *)
+   Theorem 17 analogue at the actual KA-term/red_leq level.
+   One-line instantiation of Computability/TL_Bridge.v's generic
+   eff_insep_K_of_B1_L. *)
 
 Theorem eff_insep_K_B1_L :
   exists c : nat, eff_insep_core W_L (K c) B1_L.
 Proof.
 destruct R_TL_R_target_connection as [c Hc].
-exists c.
-apply (eff_insep_core_superset (A := A0_L)).
-- exact (eff_insep_shape_to_core eff_insep_A0_B1_L_via_generic).
-- exact (@A0_L_subset_K c Hc).
-- exact (@K_B1_L_disjoint c Hc).
+exists c. exact (eff_insep_K_of_B1_L Hc).
 Qed.

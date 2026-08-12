@@ -19,6 +19,7 @@ From kacc Require Import KA.algebra KA.pre_ka KA.enumerable.
 Require kacc.CKAUndec.Encoding.
 From kacc Require Import MM2.Simulator.
 From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
+From kacc Require Import Computability.TL_Bridge.
 From kacc Require Import CKAUndec.K.
 
 Section KEnumerable.
