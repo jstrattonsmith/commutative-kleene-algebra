@@ -45,7 +45,7 @@ From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
 From stdpp Require base decidable.
 From kacc Require Import algebra pre_ka enumerable.
 From kacc Require Import TLUniform_Bridge Computability.TL_Bridge.
-From kacc Require Import MM2.Simulator.
+From kacc Require Import MM2.Simulator MM2.Splice.
 From kacc Require Import EffectiveInseparability_MM2.
 From kacc Require Import Theorem18_BinaryAlphabet.
 From kacc Require Import Theorem17_KATerm K_Enumerable.
@@ -74,8 +74,8 @@ Open Scope nat_scope.
 (* --- 1. Mirror TLUniform_Bridge.v's Psplice_R_target_divides/
    _not_divides/R_TL_R_target_connection, substituting
    mm2_R_completeness'/mm2_R_soundness' for the unembedded originals.
-   Reuses TLUniform_Bridge.v's Psplice_mm2_divides/Psplice_mm2_not_divides
-   UNCHANGED (correction: these are defined in TLUniform_Bridge.v itself,
+   Reuses MM2/Splice.v's Psplice_mm2_divides/Psplice_mm2_not_divides
+   UNCHANGED (correction: these are defined in MM2/Splice.v itself,
    not A0_L_Prime.v/Computability.TL_Bridge.v as an earlier version of
    this comment claimed -- checked directly) -- those are pure MM2-level
    (rtc) facts, no KA terms involved, so nothing about the embedding

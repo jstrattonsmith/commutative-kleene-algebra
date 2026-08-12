@@ -7,6 +7,7 @@
 MM2/Stepper.v
 MM2/Simulator.v
 MM2/FractranCompiler.v
+MM2/Splice.v
 Computability/TL_Bridge.v
 Computability/EA_L.v
 
