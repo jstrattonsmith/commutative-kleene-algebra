@@ -1,4 +1,5 @@
-(* Originally "route 2" for closing Arthur's comment 2: a from-scratch
+(* Originally "route 2" for closing the canonical-alphabet requirement:
+   a from-scratch
    attempt to transport an already-assembled repr_rel value wholesale
    along a fixed-length injective symbol encoding, so that ANY existing
    repr_rel instance could be pushed forward to the canonical Sigma =

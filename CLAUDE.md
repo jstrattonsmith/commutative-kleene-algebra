@@ -316,8 +316,8 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     `CT_L`/`MP`) to full Sigma^0_1-completeness of the actual KA-term
     inequality relation, not just its `K`-slice (`KA_ineq_m_complete`,
     composing `K_m_complete` with the reduction `K ⪯ₘ KA_ineq` via
-    `red_m_transitive` -- closes a gap Arthur, the advisor, flagged after
-    reviewing the proof).
+    `red_m_transitive` -- closes a gap flagged during review of the
+    proof).
 
 25. **`CKAUndec/BinaryAlphabet.v`** (~390 lines): the CKA-specific wiring
     that actually closes the source paper's Theorem 18/19 (undecidability/
@@ -353,7 +353,8 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     is a single, fixed algebra (the canonical two-symbol alphabet),
     independent of which machine is being encoded, exactly matching how the
     source paper states its own Theorem 18 once, not per machine. This is
-    the final theorem closing Arthur's comment 2 in full. Its own header
+    the final theorem closing the canonical-alphabet requirement in
+    full. Its own header
     comment documents a scoped decision to keep this file's `GenericK`/
     `GenericEnumerable` sections here (rather than pushing them further into
     `Computability/`, where their genericity would in principle belong)

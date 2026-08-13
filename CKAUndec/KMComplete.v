@@ -19,10 +19,9 @@
    (built from an arbitrary `EA_inst : EA` instance's canonical
    enumerator), not to a free `W` parameter the way eff_insep_shape is.
    Using it on eff_insep_shape_K_B1_L directly would require `W_L ≡ W`
-   (every Coq-enumerable set equals W_L i for some i) -- which is
-   exactly the Church's-Thesis-for-L style fact that
-   project_ka_eq_phase2_blocker's "take 1" got stuck on and this whole
-   "take 3" route was built to avoid. Computability/EA_L.v +
+   (every Coq-enumerable set equals W_L i for some i) -- exactly the
+   Church's-Thesis-for-L style fact that an earlier, more direct attempt
+   at this development got stuck on. Computability/EA_L.v +
    Computability/Myhill.v below sidestep this by building a genuine EA
    instance FROM CT_L (via SMN_for T_L) instead.
 
@@ -37,8 +36,8 @@
    Computability/Myhill.v; K_creative/K_m_complete here are just that
    machinery's CKA-specific instantiation at P := K c.
 
-   --- 3. KA_ineq_m_complete: closes a gap Arthur flagged after
-   reviewing the proof -- K_m_complete only shows m-completeness of K
+   --- 3. KA_ineq_m_complete: closes a gap flagged during review of the
+   proof -- K_m_complete only shows m-completeness of K
    itself, which is a SLICE of the actual KA-term inequality relation
    KA_ineq (CKA/KEnumerable.v) -- fixing the right-hand side to one
    specific term, red_ub Prog, and varying only the left. The source

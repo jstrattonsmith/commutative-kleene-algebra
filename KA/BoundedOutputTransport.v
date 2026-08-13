@@ -1,5 +1,5 @@
-(* Route 1 for closing Arthur's comment 2 (binary-alphabet embedding),
-   picked back up after route 2 (BinaryAlphabetTransport.v, committed
+(* Route 1 for closing the canonical-alphabet requirement (binary-alphabet
+   embedding), picked back up after route 2 (BinaryAlphabetTransport.v, committed
    c25780b) hit a genuine gap needing star-monotonicity, which this
    project's pre-KA does not axiomatize.
 

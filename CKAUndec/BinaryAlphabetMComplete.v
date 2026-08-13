@@ -1,4 +1,6 @@
-(* Closes task #40 (Arthur's comment 2, fully): mirrors CKA/Glue/
+(* Closes, in full, the requirement that Theorem 18/19 hold over the
+   source paper's own canonical, minimal two-symbol alphabet, not just a
+   machine-specific analogue of it: mirrors CKA/Glue/
    TLToRTarget.v / CKA/K.v / CKA/KEnumerable.v / CKA/KMComplete.v's
    SUPERSET-transport strategy at the embedded (binary-alphabet) level,
    using CKA/Glue/BinaryAlphabetConnection.v's R_TL_R_target_connection_bin
@@ -193,7 +195,7 @@ Qed.
    proof, to witness the reduction -- KA_ineq_bin itself doesn't
    mention them. This is the paper's Theorem 18/19 for the actual
    KA-term inequality relation, over the canonical binary alphabet,
-   Sigma^0_1-complete, closing Arthur's comment 2 in full. *)
+   Sigma^0_1-complete, closing that requirement in full. *)
 
 Definition KA_ineq_bin : ka_term (monoid_car Tm_bin) * ka_term (monoid_car Tm_bin) -> Prop :=
   @KA_ineq_over Tm_bin.

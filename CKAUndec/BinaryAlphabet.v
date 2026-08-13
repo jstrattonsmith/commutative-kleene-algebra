@@ -1,11 +1,12 @@
-(* CKA-specific wiring closing Arthur's comment 2 for real: applies
-   BoundedOutputTransport.v's route-1 machinery to Encoding.v's own mm2_R/T
+(* CKA-specific wiring closing the canonical-alphabet requirement for
+   real: applies BoundedOutputTransport.v's route-1 machinery to
+   Encoding.v's own mm2_R/T
    (the transition relation and configuration set for a FIXED program
    Prog := progOf c), and re-runs Encoding.v's own soundness/completeness
    argument (mm2_R_completeness/mm2_R_soundness) at the embedded level
    to get order-REFLECTION for red_lb/red_ub, which is what actually
    closes the gap -- having a repr_rel for the embedded term alone is
-   not enough; Arthur's point was specifically that inequality needs
+   not enough; the requirement is specifically that inequality needs
    to be shown m-complete over the CANONICAL 2-symbol alphabet, which
    needs reflection (Embed_pair(red_lb) ⊑ Embed_pair(red_ub) -> red_lb
    ⊑ red_ub), not just preservation (the free direction).
@@ -383,8 +384,8 @@ Qed.
    whose soundness against this project's own intended semantics
    would need separate justification), or (b) a genuinely different
    argument not going through red_lb/red_ub's star structure at all.
-   Left unaddressed here; flagged for Jeremy/Arthur as a real
-   mathematical question, not guessed past. *)
+   Left unaddressed here; flagged as a real open mathematical question,
+   not guessed past. *)
 
 End WithEncoding.
 
