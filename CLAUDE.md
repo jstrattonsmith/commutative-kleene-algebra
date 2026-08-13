@@ -24,16 +24,19 @@ CKA-specific payoff that combines them:
   creative/m-complete theory over an abstract numbering, plus `T_L`/`CT_L`/
   `EA` bridging. Zero MM2 or KA content -- genuinely upstreamable to the
   sibling `coq-synthetic-computability` project as-is.
-- **`KA/`** (~6,360 lines, 10 files): the paper's own pre-Kleene-algebra
+- **`KA/`** (~6,045 lines, 10 files): the paper's own pre-Kleene-algebra
   framework, plus a binary-alphabet embedding
   (`BinaryAlphabetTransport.v`, `BoundedOutputTransport.v`) transporting
   representable-relation facts along a fixed-length injective character
   encoding. Independent of `MM2/`/`Computability/`/`CKAUndec/` -- touches
-  none of them, the most foundational library in the repo. Admit-free
-  except one file (`BinaryAlphabetTransport.v`), which keeps a single
-  committed `Admitted` lemma documenting a genuine dead end (needs
-  star-monotonicity, which this project's pre-KA deliberately does not
-  axiomatize) rather than papering over it -- see its header comment.
+  none of them, the most foundational library in the repo. Fully
+  admit-free: `BinaryAlphabetTransport.v` used to keep a single
+  `Admitted` lemma (a "route 2" repr_rel-transport attempt that got
+  stuck needing star-monotonicity, which this project's pre-KA
+  deliberately does not axiomatize), but that whole stuck attempt was
+  confirmed dead (zero uses anywhere outside itself, superseded by
+  `BoundedOutputTransport.v`'s "route 1") and deleted 2026-08-13 --
+  see its header comment for what's left and why.
 - **`CKAUndec/` and `CKAUndec/Glue/`** (~2,740 lines, 9 files): the actual
   payoff -- encodes MM2 as KA terms (Definitions 11-13,
   `CKAUndec/Encoding.v`), proves the soundness/completeness pair connecting
@@ -121,10 +124,8 @@ Declared in `flake.nix` via Nix overlay:
 
 Files are listed in dependency order (`_CoqProject`, which groups them into
 the same sections used below with one-line comments). All files are
-admit-free except one deliberately-documented `Admitted` in
-`KA/BinaryAlphabetTransport.v` (see its entry below); no axioms appear
-anywhere except the two hypotheses named above (`CT_L`, `MP`), both isolated
-to `CKAUndec/KMComplete.v`.
+admit-free; no axioms appear anywhere except the two hypotheses named above
+(`CT_L`, `MP`), both isolated to `CKAUndec/KMComplete.v`.
 
 ### `MM2/`: pure two-counter-machine (MM2) machinery, zero KA content
 
@@ -230,19 +231,20 @@ to `CKAUndec/KMComplete.v`.
     termination combinators added specifically to support
     `CKAUndec/Encoding.v`'s MM2 encoding below.
 
-16. **`KA/BinaryAlphabetTransport.v`** (~555 lines): route 2 of the
-    binary-alphabet embedding (closing the source paper's Theorem 18, stated
-    over the canonical, minimal 2-symbol alphabet `{0,1}`, not an arbitrary
-    machine-specific alphabet) -- a generic algebraic transport theorem for
-    `repr_rel` along a fixed-length injective character encoding
-    (`Embed_pair`, `Embed_word`, `next_spec'`, all proved, axiom-free). Hits
-    one genuine dead end, `dpseudo_top_mismatch_transport` (left `Admitted`,
-    not axiomatized): it needs star-monotonicity
-    (`Proper ((⊑) ==> (⊑)) star`), which this pre-KA deliberately does not
-    provide (see its header comment for the full argument). Kept as a
-    committed, self-contained artifact; superseded by
-    `KA/BoundedOutputTransport.v` (route 1) for the embedding actually used
-    downstream.
+16. **`KA/BinaryAlphabetTransport.v`** (~180 lines): the fixed-length
+    injective character encoding shared by both binary-alphabet embedding
+    routes (`finite_binary_encoding`, `Embed_pair`, `Embed_word`,
+    `Embed_proj1_natural`/`Embed_proj2_natural`, all proved, axiom-free).
+    Originally also contained "route 2", a from-scratch attempt to
+    transport an already-assembled `repr_rel` value wholesale along the
+    encoding; that attempt got stuck on one genuine dead end,
+    `dpseudo_top_mismatch_transport` (needs star-monotonicity,
+    `Proper ((⊑) ==> (⊑)) star`, which this pre-KA deliberately does not
+    provide), was superseded by `KA/BoundedOutputTransport.v` (route 1),
+    and was confirmed (by grep, zero uses anywhere outside itself) to
+    have never been picked back up -- deleted 2026-08-13 along with the
+    `Admitted` lemma it required. See the file's header comment for the
+    full history.
 
 17. **`KA/bounded_output.v`** (~815 lines): Bounded-output terms (Definition
     28). Closure under join, mul, star (Lemma 30). `bounded_outputb` boolean
@@ -329,8 +331,8 @@ to `CKAUndec/KMComplete.v`.
     `red_leq'` is the embedded analogue of `red_leq`. One documented,
     non-blocking gap remains (see the file's own comment): `red_leq'` is only
     characterized for *halting* MM2 runs, matching how `red_leq` itself is
-    only ever used -- tracing to the same missing star-induction axiom as
-    `KA/BinaryAlphabetTransport.v`'s gap.
+    only ever used -- tracing to the same missing star-induction axiom
+    documented in `KA/BinaryAlphabetTransport.v`'s header comment.
 
 26. **`CKAUndec/Glue/BinaryAlphabetConnection.v`** (~120 lines): the
     binary-alphabet analogue of `CKAUndec/Glue/TLToRTarget.v` -- mirrors
