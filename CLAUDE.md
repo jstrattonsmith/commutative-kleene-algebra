@@ -354,11 +354,12 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     independent of which machine is being encoded, exactly matching how the
     source paper states its own Theorem 18 once, not per machine. This is
     the final theorem closing the canonical-alphabet requirement in
-    full. Its own header
-    comment documents a scoped decision to keep this file's `GenericK`/
-    `GenericEnumerable` sections here (rather than pushing them further into
-    `Computability/`, where their genericity would in principle belong)
-    since doing so would also require relocating `CKAUndec/K.v`'s `z_vec`.
+    full. This file's `GenericK`/`GenericEnumerable` sections (originally
+    defined locally here, parametrized over an arbitrary Pred/carrier monoid)
+    have since been relocated to where their genericity actually belongs:
+    `GenericK`'s content now lives in `Computability/TL_Bridge.v`, and
+    `GenericEnumerable`'s content now lives in `KA/enumerable.v` -- both are
+    imported here instead of redefined (see the file's own header comment).
 
 ### `MM2/Legacy/`, not on the critical path, kept for their own interest
 
