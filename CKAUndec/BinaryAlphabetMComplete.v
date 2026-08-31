@@ -1,9 +1,9 @@
 (* Closes, in full, the requirement that Theorem 18/19 hold over the
    source paper's own canonical, minimal two-symbol alphabet, not just a
-   machine-specific analogue of it: mirrors CKA/Glue/
-   TLToRTarget.v / CKA/K.v / CKA/KEnumerable.v / CKA/KMComplete.v's
+   machine-specific analogue of it: mirrors CKAUndec/Glue/
+   TLToRTarget.v / CKAUndec/K.v / CKAUndec/KEnumerable.v / CKAUndec/KMComplete.v's
    SUPERSET-transport strategy at the embedded (binary-alphabet) level,
-   using CKA/Glue/BinaryAlphabetConnection.v's R_TL_R_target_connection_bin
+   using CKAUndec/Glue/BinaryAlphabetConnection.v's R_TL_R_target_connection_bin
    in place of the unembedded R_TL_R_target_connection.
 
    Per the Azevedo de Amorim et al. paper's own Theorem 18/19 proof
@@ -13,16 +13,16 @@
    needs "A subset A'" (halting-and-accepting) and "A' disjoint from B"
    (halting-and-rejecting), never anything about inputs outside A u B.
    This is the SAME strategy this project's own Computability/TL_Bridge.v/
-   CKA/K.v already use for the unembedded K. So this file needs NO new
+   CKAUndec/K.v already use for the unembedded K. So this file needs NO new
    completeness argument beyond what's already proven -- it strictly
    mirrors the existing chain, plugging in the embedded halting-case
    lemmas in place of the unembedded ones. The genuinely-unprovable
-   divergent-run gap documented in CKA/BinaryAlphabet.v is real but not
+   divergent-run gap documented in CKAUndec/BinaryAlphabet.v is real but not
    on this critical path.
 
    K_bin/K_bin_enumerable below are one-line instantiations of two
-   GENERALIZATIONS -- of CKA/K.v's Section Splice6 and
-   CKA/KEnumerable.v respectively -- that used to live directly in this
+   GENERALIZATIONS -- of CKAUndec/K.v's Section Splice6 and
+   CKAUndec/KEnumerable.v respectively -- that used to live directly in this
    file as local Sections GenericK/GenericEnumerable, parametrized over
    an arbitrary Pred/carrier monoid T rather than the specific
    K/TmMonoid. They have since been relocated to where their genericity
