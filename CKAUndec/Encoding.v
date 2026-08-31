@@ -13,7 +13,8 @@ Unset Printing Implicit Defensive.
 
 From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang KA.automata.
 From kacc Require Import KA.repr_rel KA.bounded_output.
-From kacc.MM2 Require Import Stepper.
+From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
+From kacc.MM2 Require Import StepperCompat.
 From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.
 
@@ -262,18 +263,20 @@ Definition next_state (q : Q) : Q :=
   translate_state q.
 
 (* mm2_atom_fun/mm2_step_fun and their correctness lemmas w.r.t. the
-   library's own relational mm2_atom/mm2_step, plus mm2_step_det and
-   mm2_stop_spec (further down this section) now live in MM2/Stepper.v
-   -- pure MM2 execution-model facts, no KA content, extracted so
-   they're reusable independent of this file's own KA-term encoding.
-   Notation aliases below let the rest of this section keep calling
-   them bare, as if still section-local. *)
+   library's own relational mm2_atom/mm2_step now live in
+   Undecidability.MinskyMachines.Util.MM2_stepper -- pure MM2 execution-
+   model facts, no KA content, extracted so they're reusable independent
+   of this file's own KA-term encoding. mm2_step_det/mm2_stop_spec
+   (further down this section) come from MM2/StepperCompat.v, a thin
+   shim restoring their original shape after they were deduplicated
+   against MM2_facts.v's own equivalents. Notation aliases below let the
+   rest of this section keep calling them bare, as if still
+   section-local. *)
 
-Notation mm2_atom_fun := Stepper.mm2_atom_fun.
-Notation mm2_atom_fun_spec := Stepper.mm2_atom_fun_spec.
-Notation mm2_step_fun := (Stepper.mm2_step_fun P).
-Notation mm2_step_fun_spec := (@Stepper.mm2_step_fun_spec P).
-Notation mm2_instr_at_nth_error := (Stepper.mm2_instr_at_nth_error P).
+Notation mm2_atom_fun := MM2_stepper.mm2_atom_fun.
+Notation mm2_atom_fun_spec := MM2_stepper.mm2_atom_fun_spec.
+Notation mm2_step_fun := (MM2_stepper.mm2_step_fun P).
+Notation mm2_step_fun_spec := (@MM2_stepper.mm2_step_fun_spec P).
 
 Definition mm2_to_instr (instr : mm2_instr) : mm_instr Q :=
   match instr with
@@ -1289,7 +1292,7 @@ right; move/leibniz_equiv_iff: pa; rewrite /mm2_config /config_word /=.
 by case: (s2) => [[|?] [[|?] [|?]]] //=.
 Qed.
 
-Notation mm2_stop_spec := (Stepper.mm2_stop_spec P).
+Notation mm2_stop_spec := (StepperCompat.mm2_stop_spec P).
 
 Lemma mm2_R_soundness s1 s2 :
   rtc (mm2_step P) s1 s2 →
@@ -1302,7 +1305,7 @@ have [//|] := mm2_R_soundness_aux s1_s2 red_leq.
 rewrite /n. congruence.
 Qed.
 
-Notation mm2_step_det := (@Stepper.mm2_step_det P).
+Notation mm2_step_det := (@StepperCompat.mm2_step_det P).
 
 Lemma no_step_from_halt w :
   ¬ Unit (mm2_config (0,(0,0)), w) ⊑ mm2_R.

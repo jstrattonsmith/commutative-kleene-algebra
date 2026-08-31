@@ -52,7 +52,6 @@ From stdpp Require base decidable.
 From kacc Require Import KA.algebra KA.pre_ka KA.enumerable.
 From kacc Require Import CKAUndec.Glue.TLToRTarget Computability.TL_Bridge.
 From kacc Require Import Computability.InseparabilityCore.
-From kacc Require Import MM2.Simulator MM2.Splice.
 From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
 From kacc Require Import CKAUndec.BinaryAlphabet.
 From kacc Require Import CKAUndec.Glue.BinaryAlphabetConnection.

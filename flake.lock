@@ -3,11 +3,11 @@
     "coq-library-undecidability": {
       "flake": false,
       "locked": {
-        "lastModified": 1785035074,
-        "narHash": "sha256-lfNPfpXSEUTX8UCGmi3KrKKs/fdg5j3hzpXw6nOesD4=",
+        "lastModified": 1788208827,
+        "narHash": "sha256-VdoCap4bsXjXsOFq8+Sq0TPezupEc3mi/7usNPchXOI=",
         "owner": "jstrattonsmith",
         "repo": "coq-library-undecidability",
-        "rev": "71c9f210dc57bdf3ae06422595773a3d2bc38e7f",
+        "rev": "eb5580e17d3e7afc85e04ee38c0ba0fee65d0936",
         "type": "github"
       },
       "original": {

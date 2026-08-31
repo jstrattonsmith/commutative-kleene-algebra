@@ -31,7 +31,7 @@ From Stdlib Require Import Relations.Relation_Operators.
 From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.
 
-From kacc.MM2 Require Import Stepper.
+From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
 From kacc Require Import MM2.Simulator.
 
 (* --- 0. Splicing a prefix in front of a program, with jump targets

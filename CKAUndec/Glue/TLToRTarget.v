@@ -22,7 +22,10 @@ From Undecidability.MinskyMachines Require Import mm_defs mma_defs fractran_mma 
 From Undecidability.FRACTRAN Require Import fractran_utils prime_seq mm_fractran.
 From Undecidability.Shared.Libs.DLW Require Import utils sss subcode.
 
-From kacc Require Import MM2.FractranCompiler MM2.Simulator MM2.Splice.
+From Undecidability.MinskyMachines.Reductions Require Import
+  FRACTRAN_computable_to_MM2_computable MM2_Splice.
+From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
+From kacc Require Import MM2.Simulator MM2.RtcBridge.
 From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
 Require kacc.CKAUndec.Encoding.
 From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.

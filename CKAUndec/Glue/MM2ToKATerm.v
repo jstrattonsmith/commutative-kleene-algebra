@@ -23,7 +23,8 @@ From stdpp Require relations.
 From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.
 
-From kacc.MM2 Require Import Stepper Simulator.
+From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
+From kacc.MM2 Require Import Simulator RtcBridge.
 From kacc Require Import CKAUndec.Encoding.
 
 Require Import SyntheticComputability.Shared.partial.
@@ -46,13 +47,13 @@ Definition red_leq (P : list mm2_instr) (s1 : mm2_state) : Prop :=
 Definition R_target (c y : nat) : Prop := red_leq (progOf c) (1,(y,0)).
 
 Lemma R_target_iff_outcome c y v :
-  Θ_ours_MM2 c y =! v -> (R_target c y <-> v = 1).
+  Θ_MM2 c y =! v -> (R_target c y <-> v = 1).
 Proof.
 intros [n Hn] % seval_hasvalue.
-rewrite seval_Theta_ours_MM2 in Hn.
+rewrite seval_Theta_MM2 in Hn.
 unfold R_target.
 assert (Hrtc : relations.rtc (mm2_step (progOf c)) (1,(y,0)) (mm2_iter (progOf c) n (1,(y,0))))
-  by apply mm2_iter_rtc.
+  by (apply crt_to_rtc; apply mm2_iter_rtc).
 unfold mm2_outcome_at in Hn.
 destruct (mm2_haltedAt (progOf c) n (1,(y,0))) eqn:Ehalt; [| discriminate].
 assert (Hstop_fun : mm2_step_fun (progOf c) (mm2_iter (progOf c) n (1,(y,0))) = None).

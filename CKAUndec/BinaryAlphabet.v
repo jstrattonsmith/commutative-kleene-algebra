@@ -31,10 +31,18 @@ From kacc Require Import KA.BinaryAlphabetTransport KA.BoundedOutputTransport.
 From Undecidability.MinskyMachines Require Import MM2.
 Require Import SyntheticComputability.Shared.partial.
 Require kacc.CKAUndec.Encoding.
-Require kacc.MM2.Stepper.
-From kacc Require Import MM2.Simulator.
+From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
+From kacc Require Import MM2.Simulator MM2.RtcBridge MM2.StepperCompat.
 From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
 From kacc Require Import CKAUndec.K CKAUndec.KEnumerable.
+
+(* mm2_step_det/mm2_stop_spec come from MM2/StepperCompat.v (2026-08-31):
+   both used to live in this repo's own MM2/Stepper.v, but duplicated
+   MM2_facts.v's own mm2_step_det/mm2_stop_index_iff under a different
+   proof route, so were dropped in favor of reusing those directly --
+   StepperCompat.v restates them in the original shape this file's
+   proofs below depend on (mm2_stop_spec's exact RHS shape matters for
+   the closing `congruence` at its call site). *)
 
 Section BinaryAlphabet.
 
@@ -200,7 +208,7 @@ apply: repr_rel_iter_final xs_ys.
   rewrite x1_s in Hin1 Hin2.
   case/Encoding.encoding_sound: Hin1 => s1' [] y1_s1' s_s1'.
   case/Encoding.encoding_sound: Hin2 => s2' [] y2_s2' s_s2'.
-  have Es : s1' = s2' by exact: Stepper.mm2_step_det s_s1' s_s2'.
+  have Es : s1' = s2' by exact: mm2_step_det s_s1' s_s2'.
   by rewrite Ey1 Ey2 y1_s1' y2_s2' Es.
 - move=> ys' Hys'.
   have [x0 [y0 [Ex0 [Ey0 Hin0]]]] :=
@@ -260,7 +268,7 @@ Lemma mm2_R_soundness' (s1 s2 : nat * (nat * nat)) :
     ⊔ repr_rel_rtc_error repr_rel_embedded →
   s2 = (0, (0, 0)).
 Proof.
-move=> s1_s2 /(Stepper.mm2_stop_spec Prog) s2_stop red_leq.
+move=> s1_s2 /(mm2_stop_spec Prog) s2_stop red_leq.
 have [//|] := mm2_R_soundness_aux' s1_s2 red_leq.
 congruence.
 Qed.
@@ -300,18 +308,18 @@ Lemma red_leq'_shape (s1 : nat * (nat * nat)) :
 Proof. reflexivity. Qed.
 
 Lemma R_target_iff_outcome' y v :
-  Θ_ours_MM2 c y =! v -> (red_leq' (1%nat, (y, 0%nat)) ↔ v = 1%nat).
+  Θ_MM2 c y =! v -> (red_leq' (1%nat, (y, 0%nat)) ↔ v = 1%nat).
 Proof.
 intros [n Hn] % seval_hasvalue.
-rewrite seval_Theta_ours_MM2 in Hn.
+rewrite seval_Theta_MM2 in Hn.
 unfold red_leq'.
 assert (Hrtc : rtc (mm2_step Prog) (1%nat, (y, 0%nat)) (mm2_iter Prog n (1%nat, (y, 0%nat))))
-  by apply mm2_iter_rtc.
+  by (apply crt_to_rtc; apply mm2_iter_rtc).
 unfold mm2_outcome_at in Hn.
 destruct (mm2_haltedAt Prog n (1%nat, (y, 0%nat))) eqn:Ehalt; [| discriminate].
-assert (Hstop_fun : Stepper.mm2_step_fun Prog (mm2_iter Prog n (1%nat, (y, 0%nat))) = None).
+assert (Hstop_fun : mm2_step_fun Prog (mm2_iter Prog n (1%nat, (y, 0%nat))) = None).
 { unfold mm2_haltedAt in Ehalt.
-  destruct (Stepper.mm2_step_fun Prog (mm2_iter Prog n (1%nat, (y, 0%nat))));
+  destruct (mm2_step_fun Prog (mm2_iter Prog n (1%nat, (y, 0%nat))));
     [discriminate | reflexivity]. }
 assert (Hstop : mm2_stop Prog (mm2_iter Prog n (1%nat, (y, 0%nat))))
   by exact (mm2_stop_of_step_fun_none _ _ Hstop_fun).

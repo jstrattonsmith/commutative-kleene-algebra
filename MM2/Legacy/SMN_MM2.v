@@ -262,10 +262,10 @@ From kacc Require Import MM2.Legacy.EffectiveInseparability_MM2_Race.
 Definition eta (U i j : nat) : nat := SMN_S (SMN_S U i) j.
 
 Lemma outcome_iff_hasvalue (c z v : nat) :
-  Θ_ours_MM2 c z =! v <-> exists n, mm2_outcome_at c z n = Some v.
+  Θ_MM2 c z =! v <-> exists n, mm2_outcome_at c z n = Some v.
 Proof.
 rewrite (@partial.seval_hasvalue partial.implementation.monotonic_functions).
-setoid_rewrite seval_Theta_ours_MM2.
+setoid_rewrite seval_Theta_MM2.
 reflexivity.
 Qed.
 
@@ -281,10 +281,10 @@ Variable U : nat.
    simulator: it must, from the runtime numbers i and j alone, look up and
    run whatever programs they encode. That is NOT solved by this file. *)
 Hypothesis HU : forall i j y v,
-  Θ_ours_MM2 U (pair_xy i (pair_xy j y)) =! v <-> raceVal_MM2 i j y =! v.
+  Θ_MM2 U (pair_xy i (pair_xy j y)) =! v <-> raceVal_MM2 i j y =! v.
 
 Theorem eta_correct (i j y v : nat) :
-  Θ_ours_MM2 (eta U i j) y =! v <-> raceVal_MM2 i j y =! v.
+  Θ_MM2 (eta U i j) y =! v <-> raceVal_MM2 i j y =! v.
 Proof.
 rewrite <- (HU i j y v).
 rewrite !outcome_iff_hasvalue.
