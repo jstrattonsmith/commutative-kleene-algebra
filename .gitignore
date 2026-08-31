@@ -16,3 +16,4 @@ RocqMakefile.conf
 *.cache
 *.vio
 .lia.cache
+/result
