@@ -9,9 +9,11 @@
     nixpkgs.url = "github:NixOS/nixpkgs/c5296fdd05cfa2c187990dd909864da9658df755";
     coq-library-undecidability.url = "github:uds-psl/coq-library-undecidability/rocq-9.0";
     coq-library-undecidability.flake = false;
-    # Local checkout so in-progress edits are picked up without committing/
-    # pushing first; consumed as a real flake so we can reuse its own overlay.
-    coq-synthetic-computability.url = "path:/Users/Jeremy/Documents/College/RIT/PhD/CKA_Undec/coq-synthetic-computability";
+    # Local checkout (sibling under mech-eff-insep/) so in-progress edits are
+    # picked up without committing/pushing first; consumed as a real flake so
+    # we can reuse its own overlay. Relative path, not absolute, so this
+    # whole mech-eff-insep/ tree stays portable to another machine.
+    coq-synthetic-computability.url = "path:../coq-synthetic-computability";
     # Share our pinned coq-library-undecidability instead of building a
     # second, possibly-drifted copy.
     coq-synthetic-computability.inputs.coq-library-undecidability.follows = "coq-library-undecidability";
