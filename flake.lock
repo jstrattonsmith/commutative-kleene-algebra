@@ -3,16 +3,16 @@
     "coq-library-undecidability": {
       "flake": false,
       "locked": {
-        "lastModified": 1757941031,
-        "narHash": "sha256-v82jbE5iqlinMwuyfw699lHVkIRO25xZTfU2/LrqwwA=",
-        "owner": "uds-psl",
+        "lastModified": 1785035074,
+        "narHash": "sha256-lfNPfpXSEUTX8UCGmi3KrKKs/fdg5j3hzpXw6nOesD4=",
+        "owner": "jstrattonsmith",
         "repo": "coq-library-undecidability",
-        "rev": "806690d024009b11a4e4e6354f8ee63bdcacc3a6",
+        "rev": "71c9f210dc57bdf3ae06422595773a3d2bc38e7f",
         "type": "github"
       },
       "original": {
-        "owner": "uds-psl",
-        "ref": "rocq-9.0",
+        "owner": "jstrattonsmith",
+        "ref": "enable-L-nix-9.0",
         "repo": "coq-library-undecidability",
         "type": "github"
       }
@@ -28,14 +28,17 @@
         "rocq-mcp": "rocq-mcp"
       },
       "locked": {
-        "lastModified": 1786576535,
-        "narHash": "sha256-dfOKQmnhBYKUImKf+10GK1uCn3RQOx9hAHp/Aqw1kLI=",
-        "path": "/Users/Jeremy/Documents/College/RIT/PhD/CKA_Undec/coq-synthetic-computability",
-        "type": "path"
+        "lastModified": 1788206302,
+        "narHash": "sha256-uIHiQ214VUNZXDGlhMdjYnI0s3HOGwZEgBajf1OzMkc=",
+        "owner": "arthuraa",
+        "repo": "coq-synthetic-computability",
+        "rev": "9444080aea1a05f2d9e826741193eda25eaac79b",
+        "type": "github"
       },
       "original": {
-        "path": "/Users/Jeremy/Documents/College/RIT/PhD/CKA_Undec/coq-synthetic-computability",
-        "type": "path"
+        "owner": "arthuraa",
+        "repo": "coq-synthetic-computability",
+        "type": "github"
       }
     },
     "flake-parts": {

@@ -7,13 +7,18 @@
     # toolchain (Rocq 9.0.1, Equations 1.3.1+9.0, stdpp 1.12.0) agrees between
     # the two projects.
     nixpkgs.url = "github:NixOS/nixpkgs/c5296fdd05cfa2c187990dd909864da9658df755";
-    coq-library-undecidability.url = "github:uds-psl/coq-library-undecidability/rocq-9.0";
+    # Jeremy's fork, enable-L-nix-9.0 branch: uncomments the L/ extraction
+    # framework and adds a working flake.nix on top of an otherwise-unmodified
+    # rocq-9.0 (0 commits ahead/behind upstream at the branch point, checked
+    # 2026-08-31). Pinned via github: rather than a local path: input -- Nix
+    # flakes cannot resolve a relative path: input across sibling git repos
+    # (confirmed empirically: it resolves against the referring flake's own
+    # git-fetched store copy, not the real filesystem, even with --impure).
+    coq-library-undecidability.url = "github:jstrattonsmith/coq-library-undecidability/enable-L-nix-9.0";
     coq-library-undecidability.flake = false;
-    # Local checkout (sibling under mech-eff-insep/) so in-progress edits are
-    # picked up without committing/pushing first; consumed as a real flake so
-    # we can reuse its own overlay. Relative path, not absolute, so this
-    # whole mech-eff-insep/ tree stays portable to another machine.
-    coq-synthetic-computability.url = "path:../coq-synthetic-computability";
+    # Same reasoning: arthuraa/coq-synthetic-computability (a real GitHub
+    # remote both projects already push to), not a local path: input.
+    coq-synthetic-computability.url = "github:arthuraa/coq-synthetic-computability";
     # Share our pinned coq-library-undecidability instead of building a
     # second, possibly-drifted copy.
     coq-synthetic-computability.inputs.coq-library-undecidability.follows = "coq-library-undecidability";
