@@ -41,16 +41,16 @@ MM2/Legacy/MM2_PrefixSplice.v
 # MM2/Legacy/EffectiveInseparability_MM2_Race.v
 # MM2/Legacy/SMN_MM2.v
 
-# Computability/: pure effective-inseparability/creative/m-complete
-# theory over an abstract numbering, plus T_L/CT_L/EA bridging. Zero
-# MM2 or KA content; genuinely upstreamable to coq-synthetic-computability.
-Computability/InseparabilityCore.v
-Computability/TL_Bridge.v
-Computability/EA_L.v
-Computability/Myhill.v
+# Computability/ is gone as of 2026-08-31: its four files (pure
+# effective-inseparability/creative/m-complete theory over an abstract
+# numbering, plus T_L/CT_L/EA bridging -- zero MM2 or KA content) moved
+# to coq-synthetic-computability, as
+# ReducibilityDegrees/EffectiveInseparabilityCore.v, Models/EA_L.v,
+# Models/EA_L_Myhill.v (renamed to avoid colliding with the pre-existing
+# Basic/Myhill.v, a different classical result), and Models/T_L_Bridge.v.
 
 # KA/: the paper's own pre-Kleene-algebra framework. Independent of
-# MM2/Computability/CKA -- touches none of them.
+# MM2/CKA -- touches none of them.
 KA/utils.v
 KA/algebra.v
 KA/pre_ka.v
@@ -64,7 +64,8 @@ KA/BoundedOutputTransport.v
 
 # CKAUndec/: the actual encoding of MM2 as pre-Kleene-algebra terms and
 # everything built on red_lb/red_ub/mm2_R. CKAUndec/Glue/ files are thin
-# connective code wiring MM2/ and Computability/ into CKAUndec/.
+# connective code wiring MM2/ and coq-synthetic-computability's
+# Models/T_L_Bridge.v/EA_L.v/EA_L_Myhill.v into CKAUndec/.
 CKAUndec/Encoding.v
 CKAUndec/Glue/MM2ToKATerm.v
 CKAUndec/Glue/TLToRTarget.v

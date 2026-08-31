@@ -49,7 +49,8 @@ From Undecidability.Shared.Libs.DLW Require Import vec.
 Import vec_notations.
 From kacc Require Import CKAUndec.Glue.TLToRTarget.
 From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
-From kacc Require Import Computability.TL_Bridge Computability.InseparabilityCore.
+Require Import SyntheticComputability.Models.T_L_Bridge.
+Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityCore.
 
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.T_L_Uniform.

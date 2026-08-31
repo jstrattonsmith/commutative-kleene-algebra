@@ -59,7 +59,8 @@ Require Import ssreflect.
 From kacc Require Import CKAUndec.Glue.TLToRTarget.
 From kacc Require Import CKAUndec.K.
 From kacc Require Import CKAUndec.KEnumerable.
-From kacc Require Import Computability.EA_L Computability.Myhill.
+Require Import SyntheticComputability.Models.EA_L.
+Require Import SyntheticComputability.Models.EA_L_Myhill.
 
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.EffectiveInseparability_L.

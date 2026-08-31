@@ -50,13 +50,15 @@ From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
 From stdpp Require base decidable.
 From kacc Require Import KA.algebra KA.pre_ka KA.enumerable.
-From kacc Require Import CKAUndec.Glue.TLToRTarget Computability.TL_Bridge.
-From kacc Require Import Computability.InseparabilityCore.
+From kacc Require Import CKAUndec.Glue.TLToRTarget.
+Require Import SyntheticComputability.Models.T_L_Bridge.
+Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityCore.
 From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
 From kacc Require Import CKAUndec.BinaryAlphabet.
 From kacc Require Import CKAUndec.Glue.BinaryAlphabetConnection.
 From kacc Require Import CKAUndec.K CKAUndec.KEnumerable.
-From kacc Require Import Computability.EA_L Computability.Myhill.
+Require Import SyntheticComputability.Models.EA_L.
+Require Import SyntheticComputability.Models.EA_L_Myhill.
 From kacc Require Import CKAUndec.KMComplete.
 Require kacc.CKAUndec.Encoding.
 

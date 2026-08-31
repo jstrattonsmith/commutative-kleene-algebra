@@ -20,7 +20,7 @@ Require kacc.CKAUndec.Encoding.
 From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
 From kacc Require Import MM2.Simulator.
 From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
-From kacc Require Import Computability.TL_Bridge.
+Require Import SyntheticComputability.Models.T_L_Bridge.
 From kacc Require Import CKAUndec.K.
 
 Section KEnumerable.
