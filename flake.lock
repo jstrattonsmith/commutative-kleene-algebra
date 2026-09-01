@@ -3,11 +3,11 @@
     "coq-library-undecidability": {
       "flake": false,
       "locked": {
-        "lastModified": 1788210416,
-        "narHash": "sha256-/bmbt+8Il3xD6iE0NoGu2GUutwN4DWsod5cyAnUELSE=",
+        "lastModified": 1788223554,
+        "narHash": "sha256-Bt1AvGQxyOLQ7IK7b96SQKr5pbfSJkDikahufQuUw/U=",
         "owner": "jstrattonsmith",
         "repo": "coq-library-undecidability",
-        "rev": "af53a7fefae9315a22e31ffaf2cb375d500f65af",
+        "rev": "d30bf0c3023ff506b1f548ad8de08b8e027988aa",
         "type": "github"
       },
       "original": {
@@ -28,11 +28,11 @@
         "rocq-mcp": "rocq-mcp"
       },
       "locked": {
-        "lastModified": 1788210903,
-        "narHash": "sha256-9DGi0nwTd9pfsYyyour6KMKeEOjAb47/eaI/GgAJRdc=",
+        "lastModified": 1788223572,
+        "narHash": "sha256-PookbaBDwqRO3vPfsb0ikW8hNPfMZNUON7bSLJ9J7u0=",
         "owner": "arthuraa",
         "repo": "coq-synthetic-computability",
-        "rev": "d5dc918387d2e8c1b2f1ec1859adc1eadfe8eb07",
+        "rev": "8b6ff1c304860a63fd3700ad73bab7167b776a96",
         "type": "github"
       },
       "original": {
