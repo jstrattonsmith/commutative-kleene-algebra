@@ -26,7 +26,7 @@ As of 2026-08-31, the development is organized into two reusable libraries
 (the third, `Computability/`, has been fully upstreamed and no longer
 exists here) plus the CKA-specific payoff that combines everything:
 
-- **`MM2/`** (2 files + `Legacy/`): the Church's-Thesis-witness wrapper
+- **`MM2/`** (1 file + `Legacy/`): the Church's-Thesis-witness wrapper
   around `coq-library-undecidability`'s own MM2 simulator, plus a small
   piece of genuinely CKA-specific glue. The pure MM2 execution-model
   content (Gödel-coding, the step-indexed simulator, the FRACTRAN-to-MM2
@@ -177,18 +177,6 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
    exists because this project's own encoding happens to be built over
    stdpp's relation vocabulary.
 
-3. **`MM2/StepperCompat.v`** (~30 lines): restates `mm2_step_det`/
-   `mm2_stop_spec` in their original `Section`-scoped shape (matching what
-   used to live in this repo's own now-deleted `MM2/Stepper.v`), reusing
-   `coq-library-undecidability`'s own `Util/MM2_facts.v` lemmas
-   (`mm2_step_det`, `mm2_stop_index_iff` -- same facts, discovered to
-   already exist there under a different proof route when this content was
-   migrated, so reused directly instead of shipping a second proof).
-   `CKAUndec/Encoding.v`'s and `CKAUndec/BinaryAlphabet.v`'s existing call
-   sites depend on this exact shape (`Set Implicit Arguments` is active in
-   `Encoding.v`, and a plain top-level lemma's arguments elaborate
-   differently there than a `Section` `Variable`'s do).
-
 ### `MM2/Legacy/`: not on the critical path, kept for their own interest
 
 - **`MM2/Legacy/TLUniform_MM2.v`** (~45 lines), **`MM2/Legacy/MM2_PrefixSplice.v`**
@@ -289,7 +277,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     `translate_state`/`next_state`. `Section MM2Adapter` (parametrized by a
     program `P`, importing `coq-library-undecidability`'s
     `Util.MM2_stepper` for its single-step interpreter fragment and
-    `MM2/StepperCompat.v` for `mm2_step_det`/`mm2_stop_spec`) proves the
+    `Util.MM2_facts` for `mm2_step_det`/`mm2_stop_index_iff`) proves the
     soundness/completeness pair (paper's Theorems 15-16):
     `mm2_R_completeness` (halts-at-(0,0) implies the KA inequality
     `red_lb ⊑ red_ub`) and `mm2_R_soundness` (the converse, given the

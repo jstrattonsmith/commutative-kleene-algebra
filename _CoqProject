@@ -13,7 +13,6 @@
 # move (bridges Coq's clos_refl_trans to stdpp's relations.rtc).
 MM2/Simulator.v
 MM2/RtcBridge.v
-MM2/StepperCompat.v
 
 # MM2/Legacy/: an earlier, self-contained axiom-free S-M-N-style
 # construction directly at the MM2 level, predating the T_L-based route

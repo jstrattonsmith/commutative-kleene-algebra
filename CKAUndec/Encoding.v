@@ -14,7 +14,6 @@ Unset Printing Implicit Defensive.
 From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang KA.automata.
 From kacc Require Import KA.repr_rel KA.bounded_output.
 From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
-From kacc.MM2 Require Import StepperCompat.
 From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.
 
@@ -266,12 +265,11 @@ Definition next_state (q : Q) : Q :=
    library's own relational mm2_atom/mm2_step now live in
    Undecidability.MinskyMachines.Util.MM2_stepper -- pure MM2 execution-
    model facts, no KA content, extracted so they're reusable independent
-   of this file's own KA-term encoding. mm2_step_det/mm2_stop_spec
-   (further down this section) come from MM2/StepperCompat.v, a thin
-   shim restoring their original shape after they were deduplicated
-   against MM2_facts.v's own equivalents. Notation aliases below let the
-   rest of this section keep calling them bare, as if still
-   section-local. *)
+   of this file's own KA-term encoding. mm2_step_det/mm2_stop_index_iff
+   (used further down this section) come directly from MM2_facts.v --
+   mm2_stop_index_iff states the RHS as a disjunction (fst x = 0 \/
+   length P < fst x); see mm2_R_soundness below for how that shape is
+   used directly instead of restating it as a negated conjunction. *)
 
 Notation mm2_atom_fun := MM2_stepper.mm2_atom_fun.
 Notation mm2_atom_fun_spec := MM2_stepper.mm2_atom_fun_spec.
@@ -1292,20 +1290,16 @@ right; move/leibniz_equiv_iff: pa; rewrite /mm2_config /config_word /=.
 by case: (s2) => [[|?] [[|?] [|?]]] //=.
 Qed.
 
-Notation mm2_stop_spec := (StepperCompat.mm2_stop_spec P).
-
 Lemma mm2_R_soundness s1 s2 :
   rtc (mm2_step P) s1 s2 →
   mm2_stop P s2 →
   red_lb s1 ⊑ red_ub →
   s2 = (0,(0,0)).
 Proof.
-move=> s1_s2 /mm2_stop_spec s2_stop red_leq.
-have [//|] := mm2_R_soundness_aux s1_s2 red_leq.
-rewrite /n. congruence.
+move=> s1_s2 s2_stop red_leq.
+have [//|Hbad] := mm2_R_soundness_aux s1_s2 red_leq.
+exfalso; move/MM2_facts.mm2_stop_index_iff: s2_stop; rewrite /n /=; lia.
 Qed.
-
-Notation mm2_step_det := (@StepperCompat.mm2_step_det P).
 
 Lemma no_step_from_halt w :
   ¬ Unit (mm2_config (0,(0,0)), w) ⊑ mm2_R.
@@ -1333,7 +1327,7 @@ apply: repr_rel_iter_final xs_ys.
   rewrite xs_s in xs_ys1 xs_ys2.
   case/encoding_sound: xs_ys1 => s1' [] ys1_s1' s_s1'.
   case/encoding_sound: xs_ys2 => s2' [] ys2_s2' s_s2'.
-  have := mm2_step_det s_s1' s_s2'; congruence.
+  have := MM2_facts.mm2_step_det s_s1' s_s2'; congruence.
 - exact: no_step_from_halt.
 Qed.
 
