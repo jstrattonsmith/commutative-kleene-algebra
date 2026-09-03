@@ -1,16 +1,11 @@
-(* The Church's-Thesis-witness wrapper around coq-library-undecidability's
-   Util.MM2_simulator: builds Theta_MM2, a `part`-valued MM2 evaluator,
-   plus two disjoint enumerable halting sets (A0_MM2/B1_MM2) directly
-   from it. Stays here rather than moving upstream with the rest of
-   MM2/'s content because it genuinely needs SyntheticComputability's
-   own machinery (Shared.partial, Axioms.EA,
-   Synthetic.{Definitions,EnumerabilityFacts}), outside coq-synthetic-
-   computability's own L-only scope.
-
-   CKAUndec/Glue/MM2ToKATerm.v bridges Theta_MM2's step-indexed
-   evaluator into CKAUndec/Encoding.v's KA-term encoding, making this
-   file the CT-witness layer the rest of the undecidability argument
-   builds on. *)
+(* NOT on the critical path -- superseded, kept for documentation.
+   Builds Theta_MM2 (a step-indexed MM2 evaluator) plus two enumerable
+   halting sets A0_MM2/B1_MM2, mirroring coq-synthetic-computability's
+   L-level construction. Kept free of any CKAUndec/ dependency (no
+   ssreflect): MM2_PrefixSplice.v/SMN_MM2.v also Require it and are
+   plain-tactic-style, which breaks if ssreflect notations leak in. The
+   connection to CKAUndec/Encoding.v's R_target lives separately, in the
+   leaf-only MM2/Legacy/SimulatorToRTarget.v. *)
 
 From Stdlib Require Import Unicode.Utf8.
 From Stdlib Require Import Lia.

@@ -34,10 +34,9 @@ Require Import SyntheticComputability.Models.T_L_Bridge.
 From Undecidability.MinskyMachines.Reductions Require Import
   FRACTRAN_computable_to_MM2_computable MM2_Splice.
 From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
-From kacc Require Import MM2.Simulator MM2.RtcBridge.
-From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
+From kacc Require Import MM2.RtcBridge.
 From kacc Require Import CKAUndec.BinaryAlphabet.
-Require kacc.CKAUndec.Encoding.
+From kacc Require Import CKAUndec.Encoding.
 
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Synthetic.Definitions

@@ -17,7 +17,7 @@
 
 From Stdlib Require Import Unicode.Utf8.
 From Stdlib Require Import Lia.
-From kacc Require Import MM2.Simulator.
+From kacc Require Import MM2.Legacy.Simulator.
 
 Require Import SyntheticComputability.Models.CT.
 Require Import Undecidability.L.L.

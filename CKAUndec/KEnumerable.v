@@ -18,10 +18,8 @@ From Undecidability.FRACTRAN Require Import prime_seq.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
 From kacc Require Import KA.algebra KA.pre_ka KA.enumerable.
-Require kacc.CKAUndec.Encoding.
 From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
-From kacc Require Import MM2.Simulator.
-From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
+From kacc Require Import CKAUndec.Encoding.
 Require Import SyntheticComputability.Models.T_L_Bridge.
 From kacc Require Import CKAUndec.K.
 

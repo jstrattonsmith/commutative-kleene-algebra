@@ -52,7 +52,7 @@ From Undecidability.FRACTRAN Require Import prime_seq.
 From Undecidability.Shared.Libs.DLW Require Import vec.
 Import vec_notations.
 From kacc Require Import CKAUndec.Glue.TLToRTarget.
-From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
+From kacc Require Import CKAUndec.Encoding.
 Require Import SyntheticComputability.Models.T_L_Bridge.
 Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityCore.
 

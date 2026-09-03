@@ -31,10 +31,8 @@ From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang KA.automata
 From kacc Require Import KA.BinaryAlphabetTransport KA.BoundedOutputTransport.
 From Undecidability.MinskyMachines Require Import MM2.
 Require Import SyntheticComputability.Shared.partial.
-Require kacc.CKAUndec.Encoding.
+From kacc Require Import CKAUndec.Encoding.
 From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
-From kacc Require Import MM2.Simulator MM2.RtcBridge.
-From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
 From kacc Require Import CKAUndec.K CKAUndec.KEnumerable.
 
 Section BinaryAlphabet.
@@ -82,7 +80,7 @@ Proof. exact: Henc. Qed.
 (* mm2_R's type is the bare product `list (mm_sym QF) * list (mm_sym QF)`,
    which does not syntactically unify with `monoid_car ?T` during
    typeclass search without help (same issue flagged in
-   CKAUndec.Glue.MM2ToKATerm.v's own comment on red_leq) -- name the
+   CKAUndec.Encoding.v's own comment on red_leq) -- name the
    monoid explicitly, mirroring CKAUndec.KEnumerable.v's TmMonoid but WITHOUT
    the option-padding (mm2_R itself is unpadded). *)
 Definition Mm2RMonoid : monoid :=
@@ -266,17 +264,6 @@ have [//|Hbad] := mm2_R_soundness_aux' s1_s2 red_leq.
 exfalso; move/MM2_facts.mm2_stop_index_iff: s2_stop; lia.
 Qed.
 
-(* --- Final step: mirror R_target_iff_outcome
-   (CKAUndec.Glue.MM2ToKATerm.v:289-320) at the embedded level,
-   substituting mm2_R_completeness'/mm2_R_soundness' for the
-   originals -- everything else in that proof (mm2_iter_rtc,
-   mm2_haltedAt, mm2_stop_of_step_fun_none, mm2_state_eqb) is a plain
-   fact about the MM2 execution model, not about repr_rel/KA-terms, so
-   it transfers unchanged. Combining both versions for the SAME v
-   gives the order-reflection R_target c y <-> red_leq' (1,(y,0)),
-   which is exactly the many-one reduction needed to transport
-   m-completeness to the embedded/binary-alphabet relation. *)
-
 Definition red_leq' (s1 : nat * (nat * nat)) : Prop :=
   ltac:(let t := type of (@mm2_R_completeness' s1) in
         match t with _ -> ?B => exact B end).
@@ -300,38 +287,10 @@ Lemma red_leq'_shape (s1 : nat * (nat * nat)) :
   red_leq' s1 <-> red_lb' s1 ⊑ red_ub'.
 Proof. reflexivity. Qed.
 
-Lemma R_target_iff_outcome' y v :
-  Θ_MM2 c y =! v -> (red_leq' (1%nat, (y, 0%nat)) ↔ v = 1%nat).
-Proof.
-intros [n Hn] % seval_hasvalue.
-rewrite seval_Theta_MM2 in Hn.
-unfold red_leq'.
-assert (Hrtc : rtc (mm2_step Prog) (1%nat, (y, 0%nat)) (mm2_iter Prog n (1%nat, (y, 0%nat))))
-  by (apply crt_to_rtc; apply mm2_iter_rtc).
-unfold mm2_outcome_at in Hn.
-destruct (mm2_haltedAt Prog n (1%nat, (y, 0%nat))) eqn:Ehalt; [| discriminate].
-assert (Hstop_fun : mm2_step_fun Prog (mm2_iter Prog n (1%nat, (y, 0%nat))) = None).
-{ unfold mm2_haltedAt in Ehalt.
-  destruct (mm2_step_fun Prog (mm2_iter Prog n (1%nat, (y, 0%nat))));
-    [discriminate | reflexivity]. }
-assert (Hstop : mm2_stop Prog (mm2_iter Prog n (1%nat, (y, 0%nat))))
-  by exact (mm2_stop_of_step_fun_none _ _ Hstop_fun).
-destruct (mm2_state_eqb (mm2_iter Prog n (1%nat, (y, 0%nat))) (0, (0, 0))) eqn:Eeq.
-- apply mm2_state_eqb_true in Eeq.
-  assert (Hv : v = 1%nat) by congruence.
-  subst v.
-  split; [intros _; reflexivity | intros _].
-  apply mm2_R_completeness'. rewrite Eeq in Hrtc. exact Hrtc.
-- assert (Hv : v = 0%nat) by congruence.
-  subst v.
-  split.
-  + intros Hle. exfalso.
-    pose proof (mm2_R_soundness' Hrtc Hstop Hle) as Heq.
-    assert (Eeq' : mm2_state_eqb (mm2_iter Prog n (1%nat, (y, 0%nat))) (0, (0, 0)) = true)
-      by (apply mm2_state_eqb_true; exact Heq).
-    rewrite Eeq' in Eeq. discriminate.
-  + discriminate.
-Qed.
+(* An unconditional connection from Theta_MM2 to red_leq' also holds --
+   see MM2/Legacy/SimulatorToRTarget.v's R_target_iff_outcome_binary,
+   proven entirely from this file's own exported red_leq'/
+   mm2_R_completeness'/mm2_R_soundness'. *)
 
 (* --- GENUINE OPEN GAP, now traced to the SAME root cause as
    BinaryAlphabetTransport.v's dpseudo_top_mismatch_transport gap

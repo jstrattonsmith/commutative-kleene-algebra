@@ -1345,3 +1345,21 @@ apply: repr_rel_iter_final xs_ys.
 Qed.
 
 End MM2Adapter.
+
+(* R_target c y is the KA-term inequality attached to running the
+   program coded by c from register state (y,0); the KA-term type
+   depends on the program P (via Q := fin (S (S (length P)))), so each c
+   routes through its own type, which is fine since the end result is
+   just a Prop. Needs no axiom -- a direct consequence of
+   mm2_R_soundness/mm2_R_completeness above. CKAUndec/Glue/TLToRTarget.v
+   and CKAUndec/K.v build on it. *)
+
+(* `red_lb P s1 ⊑ red_ub P` doesn't typecheck directly via the ⊑
+   notation: instance search can't unify the two sides' generator
+   types. Extract the already-elaborated Prop from mm2_R_completeness's
+   own type via Ltac reflection instead. *)
+Definition red_leq (P : list mm2_instr) (s1 : mm2_state) : Prop :=
+  ltac:(let t := type of (@mm2_R_completeness P s1) in
+        match t with _ -> ?B => exact B end).
+
+Definition R_target (c y : nat) : Prop := red_leq (progOf c) (1%nat,(y,0%nat)).

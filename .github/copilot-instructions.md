@@ -106,13 +106,14 @@ Debugging and common gotchas
   "term ⊑ 1", look for an existing semantic interpreter (e.g. `count_term`)
   and an associated lemma (`count_finiteP`) relating it to the semantic
   property, rather than attempting large-scale normalization.
-- `red_leq`/`R_target` is a KA-term *safety* property (language
-  containment), not a termination witness -- there is deliberately no
-  "red_leq implies halts" direction (that would make the KA-term problem
-  decidable). Don't try to define an enumerable set directly via
-  `R_target`; go through the step-indexed simulator instead
-  (`CKAUndec/Glue/MM2ToKATerm.v`), and bring `R_target` in only via the
-  halts-implies-safe direction.
+- `red_leq`/`R_target` (`CKAUndec/Encoding.v`) is a KA-term *safety*
+  property, not a termination witness -- there is deliberately no
+  "red_leq implies halts" direction (that would make the problem
+  decidable). Don't define an enumerable set directly via `R_target`;
+  go through `A0_L` (already enumerable, `coq-synthetic-computability`'s
+  `L`-level construction) and `CKAUndec/Glue/TLToRTarget.v`'s
+  `R_TL_R_target_connection` instead, using `R_target`'s easy
+  (halts-implies-safe) direction only.
 - A literal `*)` inside a Coq comment's own prose (e.g. writing "`L.*`" to
   mean "everything under the `L` namespace") closes the comment early and
   produces a confusing syntax error downstream, not at the `*)` itself.

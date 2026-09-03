@@ -59,14 +59,13 @@ From kacc Require Import KA.algebra KA.pre_ka KA.enumerable.
 From kacc Require Import CKAUndec.Glue.TLToRTarget.
 Require Import SyntheticComputability.Models.T_L_Bridge.
 Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityCore.
-From kacc Require Import CKAUndec.Glue.MM2ToKATerm.
 From kacc Require Import CKAUndec.BinaryAlphabet.
 From kacc Require Import CKAUndec.Glue.BinaryAlphabetConnection.
 From kacc Require Import CKAUndec.K CKAUndec.KEnumerable.
 Require Import SyntheticComputability.Models.EA_L.
 Require Import SyntheticComputability.Models.EA_L_Myhill.
 From kacc Require Import CKAUndec.KMComplete.
-Require kacc.CKAUndec.Encoding.
+From kacc Require Import CKAUndec.Encoding.
 
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.EffectiveInseparability_L.
