@@ -16,18 +16,18 @@ dependencies as independent git repos:
   Minsky-machine/FRACTRAN definitions, `L` (Rocq's own untyped lambda
   calculus, used for extraction/Church's-Thesis witnesses), and a growing
   set of genuinely reusable MM2 (two-counter machine) machinery originally
-  built for this project (see MM2/ below).
+  built for this project (see MM2_Legacy/ below).
 - `coq-synthetic-computability` (a collaborator's repo) -- generic
   synthetic-computability theory (`T_L`/`CT_L`, effective inseparability,
   reducibility degrees), including a set of files originally built for
   this project too (see Dependencies below).
 
-The development is organized into `MM2/` (small CKA-specific glue, plus
-a `Legacy/` evaluator wrapper not on the critical path), `KA/` (the
-paper's own pre-Kleene-algebra framework and binary-alphabet embedding,
-independent of `MM2/`/`CKAUndec/`), and `CKAUndec/`/`CKAUndec/Glue/`
-(the actual MM2-as-KA-terms payoff) -- see File Structure below for the
-file-by-file breakdown of each.
+The development is organized into `MM2_Legacy/` (an evaluator wrapper not
+on the critical path), `KA/` (the paper's own pre-Kleene-algebra framework
+and binary-alphabet embedding, independent of `MM2_Legacy/`/`CKAUndec/`),
+and `CKAUndec/`/`CKAUndec/Glue/` (the actual MM2-as-KA-terms payoff, plus
+a small piece of CKA-specific `MM2`-facing glue, `CKAUndec/Glue/RtcBridge.v`)
+-- see File Structure below for the file-by-file breakdown of each.
 
 This whole development depends heavily on the sibling
 `coq-synthetic-computability` project (see Dependencies below) -- in
@@ -123,35 +123,26 @@ the same sections used below with one-line comments). All files are
 admit-free; no axioms appear anywhere except the two hypotheses named above
 (`CT_L`, `MP`), both isolated to `CKAUndec/KMComplete.v`.
 
-### `MM2/`: a small piece of genuinely CKA-specific glue
+### `MM2_Legacy/`: not on the critical path, kept for their own interest
 
-1. **`MM2/RtcBridge.v`** (~25 lines): `crt_to_rtc`, bridging Coq's
-   `clos_refl_trans` (what the upstream MM2 facts are now stated over) to
-   stdpp's `relations.rtc` (what this project's own KA-term encoding
-   needs). Genuinely CKA-specific glue, not MM2-generic content -- it only
-   exists because this project's own encoding happens to be built over
-   stdpp's relation vocabulary.
-
-### `MM2/Legacy/`: not on the critical path, kept for their own interest
-
-- **`MM2/Legacy/TLUniform_MM2.v`** (~45 lines), **`MM2/Legacy/MM2_PrefixSplice.v`**
+- **`MM2_Legacy/TLUniform_MM2.v`** (~45 lines), **`MM2_Legacy/MM2_PrefixSplice.v`**
   (~265 lines): an earlier, self-contained axiom-free S-M-N-style
   construction directly at the MM2 level (predating the `T_L`-based route
   above, which superseded it for the main argument). Still compile, still
   in `_CoqProject`.
-- **`MM2/Legacy/EffectiveInseparability_MM2_Race.v`** (~415 lines) and
-  **`MM2/Legacy/SMN_MM2.v`** (~250 lines, `Require`s the former):
+- **`MM2_Legacy/EffectiveInseparability_MM2_Race.v`** (~415 lines) and
+  **`MM2_Legacy/SMN_MM2.v`** (~250 lines, `Require`s the former):
   **excluded from `_CoqProject`** (commented out, not deleted). Their
   `semidec_of_MM2_computable` needs MetaRocq's `extract` to bridge a
   `computable` instance across a file boundary, which fails.
-- **`MM2/Legacy/Simulator.v`** (~150 lines): builds `Θ_MM2`, a
+- **`MM2_Legacy/Simulator.v`** (~150 lines): builds `Θ_MM2`, a
   `part`-valued MM2 evaluator, plus two enumerable halting sets
   (`A0_MM2`/`B1_MM2`), mirroring `coq-synthetic-computability`'s `L`-level
   construction (`Models/EffectiveInseparability_L.v`). Kept free of any
   `CKAUndec/` dependency (no `ssreflect`): `MM2_PrefixSplice.v`/
   `SMN_MM2.v` above also `Require` it and are plain-tactic-style, which
   breaks if `ssreflect` notations leak in.
-- **`MM2/Legacy/SimulatorToRTarget.v`** (~120 lines): connects `Θ_MM2` to
+- **`MM2_Legacy/SimulatorToRTarget.v`** (~120 lines): connects `Θ_MM2` to
   `CKAUndec/Encoding.v`'s `R_target` (`R_target_iff_outcome`), plus its
   embedded-alphabet analogue against `CKAUndec/BinaryAlphabet.v`'s
   `red_leq'` (`R_target_iff_outcome_binary`) -- a proven alternative to
@@ -228,7 +219,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     from `KA/BinaryAlphabetTransport.v`. `repr_rel_via_bounded_output` is the
     payoff theorem, fully proved, admit- and axiom-free.
 
-### `CKAUndec/` and `CKAUndec/Glue/`: the actual MM2-as-KA-terms payoff, plus the glue wiring `MM2/`/`coq-synthetic-computability` into it
+### `CKAUndec/` and `CKAUndec/Glue/`: the actual MM2-as-KA-terms payoff, plus the glue wiring `coq-synthetic-computability` into it
 
 19. **`CKAUndec/Encoding.v`** (~1335 lines): encodes two-counter (MM2) Minsky
     machines as KA terms over a doubled/commutable alphabet (Definitions
@@ -250,7 +241,15 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     decision problem the whole argument is ultimately about, and a
     direct consequence of `mm2_R_soundness`/`mm2_R_completeness` above.
 
-20. **`CKAUndec/Glue/TLToRTarget.v`** (~130 lines): builds a single uniform
+20. **`CKAUndec/Glue/RtcBridge.v`** (~25 lines): `crt_to_rtc`, bridging Coq's
+    `clos_refl_trans` (what the upstream MM2 facts are now stated over) to
+    stdpp's `relations.rtc` (what this project's own KA-term encoding
+    needs). Genuinely CKA-specific glue, not MM2-generic content -- it only
+    exists because this project's own encoding happens to be built over
+    stdpp's relation vocabulary. Used by the next item and by
+    `CKAUndec/Glue/BinaryAlphabetConnection.v` below.
+
+21. **`CKAUndec/Glue/TLToRTarget.v`** (~130 lines): builds a single uniform
     MM2 program for `T_L` via `coq-library-undecidability`'s
     `Reductions.FRACTRAN_computable_to_MM2_computable`, then splices its
     divisibility-encoded output convention
@@ -258,7 +257,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     exact `(0,(0,0))`-halting convention, connecting all the way to
     `R_target` (`R_TL_R_target_connection`).
 
-21. **`CKAUndec/K.v`** (~105 lines): closes Theorem 17. Defines `z_vec`,
+22. **`CKAUndec/K.v`** (~105 lines): closes Theorem 17. Defines `z_vec`,
     `K z := R_target c (...)` -- a genuine `red_lb ⊑ red_ub` KA-term-level
     statement -- and proves it's effectively inseparable from `B1_L` (in the
     unbundled sense both source papers state their own Theorem 17 in:
@@ -266,7 +265,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     `coq-synthetic-computability`'s `ReducibilityDegrees.EffectiveInseparabilityCore`'s
     superset-transport lemma (Kuznetsov's Proposition 9).
 
-22. **`CKAUndec/KEnumerable.v`** (~110 lines): shows `K` is genuinely
+23. **`CKAUndec/KEnumerable.v`** (~110 lines): shows `K` is genuinely
     enumerable, by identifying `CKAUndec/Encoding.v`'s carrier monoid (a
     product of free monoids over an `option`-padded, finite, decidable-
     equality alphabet) and applying `KA/enumerable.v`'s generic finitary-
@@ -274,7 +273,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     `{(x,y) | x ⊑ y}` relation over that carrier (`K` is one fixed-rhs slice
     of it), via `ka_sqsubseteq_enumerable`.
 
-23. **`CKAUndec/KMComplete.v`** (~135 lines): the full chain from `K`'s
+24. **`CKAUndec/KMComplete.v`** (~135 lines): the full chain from `K`'s
     bundled effective inseparability (`eff_insep_shape_K_B1_L`, upgrading
     `CKAUndec/K.v`'s unbundled result now that enumerability is in hand)
     through Myhill's theorem (`K_creative`, `K_m_complete`, instantiating
@@ -284,7 +283,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     (`KA_ineq_m_complete`, composing `K_m_complete` with the reduction
     `K ⪯ₘ KA_ineq` via `red_m_transitive`).
 
-24. **`CKAUndec/BinaryAlphabet.v`** (~390 lines): the CKA-specific wiring
+25. **`CKAUndec/BinaryAlphabet.v`** (~390 lines): the CKA-specific wiring
     that actually closes the source paper's Theorem 18/19 (undecidability/
     completeness stated over the canonical, minimal 2-symbol alphabet
     `{0,1}`, not `mm_sym Q`) -- applies `KA/BoundedOutputTransport.v`'s
@@ -299,14 +298,14 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     only ever used -- tracing to the same missing star-induction axiom
     documented in `KA/BinaryAlphabetTransport.v`'s header comment.
 
-25. **`CKAUndec/Glue/BinaryAlphabetConnection.v`** (~120 lines): the
+26. **`CKAUndec/Glue/BinaryAlphabetConnection.v`** (~120 lines): the
     binary-alphabet analogue of `CKAUndec/Glue/TLToRTarget.v` -- mirrors
     `Psplice_R_target_divides`/`_not_divides`/`R_TL_R_target_connection`,
     substituting `CKAUndec/BinaryAlphabet.v`'s `mm2_R_completeness'`/
     `mm2_R_soundness'` for the unembedded originals, closing with
     `R_TL_R_target_connection_bin`.
 
-26. **`CKAUndec/BinaryAlphabetMComplete.v`** (~325 lines): the
+27. **`CKAUndec/BinaryAlphabetMComplete.v`** (~325 lines): the
     binary-alphabet analogue of `CKAUndec/KMComplete.v`, generalized over an
     abstract Prop family/carrier monoid wherever the original argument only
     used `K`/`red_leq` as an opaque interface (verified faithful to the

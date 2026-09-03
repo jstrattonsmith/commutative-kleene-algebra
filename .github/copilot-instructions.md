@@ -9,7 +9,7 @@ style guide -- this file is a shorter Copilot-oriented supplement, not a
 replacement.
 
 The development is organized into two reusable libraries, `KA/` (the
-paper's own pre-Kleene-algebra framework) and `MM2/` (a thin
+paper's own pre-Kleene-algebra framework) and `MM2_Legacy/` (a thin
 Church's-Thesis-witness wrapper around `coq-library-undecidability`'s own
 MM2 simulator -- the bulk of MM2's own execution-model machinery lives
 upstream there, not in this repo), plus `CKAUndec/` (the actual
@@ -74,7 +74,7 @@ Project-specific patterns and conventions
   it to build interpreters (`ka_term_map`, `count_term`); it does not
   normalize syntax.
 - Style split: `KA/` uses ssreflect tactics (`move=>`, `rewrite`, `apply/`,
-  `case/`, `elim:`) extensively. `MM2/` and `CKAUndec/` deliberately use
+  `case/`, `elim:`) extensively. `MM2_Legacy/` and `CKAUndec/` deliberately use
   plain Coq tactics (`intros`, `destruct`, `apply`) instead, since they
   interface directly with `coq-synthetic-computability`'s own plain-tactic
   style.

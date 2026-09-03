@@ -8,7 +8,7 @@
    register-arithmetic combinator, so it is reusable for any
    compile-time-constant-indexed prefix.
 
-   Used by MM2/Legacy/SMN_MM2.v, whose mm2_prefix (computing pair_xy x _)
+   Used by MM2_Legacy/SMN_MM2.v, whose mm2_prefix (computing pair_xy x _)
    is one instance of Pre/f here. Off-critical-path for the same reason
    SMN_MM2.v is: this splicing engine alone doesn't supply the universal
    MM2 machine a creative-set-style undecidability argument also needs. *)
@@ -19,7 +19,7 @@ From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.
 
 From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
-From kacc Require Import MM2.Legacy.Simulator.
+From kacc Require Import MM2_Legacy.Simulator.
 
 (* --- 0. Splicing a prefix in front of a program, with jump targets
    shifted accordingly. -------------------------------------------------- *)

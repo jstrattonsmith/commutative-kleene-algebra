@@ -5,7 +5,7 @@
    ssreflect): MM2_PrefixSplice.v/SMN_MM2.v also Require it and are
    plain-tactic-style, which breaks if ssreflect notations leak in. The
    connection to CKAUndec/Encoding.v's R_target lives separately, in the
-   leaf-only MM2/Legacy/SimulatorToRTarget.v. *)
+   leaf-only MM2_Legacy/SimulatorToRTarget.v. *)
 
 From Stdlib Require Import Unicode.Utf8.
 From Stdlib Require Import Lia.

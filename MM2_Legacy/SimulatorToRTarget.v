@@ -1,5 +1,5 @@
 (* NOT on the critical path -- superseded, kept for documentation.
-   Connects MM2/Legacy/Simulator.v's Theta_MM2 to CKAUndec/Encoding.v's
+   Connects MM2_Legacy/Simulator.v's Theta_MM2 to CKAUndec/Encoding.v's
    R_target (and its embedded-alphabet analogue, against
    CKAUndec/BinaryAlphabet.v's red_leq'). The project actually connects
    to R_target directly via Encoding.v's own soundness/completeness
@@ -7,7 +7,7 @@
    needs no separate evaluator to reconcile against a compiled
    program's reachability facts; neither lemma below is used elsewhere.
 
-   Kept separate from MM2/Legacy/Simulator.v itself: this file needs
+   Kept separate from MM2_Legacy/Simulator.v itself: this file needs
    CKAUndec/Encoding.v and CKAUndec/BinaryAlphabet.v, which pull in
    ssreflect, and Simulator.v's other clients (MM2_PrefixSplice.v,
    SMN_MM2.v) are plain-tactic-style and break if that leaks in. Being
@@ -18,8 +18,8 @@ From stdpp Require relations.
 From Undecidability.MinskyMachines Require Import MM2.
 From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
 Import MM2Notations.
-From kacc Require Import MM2.RtcBridge.
-From kacc Require Import MM2.Legacy.Simulator.
+From kacc Require Import CKAUndec.Glue.RtcBridge.
+From kacc Require Import MM2_Legacy.Simulator.
 Require kacc.KA.algebra.
 From kacc Require Import CKAUndec.Encoding.
 Require kacc.CKAUndec.BinaryAlphabet.

@@ -26,7 +26,7 @@ From Undecidability.Shared.Libs.DLW Require Import utils sss subcode.
 From Undecidability.MinskyMachines.Reductions Require Import
   FRACTRAN_computable_to_MM2_computable MM2_Splice.
 From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
-From kacc Require Import MM2.RtcBridge.
+From kacc Require Import CKAUndec.Glue.RtcBridge.
 From kacc Require Import CKAUndec.Encoding.
 From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.
 

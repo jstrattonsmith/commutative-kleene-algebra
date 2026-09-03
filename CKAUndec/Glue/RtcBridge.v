@@ -9,8 +9,9 @@
    Genuinely CKA-specific glue, not MM2-generic content: it only exists
    because this project's own KA-term encoding is built over stdpp's
    relation vocabulary while the underlying MM2 execution model
-   (upstream) uses Coq's own. Used directly by CKAUndec/Encoding.v's
-   transition relation. *)
+   (upstream) uses Coq's own. Used by CKAUndec/Glue/TLToRTarget.v and
+   CKAUndec/Glue/BinaryAlphabetConnection.v to connect
+   CKAUndec/Encoding.v's transition relation to raw MM2 reachability. *)
 
 From Stdlib Require Import Relations.
 From stdpp Require relations.

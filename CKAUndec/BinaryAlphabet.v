@@ -288,7 +288,7 @@ Lemma red_leq'_shape (s1 : nat * (nat * nat)) :
 Proof. reflexivity. Qed.
 
 (* An unconditional connection from Theta_MM2 to red_leq' also holds --
-   see MM2/Legacy/SimulatorToRTarget.v's R_target_iff_outcome_binary,
+   see MM2_Legacy/SimulatorToRTarget.v's R_target_iff_outcome_binary,
    proven entirely from this file's own exported red_leq'/
    mm2_R_completeness'/mm2_R_soundness'. *)
 

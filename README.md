@@ -24,22 +24,24 @@ fit together and why.
 
 ## File structure
 
-The development is organized into two reusable libraries (`KA/`, `MM2/`)
-plus the CKA-specific payoff (`CKAUndec/`) that combines them with a third,
-external dependency (`coq-synthetic-computability`'s effective-inseparability
-machinery). See [`CLAUDE.md`](CLAUDE.md) for the full file-by-file
-breakdown and [`paper-comparison.md`](paper-comparison.md) for a detailed
-mapping between the paper and the formalization.
+The development is organized into `KA/` (a reusable library) plus the
+CKA-specific payoff (`CKAUndec/`, `CKAUndec/Glue/`) that builds on it and
+on a third, external dependency (`coq-synthetic-computability`'s
+effective-inseparability machinery), with `MM2_Legacy/` holding an
+earlier evaluator wrapper kept off the critical path. See
+[`CLAUDE.md`](CLAUDE.md) for the full file-by-file breakdown and
+[`paper-comparison.md`](paper-comparison.md) for a detailed mapping
+between the paper and the formalization.
 
 - **`KA/`** -- the paper's own pre-Kleene-algebra framework: utilities,
   the algebraic hierarchy, free `ka_term` syntax, language semantics,
   finite automata, representable relations, and the binary-alphabet
   embedding.
-- **`MM2/`** -- a thin Church's-Thesis-witness wrapper around
+- **`MM2_Legacy/`** -- a thin Church's-Thesis-witness wrapper around
   `coq-library-undecidability`'s own MM2 (two-counter machine) simulator
   (the pure MM2 execution-model machinery itself lives upstream, in
   `coq-library-undecidability`, since it's reusable independent of this
-  project).
+  project); not on the critical path, kept for its own interest.
 - **`CKAUndec/`** -- the actual payoff: encodes MM2 as KA terms
   (Definitions 11-13), proves soundness/completeness (Theorems 15-16),
   and builds up effective inseparability (Theorem 17) and

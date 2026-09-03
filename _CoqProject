@@ -4,32 +4,28 @@
 
 -R . kacc
 
-# MM2/: RtcBridge.v, CKA-specific glue bridging Coq's clos_refl_trans to
-# stdpp's relations.rtc. Simulator.v moved to Legacy/ below.
-MM2/RtcBridge.v
-
-# MM2/Legacy/: not on the critical path, kept for their own interest.
+# MM2_Legacy/: not on the critical path, kept for their own interest.
 #
 # TLUniform_MM2.v/MM2_PrefixSplice.v: an earlier, self-contained
 # axiom-free S-M-N-style construction directly at the MM2 level,
 # predating and superseded by the T_L-based route above (used in the
 # main argument). Genuinely MM2-generic, no CKA content.
-MM2/Legacy/TLUniform_MM2.v
-MM2/Legacy/MM2_PrefixSplice.v
+MM2_Legacy/TLUniform_MM2.v
+MM2_Legacy/MM2_PrefixSplice.v
 
 # Simulator.v: builds Theta_MM2 and its halting sets, kept free of any
 # CKAUndec/ dependency (no ssreflect) -- see its own header comment.
-MM2/Legacy/Simulator.v
+MM2_Legacy/Simulator.v
 
-# MM2/Legacy/EffectiveInseparability_MM2_Race.v and MM2/Legacy/SMN_MM2.v
+# MM2_Legacy/EffectiveInseparability_MM2_Race.v and MM2_Legacy/SMN_MM2.v
 # are excluded here, not deleted: their semidec_of_MM2_computable needs
 # MetaRocq's `extract` to bridge a `computable` instance across this
 # file boundary, which fails. Not on the critical path.
-# MM2/Legacy/EffectiveInseparability_MM2_Race.v
-# MM2/Legacy/SMN_MM2.v
+# MM2_Legacy/EffectiveInseparability_MM2_Race.v
+# MM2_Legacy/SMN_MM2.v
 
 # KA/: the paper's own pre-Kleene-algebra framework. Independent of
-# MM2/CKA -- touches none of them.
+# MM2_Legacy/CKAUndec -- touches none of them.
 KA/utils.v
 KA/algebra.v
 KA/pre_ka.v
@@ -47,6 +43,11 @@ KA/BoundedOutputTransport.v
 # coq-synthetic-computability's Models/T_L_Bridge.v/EA_L.v/EA_L_Myhill.v
 # into CKAUndec/.
 CKAUndec/Encoding.v
+
+# RtcBridge.v: CKA-specific glue bridging Coq's clos_refl_trans to
+# stdpp's relations.rtc, used by the two Glue files below (and by
+# MM2_Legacy/SimulatorToRTarget.v further down).
+CKAUndec/Glue/RtcBridge.v
 CKAUndec/Glue/TLToRTarget.v
 CKAUndec/K.v
 CKAUndec/KEnumerable.v
@@ -55,8 +56,8 @@ CKAUndec/BinaryAlphabet.v
 CKAUndec/Glue/BinaryAlphabetConnection.v
 CKAUndec/BinaryAlphabetMComplete.v
 
-# SimulatorToRTarget.v: connects MM2/Legacy/Simulator.v's Theta_MM2 to
+# SimulatorToRTarget.v: connects MM2_Legacy/Simulator.v's Theta_MM2 to
 # CKAUndec/Encoding.v's R_target (plus an embedded-alphabet analogue) --
 # a proven alternative to the T_L-based route actually used. Kept
 # separate from Simulator.v so that file can stay ssreflect-free.
-MM2/Legacy/SimulatorToRTarget.v
+MM2_Legacy/SimulatorToRTarget.v

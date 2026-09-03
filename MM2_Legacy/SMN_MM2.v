@@ -15,7 +15,7 @@
    via the T_L-based route (CKAUndec/K.v, CKAUndec/KMComplete.v), whose
    universal self-interpreter comes for free from L's reduction
    semantics. Off-critical-path; excluded from _CoqProject alongside
-   MM2/Legacy/EffectiveInseparability_MM2_Race.v, which it Requires
+   MM2_Legacy/EffectiveInseparability_MM2_Race.v, which it Requires
    (via raceVal_MM2). *)
 
 From Stdlib Require Import Arith Lia.
@@ -172,10 +172,10 @@ exact Hfwd.
 Qed.
 
 (* --- 3. Splice mm2_prefix in front of a shifted copy of progOf c, via
-   the generic specialization interface (MM2/Legacy/MM2_PrefixSplice.v) ------------- *)
+   the generic specialization interface (MM2_Legacy/MM2_PrefixSplice.v) ------------- *)
 
-From kacc Require Import MM2.Legacy.Simulator.
-From kacc Require Import MM2.Legacy.MM2_PrefixSplice.
+From kacc Require Import MM2_Legacy.Simulator.
+From kacc Require Import MM2_Legacy.MM2_PrefixSplice.
 
 Definition SMN_S (c x : nat) : nat := specialize (mm2_prefix x) c.
 
@@ -211,7 +211,7 @@ Qed.
    below for the precise obligation. *)
 
 Require Import SyntheticComputability.Shared.partial.
-From kacc Require Import MM2.Legacy.EffectiveInseparability_MM2_Race.
+From kacc Require Import MM2_Legacy.EffectiveInseparability_MM2_Race.
 
 Definition eta (U i j : nat) : nat := SMN_S (SMN_S U i) j.
 
