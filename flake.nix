@@ -7,7 +7,7 @@
     # toolchain (Rocq 9.0.1, Equations 1.3.1+9.0, stdpp 1.12.0) agrees between
     # the two projects.
     nixpkgs.url = "github:NixOS/nixpkgs/c5296fdd05cfa2c187990dd909864da9658df755";
-    # Jeremy's fork, enable-L-nix-9.0 branch: uncomments the L/ extraction
+    # This fork's enable-L-nix-9.0 branch: uncomments the L/ extraction
     # framework and adds a working flake.nix on top of an otherwise-unmodified
     # rocq-9.0 (0 commits ahead/behind upstream at the branch point, checked
     # 2026-08-31). Pinned via github: rather than a local path: input -- Nix

@@ -1,37 +1,43 @@
 (* Closes, in full, the requirement that Theorem 18/19 hold over the
-   source paper's own canonical, minimal two-symbol alphabet, not just a
-   machine-specific analogue of it: mirrors CKAUndec/Glue/
-   TLToRTarget.v / CKAUndec/K.v / CKAUndec/KEnumerable.v / CKAUndec/KMComplete.v's
-   SUPERSET-transport strategy at the embedded (binary-alphabet) level,
-   using CKAUndec/Glue/BinaryAlphabetConnection.v's R_TL_R_target_connection_bin
-   in place of the unembedded R_TL_R_target_connection.
+   source paper's own canonical, minimal two-symbol alphabet, not just
+   the machine-specific alphabet: mirrors CKAUndec/Glue/TLToRTarget.v /
+   CKAUndec/K.v / CKAUndec/KEnumerable.v / CKAUndec/KMComplete.v's
+   superset-transport strategy at the embedded (binary-alphabet) level,
+   using CKAUndec/Glue/BinaryAlphabetConnection.v's
+   R_TL_R_target_connection_bin in place of the unembedded
+   R_TL_R_target_connection.
 
-   Per the Azevedo de Amorim et al. paper's own Theorem 18/19 proof
-   (checked directly): their reduction never characterizes a divergent
-   run either -- A/B (Theorem 17) are BOTH defined only over HALTING
-   computations, and their A' superset (Theorem 19's proof) only ever
-   needs "A subset A'" (halting-and-accepting) and "A' disjoint from B"
-   (halting-and-rejecting), never anything about inputs outside A u B.
-   This is the SAME strategy this project's own Computability/TL_Bridge.v/
-   CKAUndec/K.v already use for the unembedded K. So this file needs NO new
-   completeness argument beyond what's already proven -- it strictly
-   mirrors the existing chain, plugging in the embedded halting-case
-   lemmas in place of the unembedded ones. The genuinely-unprovable
-   divergent-run gap documented in CKAUndec/BinaryAlphabet.v is real but not
-   on this critical path.
+   Per the source paper's own Theorem 18/19 proof: their reduction
+   never characterizes a divergent run either -- A/B (Theorem 17) are
+   both defined only over halting computations, and their A' superset
+   (Theorem 19's proof) only ever needs "A subset A'"
+   (halting-and-accepting) and "A' disjoint from B"
+   (halting-and-rejecting), never anything about inputs outside A u B
+   -- the same strategy coq-synthetic-computability's Models/
+   T_L_Bridge.v and CKAUndec/K.v already use for the unembedded K. So
+   this file needs no new completeness argument beyond what is already
+   proven: it mirrors the existing chain, plugging in the embedded
+   halting-case lemmas in place of the unembedded ones. The
+   genuinely-unprovable divergent-run gap documented in
+   CKAUndec/BinaryAlphabet.v is real but not on this critical path.
 
-   K_bin/K_bin_enumerable below are one-line instantiations of two
-   GENERALIZATIONS -- of CKAUndec/K.v's Section Splice6 and
-   CKAUndec/KEnumerable.v respectively -- that used to live directly in this
-   file as local Sections GenericK/GenericEnumerable, parametrized over
-   an arbitrary Pred/carrier monoid T rather than the specific
-   K/TmMonoid. They have since been relocated to where their genericity
-   actually belongs: GenericK's content (z_vec, K_of,
-   A0_L_subset_K_of/K_of_B1_L_disjoint/eff_insep_K_of_B1_L) now lives in
-   Computability/TL_Bridge.v, and GenericEnumerable's content
-   (T_equiv_dec/T_equiv_enumerable/KA_ineq_over/
-   KA_ineq_over_enumerable/slice_enumerable) now lives in
-   KA/enumerable.v -- both are imported below instead of redefined. *)
+   K_bin/K_bin_enumerable are one-line instantiations of two generic
+   constructions, imported rather than redefined locally: the
+   "connection -> effective inseparability" argument
+   (coq-synthetic-computability's Models/T_L_Bridge.v, generalizing
+   CKAUndec/K.v's own instantiation) and the enumerability argument
+   (KA/enumerable.v). K_eq_K_of_R_target verifies this generic route is
+   faithful to CKAUndec/KMComplete.v's argument -- K and the new K_bin
+   are proven by the SAME lemmas, not two copies.
+
+   Closes with KA_ineq_bin_m_complete : CT_L -> MP -> m-complete
+   KA_ineq_bin -- the final theorem closing the canonical-alphabet
+   requirement in full. Unlike KA_ineq_m_complete (one instance per
+   machine c), this needs no existential over c: the embedded carrier
+   Tm_bin is a single, fixed algebra (the canonical two-symbol
+   alphabet), independent of which machine is encoded, exactly matching
+   how the source paper states its own Theorem 18 once, not per
+   machine. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia.
 From Undecidability Require Import FRACTRAN.

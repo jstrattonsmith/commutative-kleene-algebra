@@ -1,58 +1,47 @@
-(* Merge of Theorem17_Full.v + Theorem19_MComplete.v's CKA-specific tail
-   + Theorem19_Full.v: the full chain from K's bundled effective
-   inseparability from B1_L to Sigma^0_1-completeness of the actual
-   KA-term inequality relation KA_ineq (not just its K-slice).
+(* The final chain from K's bundled effective inseparability from B1_L
+   to Sigma^0_1-completeness of the full KA-term inequality relation
+   KA_ineq (not just its K-slice) -- the terminal theorem of this
+   development, closing the source paper's Theorem 18/19 over the
+   machine-specific alphabet, conditional on two hypotheses: CT_L
+   (Church's Thesis for Rocq's L) and MP (Markov's Principle).
 
-   --- 1. eff_insep_shape_K_B1_L: upgrades CKA/K.v's eff_insep_core
+   --- 1. eff_insep_shape_K_B1_L: upgrades CKAUndec/K.v's eff_insep_core
    result to the fully bundled eff_insep_shape, now that K is known
-   enumerable (CKA/KEnumerable.v closes the gap CKA/K.v flagged) -- real,
-   axiom-free effective inseparability of K (the actual KA-term/red_leq
-   level set) from B1_L, over the SAME numbering W_L throughout --
-   Kuznetsov's Proposition 9 applied once more, this time with its
-   enumerability hypothesis genuinely discharged rather than dropped.
+   enumerable (CKAUndec/KEnumerable.v) -- real, axiom-free effective
+   inseparability of K (the actual KA-term/red_leq level set) from B1_L,
+   over the same numbering W_L throughout (Kuznetsov's Proposition 9
+   applied again, this time with its enumerability hypothesis genuinely
+   discharged).
 
-   A further step was attempted and deliberately NOT included here:
-   coq-synthetic-computability's EffectiveInseparability.v proves
-   eff_insep_to_m_complete (eff_insep A B -> m-complete A, i.e. genuine
-   Sigma^0_1-hardness, matching Kuznetsov's Proposition 7 / Myhill's
-   theorem), but its `eff_insep` is tied to THAT file's own ambient `W`
-   (built from an arbitrary `EA_inst : EA` instance's canonical
-   enumerator), not to a free `W` parameter the way eff_insep_shape is.
-   Using it on eff_insep_shape_K_B1_L directly would require `W_L ≡ W`
-   (every Coq-enumerable set equals W_L i for some i) -- exactly the
-   Church's-Thesis-for-L style fact that an earlier, more direct attempt
-   at this development got stuck on. Computability/EA_L.v +
-   Computability/Myhill.v below sidestep this by building a genuine EA
-   instance FROM CT_L (via SMN_for T_L) instead.
+   coq-synthetic-computability's generic EffectiveInseparability.v
+   machinery (eff_insep_to_m_complete, Kuznetsov's Proposition 7 /
+   Myhill's theorem) is stated relative to that file's own ambient `W`
+   (from an arbitrary EA instance's canonical enumerator), not a free
+   `W` parameter the way eff_insep_shape is; using it on
+   eff_insep_shape_K_B1_L directly would require `W_L ≡ W` (every
+   Coq-enumerable set equals W_L i for some i), a Church's-Thesis-for-L
+   fact this development does not establish in general.
+   coq-synthetic-computability's Models/EA_L.v and Models/EA_L_Myhill.v
+   sidestep this by building a genuine EA instance FROM CT_L (via SMN
+   for T_L) instead.
 
-   --- 2. K_creative/K_m_complete: reuses coq-synthetic-computability's
-   EXISTING, already-proven generic machinery (simple.v /
-   EffectiveInseparability.v -- productive, creative,
-   eff_insep_to_m_complete) directly, by supplying EA_L as the EA
-   instance, instead of re-deriving productive/creative/
-   creative_to_m_complete from scratch against W_L. The generic
-   Myhill's-theorem machinery itself (eff_insep_shape_W_iff,
-   creative_of_eff_insep_shape, m_complete_of_eff_insep_shape) lives in
-   Computability/Myhill.v; K_creative/K_m_complete here are just that
-   machinery's CKA-specific instantiation at P := K c.
+   --- 2. K_creative/K_m_complete: instantiate Models/EA_L_Myhill.v's
+   generic Myhill's-theorem machinery (eff_insep_shape_W_iff,
+   creative_of_eff_insep_shape, m_complete_of_eff_insep_shape) at
+   P := K c, supplying EA_L as the EA instance rather than re-deriving
+   productive/creative/creative_to_m_complete from scratch against W_L.
 
-   --- 3. KA_ineq_m_complete: closes a gap flagged during review of the
-   proof -- K_m_complete only shows m-completeness of K
-   itself, which is a SLICE of the actual KA-term inequality relation
-   KA_ineq (CKA/KEnumerable.v) -- fixing the right-hand side to one
-   specific term, red_ub Prog, and varying only the left. The source
-   paper's own Theorem 18/19 are stated over the full relation
-   {(x,y) | x ⊑ y}, not over one fixed slice of it, so a theorem about K
-   alone does not yet match what those theorems actually claim.
-
-   Closing this needs no new construction: CKA/KEnumerable.v already
-   builds the reduction K_to_KA_ineq witnessing K ⪯ₘ KA_ineq (used
-   there in the OPPOSITE direction, to import KA_ineq's enumerability
-   INTO K). Composing K_m_complete's hardness with that same reduction,
-   via red_m_transitive, transports m-completeness the other way, OUT
-   of K and into KA_ineq -- immediate once you have the reduction in
-   hand, since `m-complete p` (Axioms/EA.v) is pure many-one hardness
-   with no enumerability side-condition on the target. *)
+   --- 3. KA_ineq_m_complete: K_m_complete only shows m-completeness of
+   K itself, a SLICE of the full KA-term inequality relation KA_ineq
+   (CKAUndec/KEnumerable.v) -- fixing the right-hand side to one
+   specific term, red_ub Prog, and varying only the left -- whereas the
+   source paper's own Theorem 18/19 are stated over the full relation
+   {(x,y) | x ⊑ y}. CKAUndec/KEnumerable.v already builds the reduction
+   K_to_KA_ineq witnessing K ⪯ₘ KA_ineq (used there in the opposite
+   direction, to import KA_ineq's enumerability into K); composing
+   K_m_complete's hardness with that same reduction via
+   red_m_transitive transports m-completeness out of K and into
+   KA_ineq. *)
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia.
 Require Import ssreflect.

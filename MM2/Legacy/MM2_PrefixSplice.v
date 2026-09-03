@@ -1,30 +1,17 @@
-(* General "specialize an MM2 program by splicing a prefix in front of it"
-   interface. Decoupled from any specific prefix construction: this file
-   knows nothing about pair_xy, mma_mult_cst_with_zero, or any other
-   register-arithmetic combinator. It only knows how to splice an arbitrary
-   prefix program in front of an arbitrary program, shift the prefix's own
-   jump targets accordingly, and transport `mm2_outcome_at` across the
-   splice given a black-box "the prefix, run from (1,(y,0)), reaches
-   (1+len(Pre), (f y, 0))" spec for the prefix's own input/output relation
-   `f : nat -> nat`.
+(* General "splice a prefix program in front of an MM2 program" engine:
+   given a black-box spec "the prefix, run from (1,(y,0)), reaches
+   (1+len(Pre), (f y, 0))" for the prefix's own input/output relation
+   f : nat -> nat, splices Pre in front of an arbitrary program, shifts
+   the prefix's own jump targets accordingly, and transports
+   mm2_outcome_at across the splice. Decoupled from any specific prefix
+   construction -- knows nothing about pair_xy or any particular
+   register-arithmetic combinator, so it is reusable for any
+   compile-time-constant-indexed prefix.
 
-   Lifted out of MM2/Legacy/SMN_MM2.v, whose own `mm2_prefix` (computing
-   `pair_xy x _`) is exactly one instance of `Pre`/`f` here -- see
-   MM2/Legacy/SMN_MM2.v for that instantiation. The point of splitting this out:
-   this splicing engine is reusable for ANY compile-time-constant-indexed
-   prefix, e.g. an EXP_K-style combinator (raw register ->
-   K^(register)) would be expected to be another instance, not a
-   variant that needs its own copy of this reasoning.
-
-   Like SMN_MM2.v (its one consumer), this file is genuinely reusable,
-   CKA-content-free MM2 infrastructure -- specialize/specialize_correct
-   below are stated for an ARBITRARY prefix program and its own abstract
-   input/output spec, no reference to red_lb/red_ub/mm2_R anywhere. It
-   isn't on the critical path for the same reason SMN_MM2.v isn't: see
-   that file's header for the full account of why (it needs a separate,
-   harder ingredient -- a universal MM2 machine -- that this splicing
-   engine doesn't provide and that MM2's own instruction set was confirmed
-   unable to supply via elementary composition). *)
+   Used by MM2/Legacy/SMN_MM2.v, whose mm2_prefix (computing pair_xy x _)
+   is one instance of Pre/f here. Off-critical-path for the same reason
+   SMN_MM2.v is: this splicing engine alone doesn't supply the universal
+   MM2 machine a creative-set-style undecidability argument also needs. *)
 
 From Stdlib Require Import Arith List Lia.
 From Stdlib Require Import Relations.Relation_Operators.

@@ -1,3 +1,15 @@
+(* Bounded-output KA terms (Definition 28): terms whose accepted
+   strings' second component has length bounded relative to the first,
+   closed under join/mul/star (Lemma 30, `bounded_outputb` for the
+   decidable check), plus prefix-free terms (Definition 32) and the
+   divergence fact `list_diverge` (Lemma 33). The main payoff is Lemma
+   34/31 (`bounded_output_repr_rel`, and a variant
+   `bounded_output_repr_rel'` used directly by CKAUndec/Encoding.v): a
+   bounded-output, prefix-free term with domain/codomain containment
+   yields a genuine `repr_rel`. KA/BoundedOutputTransport.v reuses this
+   lemma to transport the same construction across the binary-alphabet
+   embedding. *)
+
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.

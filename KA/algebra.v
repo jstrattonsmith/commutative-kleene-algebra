@@ -1,3 +1,10 @@
+(* The algebraic hierarchy KA/ is built on: `setoid` -> `monoid` (via
+   `MonoidMixin`) -> `semi_lattice` (via `SemiLatticeMixin`), each with a
+   matching morphism class (`MonoidMorphism`, `SemiLatticeMorphism`), plus
+   concrete instances for `bool`, `option`, `list`, and products. Also
+   defines `MonoidGen`/`SizedMonoid` for generator structures. This is the
+   base scaffolding every later file in KA/ and CKAUndec/ builds on. *)
+
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.

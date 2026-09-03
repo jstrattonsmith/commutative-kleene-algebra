@@ -33,14 +33,18 @@
    CKAUndec.KEnumerable.v/CKAUndec.KMComplete.v.
 
    The generic unbundled machinery (eff_insep_core,
-   eff_insep_shape_to_core, eff_insep_core_superset) has been extracted
-   to Computability/InseparabilityCore.v, and the "connection ->
-   eff_insep_core" argument itself (z_vec, K_of,
+   eff_insep_shape_to_core, eff_insep_core_superset) lives in
+   coq-synthetic-computability's ReducibilityDegrees/
+   EffectiveInseparabilityCore.v; the "connection -> eff_insep_core"
+   argument itself (z_vec, K_of,
    A0_L_subset_K_of/K_of_B1_L_disjoint/eff_insep_K_of_B1_L, generic over
-   an arbitrary Pred) has been further extracted to
-   Computability/TL_Bridge.v -- this file is now just the CKA-specific
-   instantiation at Pred := R_target c: K itself, and its effective
-   inseparability from B1_L. *)
+   an arbitrary Pred) lives in that project's Models/T_L_Bridge.v. This
+   file is just the CKA-specific instantiation at Pred := R_target c: K
+   itself, and its effective inseparability from B1_L -- the source
+   paper's Theorem 17. K's enumerability (picked up in
+   CKAUndec/KEnumerable.v) upgrades this to the fully bundled
+   eff_insep_shape that CKAUndec/KMComplete.v needs for the final
+   Sigma^0_1-completeness argument. *)
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia.
 From Undecidability Require Import FRACTRAN.

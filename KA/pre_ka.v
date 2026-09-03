@@ -1,3 +1,14 @@
+(* Pre-Kleene algebras: `PreKAMixin` adds `star` together with its
+   distribution and idempotency laws to the `semi_lattice` hierarchy from
+   KA/algebra.v, plus a matching `PreKAMorphism` class. Defines the free
+   pre-KA term algebra `ka_term T` (`Unit`, `ka_term_bottom`,
+   `ka_term_join`, `ka_term_mul`, `ka_term_star`) with its eliminator
+   `ka_term_elim` and derived operations (`count_term`, `has_one`,
+   `pseudo_top`), plus `count`/`lang` instances. `ka_term` is the type
+   CKAUndec/Encoding.v later encodes MM2 programs into, making this
+   file's free-term construction the syntactic backbone of the whole
+   encoding. *)
+
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.

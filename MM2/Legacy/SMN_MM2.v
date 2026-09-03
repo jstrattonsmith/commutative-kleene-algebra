@@ -1,68 +1,22 @@
-(* SMN_for T_MM2: build SMN_S(c,x) so that Theta_ours_MM2 (SMN_S c x) y
-   agrees with Theta_ours_MM2 c (pair_xy x y), for a fixed pairing
-   pair_xy chosen SPECIFICALLY to be realizable by an actual 2-register
-   MM2 program (unlike embed_nat's Cantor pairing, which needs genuine
-   runtime-value*runtime-value multiplication -- raw-register squaring
-   has no direct 2-register MM2 realization, which is why this file
-   doesn't just reuse embed_nat's pairing).
+(* An axiom-free S-M-N/currying theorem for MM2: given a program c and a
+   compile-time-constant x, SMN_S c x behaves on runtime input y exactly
+   like c does on the packed pair (x, y). Uses a "2-adic valuation"
+   pairing pair_xy x y := 2^x * (2*y+1) - 1 rather than embed_nat's
+   Cantor pairing: for fixed x it is linear in y with a compile-time
+   constant coefficient, realizable via coq-library-undecidability's
+   mma_mult_cst_with_zero combinator, unlike a pairing needing runtime
+   squaring.
 
-   pair_xy x y := 2^x * (2*y+1) - 1, i.e. z+1 = 2^x * (2y+1) -- the standard
-   "2-adic valuation" bijection nat*nat =~= nat. Its defining feature: for a
-   FIXED compile-time constant x, z is a LINEAR function of the runtime y
-   with a compile-time-constant coefficient (2^x), so materializing it from
-   a raw register only needs "multiply register by a fixed constant", which
-   coq-library-undecidability already provides as a proven 2-register
-   combinator (MinskyMachines/MMA/mma_utils.v's mma_mult_cst_with_zero) --
-   unlike embed_nat's pairing, which needs squaring a runtime value.
-
-   WHY THIS FILE ISN'T ON THE CRITICAL PATH -- and why that's not because
-   the construction failed. The theorem this file proves (SMN_MM2, later
-   restated via MM2/Legacy/MM2_PrefixSplice.v's more abstract
-   specialize_correct) IS a genuine, axiom-free S-M-N/currying theorem for
-   the MM2 model: given a program c and a compile-time-constant x, it
-   builds a program SMN_S c x behaving on raw input y exactly like c on
-   the packed pair (x,y). It is stated purely over mm2_outcome_at/progOf/
-   codeOf, with zero reference to red_lb/red_ub/mm2_R or anything else
-   CKA-specific -- a legitimate, reusable piece of MM2 infrastructure in
-   its own right, not glue, and not superseded on its own terms.
-
-   What it does NOT supply, and what actually stalled this route, is the
-   OTHER classical ingredient a creative-set/undecidability argument needs
-   alongside S-M-N: a universal machine that can simulate an arbitrary
-   program given only as runtime data. The intended next step (Section 6
-   below, `eta`) needs exactly that -- a base program U such that
-   Theta_ours_MM2 U (pair_xy i (pair_xy j y)) simulates whichever MM2
-   program RUNTIME i denotes. No amount of further specialization/currying
-   machinery supplies that; the two ingredients are independent. And this
-   isn't a case of "didn't find a way yet": three independent
-   investigations confirmed MM2's own 2-register, 4-instruction model
-   (MM2.v's mm2_inc_a/mm2_inc_b/mm2_dec_a/mm2_dec_b -- no non-destructive
-   read exists) cannot supply it via elementary composition -- (1) tracing
-   every relevant mma_utils.v combinator (mma_mult_cst_with_zero, mma_div_
-   cst/mma_mod_cst) shows all of them read a register's value by
-   destructively draining it, so decoding a packed runtime index and then
-   simulating it needs a 3rd register to hold a loop counter surviving an
-   inner drain-and-rebuild step, which MM2 doesn't have; (2) Minsky's own
-   universality theorem, checked directly in the literature, requires
-   PRE-PACKED input, not a raw runtime value, so it doesn't license this
-   bridge either; (3) a direct hand-built formalization attempt
-   (MM2_ExpK_Attempt.v) reusing the library's own mma_exp_cst template at
-   2 registers reached one precise, unavoidable `admit`: a precondition
-   that would need to hold for every nonzero remaining loop count, which
-   is false in general.
-
-   The T_L-based route used by the main argument
-   (MM2/Splice.v/CKAUndec/Glue/TLToRTarget.v -> CKAUndec/K.v ->
-   CKAUndec/KMComplete.v) succeeds not by generalizing this file's S-M-N
-   work further, but by sidestepping the need for U entirely: T_L (Rocq's
-   own L-language interpreter) already comes with a working universal
-   self-interpreter built into L's own reduction semantics, so no
-   MM2-native universal machine ever needs to be hand-built on that route.
-   This file is kept because the S-M-N/pair_xy construction itself remains
-   genuine, verified, reusable infrastructure -- a candidate building
-   block for a future MM2-native project that doesn't need a universal
-   machine, and a possible paper narrative beat about this specific
-   ingredient/ingredient distinction. *)
+   This construction alone doesn't give a creative-set-style
+   undecidability argument: that also needs a universal MM2 machine
+   simulating an arbitrary program given only as runtime data, which
+   MM2's own instruction set (no non-destructive register read) cannot
+   supply via elementary composition. The main argument sidesteps this
+   via the T_L-based route (CKAUndec/K.v, CKAUndec/KMComplete.v), whose
+   universal self-interpreter comes for free from L's reduction
+   semantics. Off-critical-path; excluded from _CoqProject alongside
+   MM2/Legacy/EffectiveInseparability_MM2_Race.v, which it Requires
+   (via raceVal_MM2). *)
 
 From Stdlib Require Import Arith Lia.
 

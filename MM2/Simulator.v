@@ -1,31 +1,16 @@
 (* The Church's-Thesis-witness wrapper around coq-library-undecidability's
-   MM2_simulator.v: builds Theta_MM2, a `part`-valued MM2 evaluator, plus
-   two disjoint enumerable halting sets (A0_MM2/B1_MM2) directly from it.
+   Util.MM2_simulator: builds Theta_MM2, a `part`-valued MM2 evaluator,
+   plus two disjoint enumerable halting sets (A0_MM2/B1_MM2) directly
+   from it. Stays here rather than moving upstream with the rest of
+   MM2/'s content because it genuinely needs SyntheticComputability's
+   own machinery (Shared.partial, Axioms.EA,
+   Synthetic.{Definitions,EnumerabilityFacts}), outside coq-synthetic-
+   computability's own L-only scope.
 
-   This half of the original file couldn't move upstream with the pure
-   Godel-coding/step-indexed-simulator content (now
-   Undecidability.MinskyMachines.Util.MM2_simulator): it genuinely needs
-   SyntheticComputability's own machinery (Shared.partial, Axioms.EA,
-   Synthetic.{Definitions,EnumerabilityFacts}), and coq-synthetic-
-   computability's own scope is L-only -- adding MM2-specific machinery
-   there would be over-specific to this project, not that library's
-   general purpose (Jeremy's call, 2026-08-31; revisit if Arthur wants
-   it there instead).
-
-   mm2_outcome_at itself and the whole MetaRocq-driven L-extractability
-   section moved upstream too, alongside progOf/codeOf/mm2_iter/
-   mm2_haltedAt/mm2_state_eqb (2026-08-31): mm2_outcome_at has zero
-   SyntheticComputability content on its own (it's only ever *used* to
-   build Theta_MM2 below), and colocating the extraction instances with
-   the functions they extract turned out to matter -- `extract` didn't
-   reliably bridge a `computableExt`-registered instance across a file
-   boundary, even though the exact same proof scripts work fine
-   colocated (confirmed empirically while doing this split).
-
-   Renamed Theta_ours_MM2 -> Theta_MM2 (2026-08-31): "ours" was
-   uninformative, and this now matches the plain `_MM2`/`_L` per-model
-   suffix convention (see also the coq-synthetic-computability
-   Theta_ours/Theta_ours_L rename tracked in the same pass). *)
+   CKAUndec/Glue/MM2ToKATerm.v bridges Theta_MM2's step-indexed
+   evaluator into CKAUndec/Encoding.v's KA-term encoding, making this
+   file the CT-witness layer the rest of the undecidability argument
+   builds on. *)
 
 From Stdlib Require Import Unicode.Utf8.
 From Stdlib Require Import Lia.

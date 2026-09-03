@@ -1,35 +1,23 @@
-(* Route 1 for closing the canonical-alphabet requirement (binary-alphabet
-   embedding), picked back up after route 2 (BinaryAlphabetTransport.v, committed
-   c25780b) hit a genuine gap needing star-monotonicity, which this
-   project's pre-KA does not axiomatize.
+(* Transports KA/bounded_output.v's Lemma 34 (`bounded_output_repr_rel`,
+   already generic over an arbitrary finite alphabet) across the
+   fixed-length character encoding from KA/BinaryAlphabetTransport.v:
+   given the four hypotheses of Lemma 34 for a term `e` over alphabet
+   `T` (`finite_stateb e = true`, `bounded_output e`, domain/codomain
+   containment `proj1/proj2 e ⊑ L`, and `prefix_free L`),
+   `repr_rel_via_bounded_output` builds a genuine `repr_rel` for `e`'s
+   image under `Embed_pair`/`Embed_word` over any target alphabet `S`
+   embeddable into (e.g. `bool`). Reuses `bounded_output_repr_rel`
+   directly rather than re-proving it, transporting only its four
+   input hypotheses through the embedding.
 
-   Route 1 does NOT reprove bounded_output.v: that file's Lemma 34
-   (bounded_output_repr_rel) is already generic over an arbitrary
-   finite alphabet T, and its own star case avoids algebraic star
-   reasoning entirely by working through actual strings (via l_alt),
-   which is exactly why route 1 sidesteps route 2's wall. So this file
-   applies bounded_output_repr_rel DIRECTLY to (Embed_pair e,
-   Embed_word L) -- reusing BinaryAlphabetTransport.v's Embed_pair/
-   Embed_word -- by proving that its four hypotheses transport under
-   the embedding:
-
-     finite_stateb e = true  -- DONE, finite_state_transport (revised
-                                 hypothesis, see its own comment: an
-                                 explicit automaton-refinement
-                                 construction turned out unnecessary)
-     bounded_output e        -- DONE, bounded_output_transport
-     proj1/proj2 e ⊑ L        -- DONE, free from Embed_proj{1,2}_natural
-     prefix_free L            -- DONE, prefix_free_transport
-
-   STATUS: repr_rel_via_bounded_output is fully proven, axiom-free --
-   `Print Assumptions` confirms no admits anywhere in this file. The
-   hypothesis is finite_stateb e = true rather than the fully abstract
-   finite_state e (a purely syntactic, decidable check on e's own
-   constructor shape, from automata.v) -- strictly stronger, but
-   exactly what Encoding.v's own construction of its transition term
-   provides at the leaf level (Encoding.v:1319-1320, via
-   finite_state_join_list + finite_stateP per instruction), so this
-   loses no real generality for the actual application. *)
+   This is the theorem CKAUndec/BinaryAlphabet.v applies directly to
+   close the source paper's Theorem 18/19 over the canonical 2-symbol
+   alphabet. Fully proved, axiom-free. The `finite_stateb e = true`
+   hypothesis (a purely syntactic, decidable check on `e`'s own
+   constructor shape, from automata.v) is stronger than the fully
+   abstract `finite_state e`, but exactly what CKAUndec/Encoding.v's
+   own construction of its transition term provides at the leaf level,
+   so this loses no generality for the actual application. *)
 
 From Stdlib Require Import Unicode.Utf8.
 Require Import ssreflect.

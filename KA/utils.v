@@ -1,3 +1,8 @@
+(* Finite-enumeration utilities: exhaustive lists of gmaps, gsets, list
+   pairs, and lists up to a bounded length, layered on stdpp's `Finite`
+   typeclass. Used throughout KA/, most directly by KA/enumerable.v's
+   proof-search procedure and KA/automata.v's automaton definitions. *)
+
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.

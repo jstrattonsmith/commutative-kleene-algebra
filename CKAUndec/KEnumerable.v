@@ -1,12 +1,14 @@
-(* Follow-up to CKAUndec.K.v, prompted by the observation that
-   Undecidability/enumerable.v (already in _CoqProject) proves exactly
-   the "provability from a finite axiomatisation is r.e." bridge needed
-   to show K enumerable: ka_sqsubseteq_enumerable shows that ⊑ on
+(* Follow-up to CKAUndec/K.v: KA/enumerable.v proves exactly the
+   "provability from a finite axiomatisation is r.e." bridge needed to
+   show K enumerable -- ka_sqsubseteq_enumerable shows that ⊑ on
    ka_term T is enumerable whenever the carrier monoid T's own ≡ is.
    Encoding.v's carrier (for a fixed program P := progOf c) is
    list (mm_sym Q) * list (mm_sym Q) with Q := fin (S (S (length P))) --
    a product of free monoids over a finite, decidable-equality alphabet,
-   so its ≡ is decidable, hence enumerable for free. *)
+   so its ≡ is decidable, hence enumerable for free. Also defines
+   KA_ineq, the full {(x,y) | x ⊑ y} relation over that carrier (K is
+   one fixed-rhs slice of it) -- the enumerability CKAUndec/KMComplete.v
+   needs to close Sigma^0_1-completeness. *)
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia.
 Require Import ssreflect.

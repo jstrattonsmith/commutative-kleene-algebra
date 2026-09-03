@@ -1,3 +1,12 @@
+(* Representable relations (`repr_rel`, pairing a `next`/`residue` step
+   function with an `expand_rel` correctness statement) and their
+   iteration theory (`repr_rel_iter`, Lemma 21; `repr_rel_iter_empty`,
+   Theorem 22). Also defines `pad_lang`/`pad_rel` and
+   `repr_rel_iter_final`, padding/termination combinators added
+   specifically to support CKAUndec/Encoding.v's MM2-as-KA-terms
+   encoding, which needs a `repr_rel` for its own transition relation to
+   run the effective-inseparability argument downstream. *)
+
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.

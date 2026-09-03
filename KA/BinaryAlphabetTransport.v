@@ -1,36 +1,15 @@
-(* Originally "route 2" for closing the canonical-alphabet requirement:
-   a from-scratch
-   attempt to transport an already-assembled repr_rel value wholesale
-   along a fixed-length injective symbol encoding, so that ANY existing
-   repr_rel instance could be pushed forward to the canonical Sigma =
-   {0,1} carrier the source paper's own Theorem 18/19 use, without
-   redoing the underlying finite-state/bounded-output work.
-
-   That attempt (the repr_rel-transport theorem itself, repr_rel_transport,
-   plus its supporting decode/chunk machinery) got stuck on one genuine,
-   non-mechanical gap -- transporting the "mismatch" term needs
-   Proper((⊑)==>(⊑)) star (star-monotonicity), which this pre-KA
-   deliberately does not axiomatize (PreKAMixin has only the unfold
-   equation + Properness w.r.t. ≡, no induction/least-fixpoint axiom --
-   see CLAUDE.md) -- and was superseded by KA/BoundedOutputTransport.v
-   ("route 1"), which sidesteps the gap entirely by transporting
-   bounded_output_repr_rel's four *ingredients* (each only needing
-   order-preservation) instead of an already-assembled repr_rel value
-   (which needs order-reflection). Route 1 is what CKAUndec/BinaryAlphabet.v
-   actually uses. The stuck route-2 machinery (repr_rel_transport,
-   dpseudo_top_mismatch_transport, and everything built only for them)
-   was deleted 2026-08-13, confirmed via grep to have zero uses anywhere
-   outside itself -- Route 1's own header comment independently confirms
-   it never picked route 2's decode function back up.
-
-   What's LEFT in this file is exactly the generic, reusable part that
-   both routes actually share and still depend on: a fixed-length
-   injective encoding always exists for a finite alphabet
-   (finite_binary_encoding), and the induced word/pair-level embeddings
-   Embed_word/Embed_pair, with their projection-naturality lemmas
-   (Embed_proj1_natural/Embed_proj2_natural). Everything here is
-   axiom-free and GENERIC over an arbitrary finite alphabet T, not
-   specific to mm_sym or this project's own encoding. *)
+(* Encoding infrastructure for the binary-alphabet embedding used to
+   close the source paper's Theorem 18/19 over its own canonical
+   2-symbol alphabet: `finite_binary_encoding` shows a fixed-length
+   injective encoding into `list bool` always exists for a finite
+   alphabet `T`, and `Embed_word`/`Embed_pair` lift it to KA terms, with
+   naturality lemmas `Embed_proj1_natural`/`Embed_proj2_natural`. Fully
+   axiom-free and generic over an arbitrary finite alphabet, not
+   specific to this project's own `mm_sym` alphabet.
+   KA/BoundedOutputTransport.v uses this encoding directly to transport
+   KA/bounded_output.v's representable-relation construction to the
+   binary alphabet, which CKAUndec/BinaryAlphabet.v then applies to the
+   MM2 encoding. *)
 
 From Stdlib Require Import Unicode.Utf8.
 Require Import ssreflect.

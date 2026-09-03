@@ -1,18 +1,18 @@
-(* The binary-alphabet analogue of CKA/Glue/TLToRTarget.v: mirrors its
-   Psplice_R_target_divides/_not_divides/R_TL_R_target_connection,
-   substituting CKA/BinaryAlphabet.v's mm2_R_completeness'/
+(* The binary-alphabet analogue of CKAUndec/Glue/TLToRTarget.v: mirrors
+   its Psplice_R_target_divides/_not_divides/R_TL_R_target_connection,
+   substituting CKAUndec/BinaryAlphabet.v's mm2_R_completeness'/
    mm2_R_soundness' (halting-case only, exactly mirroring
    Encoding.mm2_R_completeness/mm2_R_soundness's own restriction) for
-   the unembedded originals. Reuses MM2/Splice.v's Psplice_mm2_divides/
-   Psplice_mm2_not_divides UNCHANGED -- those are pure MM2-level (rtc)
-   facts, no KA terms involved, so nothing about the embedding touches
-   them.
+   the unembedded originals. Reuses coq-library-undecidability's
+   Reductions/MM2_Splice.v's Psplice_mm2_divides/Psplice_mm2_not_divides
+   unchanged -- those are pure MM2-level (rtc) facts, no KA terms
+   involved, so nothing about the embedding touches them. Feeds
+   CKAUndec/BinaryAlphabetMComplete.v's superset-transport argument.
 
    Naming note: the binary-alphabet character encoding is named `bEnc`
-   throughout (NOT `enc`) to avoid shadowing prime_seq.enc, which this
-   file also uses pervasively (`ps 1 * enc 2 v`, from the Psplice
-   construction) -- a real name collision caught while drafting this
-   file, not a style choice. *)
+   throughout (not `enc`) -- a genuine collision with prime_seq.enc,
+   which this file also uses pervasively (`ps 1 * enc 2 v`, from the
+   Psplice construction), not a style choice. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia.
 From Undecidability Require Import FRACTRAN.

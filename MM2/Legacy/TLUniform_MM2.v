@@ -1,33 +1,17 @@
 (* Compiles coq-synthetic-computability's Models/T_L_Uniform.v's
-   L_computable_closed_R_TL (a SINGLE L term taking (c,x) as RUNTIME
-   bound variables, realizing "T_L c x eventually outputs m" for ANY
-   c,x -- not a per-instance construction) through the same axiom-free
-   chain used by MM2/Legacy/EffectiveInseparability_MM2_Race.v's R_race, producing
-   ONE genuine, fully-packaged MM2_computable witness for the whole T_L
-   family (no choice/Sigma-unraveling needed, since there is exactly one
-   program, not one per (c,x) pair).
+   L_computable_closed_R_TL (a single L term taking (c,x) as runtime
+   bound variables, realizing "T_L c x eventually outputs m" for any
+   c,x) through the same axiom-free chain used by
+   EffectiveInseparability_MM2_Race.v's R_race, producing one genuine
+   MM2_computable witness for the whole T_L family.
 
-   Kept despite being unused by the main argument
-   (CKAUndec.KMComplete/CKAUndec.BinaryAlphabetMComplete): this is
-   the direct, intended predecessor to CKAUndec.Glue.TLToRTarget.v's own pinned
-   re-derivation of the same fact. The reason it went unused is itself
-   informative -- R_TL_MM2_computable's MM2_computable/MMA2_computable
-   conclusion is an opaque existential (Qed-opaque about exactly where
-   the compiled program stops), and CKAUndec.Glue.TLToRTarget.v's splice
+   Not used by the main argument: this witness's MM2_computable/
+   MMA2_computable conclusion is Qed-opaque about exactly where the
+   compiled program stops, and CKAUndec/Glue/TLToRTarget.v's splice
    construction needs that stop position exposed, not just known to
-   exist, to know where to append its divides-test code. Rather than
-   strengthen this proof to expose it, CKAUndec.Glue.TLToRTarget.v re-derives the
-   fact directly with the stop position pinned from the start. Kept
-   around as a candidate for a simpler fix and as a possible paper
-   narrative beat about this specific opacity trap.
-
-   NOTE this is a different KIND of limitation from the other three files
-   in this directory (SMN_MM2.v/MM2_PrefixSplice.v/
-   EffectiveInseparability_MM2_Race.v): those hit a genuine structural gap
-   in MM2's own instruction set (no way to hand-build a universal MM2
-   machine); this file's issue is a one-lemma engineering opacity problem
-   with a known, straightforward fix (expose the stop position), not a
-   structural limitation of the MM2 model itself. *)
+   exist. CKAUndec/Glue/TLToRTarget.v re-derives the fact directly with
+   the stop position pinned from the start instead of strengthening this
+   proof to expose it. *)
 
 From Undecidability Require Import
   L_computable_closed_to_MMA_computable

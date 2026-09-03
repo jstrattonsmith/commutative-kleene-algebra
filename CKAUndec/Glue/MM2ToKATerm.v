@@ -1,22 +1,17 @@
-(* Bridges MM2/Simulator.v's step-indexed evaluator (Theta_ours_MM2) to
-   Encoding.v's own KA-term encoding: R_target c y is the KA-term inequality
-   Encoding.v attaches to running the program coded by c from register state
-   (y,0) -- a per-program *dependent* Prop (red_lb/red_ub's own KA-term
-   type depends on P via Q := fin (S (S (length P))), so there is no
-   single common `ka_term` type to state this over; each c simply
-   routes through its own type internally, which is fine since the end
-   result is just a Prop). This bridging needs no axiom -- it is a
-   straightforward consequence of Encoding.v's mm2_R_soundness/
-   mm2_R_completeness, applicable regardless of which route
-   (axiom-free machine-relative, or CT_L-based absolute) is used to
-   finish the undecidability argument.
-
-   Extracted 2026-08-14: this file used to also contain the MM2
-   simulator itself (progOf/codeOf, mm2_iter, Theta_ours_MM2, A0_MM2/
-   B1_MM2, and their L-extractability) -- all pure MM2-execution-model
-   content with zero KA reference, now in MM2/Simulator.v. What
-   remains here is genuine glue: the only content that actually
-   touches Encoding.v's red_lb/red_ub. *)
+(* Bridges MM2/Simulator.v's step-indexed evaluator (Theta_MM2) to
+   Encoding.v's own KA-term encoding: R_target c y is the KA-term
+   inequality Encoding.v attaches to running the program coded by c
+   from register state (y,0) -- a per-program *dependent* Prop
+   (red_lb/red_ub's own KA-term type depends on P via
+   Q := fin (S (S (length P))), so there is no single common `ka_term`
+   type to state this over; each c simply routes through its own type
+   internally, which is fine since the end result is just a Prop). This
+   bridging needs no axiom -- it is a straightforward consequence of
+   Encoding.v's mm2_R_soundness/mm2_R_completeness, applicable
+   regardless of which route (axiom-free machine-relative, or
+   CT_L-based absolute) is used to finish the undecidability argument.
+   R_target/R_target_iff_outcome are what CKAUndec/Glue/TLToRTarget.v
+   and CKAUndec/K.v build on. *)
 
 From Stdlib Require Import Unicode.Utf8.
 From stdpp Require relations.

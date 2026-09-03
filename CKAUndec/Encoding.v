@@ -1,3 +1,16 @@
+(* Encodes two-counter (MM2) Minsky machines as KA terms over a doubled,
+   commutable alphabet (Definitions 11-13): mm_sym, encode_instr,
+   transition_rel (R_M), config_set (C_M). Connects to
+   coq-library-undecidability's MM2 library via translate_state/
+   next_state, and proves the soundness/completeness pair the rest of
+   the development is built on (Theorems 15-16): mm2_R_completeness
+   (halting at (0,0) implies the KA inequality red_lb ⊑ red_ub) and
+   mm2_R_soundness (the converse). red_lb/red_ub/red_leq are the
+   KA-term-level objects every later file in CKAUndec/ (K.v,
+   KMComplete.v, BinaryAlphabet.v, BinaryAlphabetMComplete.v) is stated
+   over -- this is the foundational encoding the rest of the
+   undecidability development builds on. *)
+
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.

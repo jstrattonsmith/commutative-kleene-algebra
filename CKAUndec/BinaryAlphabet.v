@@ -1,26 +1,27 @@
 (* CKA-specific wiring closing the canonical-alphabet requirement for
-   real: applies BoundedOutputTransport.v's route-1 machinery to
-   Encoding.v's own mm2_R/T
-   (the transition relation and configuration set for a FIXED program
-   Prog := progOf c), and re-runs Encoding.v's own soundness/completeness
-   argument (mm2_R_completeness/mm2_R_soundness) at the embedded level
-   to get order-REFLECTION for red_lb/red_ub, which is what actually
-   closes the gap -- having a repr_rel for the embedded term alone is
-   not enough; the requirement is specifically that inequality needs
-   to be shown m-complete over the CANONICAL 2-symbol alphabet, which
-   needs reflection (Embed_pair(red_lb) ⊑ Embed_pair(red_ub) -> red_lb
-   ⊑ red_ub), not just preservation (the free direction).
+   real: applies BoundedOutputTransport.v's machinery to Encoding.v's
+   own mm2_R/T (the transition relation and configuration set for a
+   fixed program Prog := progOf c), and re-runs Encoding.v's own
+   soundness/completeness argument (mm2_R_completeness/mm2_R_soundness)
+   at the embedded level to get order-REFLECTION for red_lb/red_ub --
+   having a repr_rel for the embedded term alone is not enough; showing
+   m-completeness over the CANONICAL 2-symbol alphabet needs reflection
+   (Embed_pair(red_lb) ⊑ Embed_pair(red_ub) -> red_lb ⊑ red_ub), not
+   just preservation (the free direction).
 
-   Key simplification found while wiring this up: bounded_output_repr_rel'
-   (bounded_output.v:801) already handles ALL of the pad_rel/pad_lang
-   lifting internally (finite_state_pad_rel, bounded_output_pad_rel,
-   pad_rel_pad_lang_1/2, prefix_free_pad_lang) -- so there is no need
-   for a separate "primed" version of repr_rel_via_bounded_output. We
-   embed mm2_R/T at the UNPADDED mm_sym QF level directly (reusing
-   BoundedOutputTransport.v's transport lemmas, which are generic over
-   any finite alphabet), then hand the embedded, still-unpadded terms
-   straight to the EXISTING bounded_output_repr_rel', exactly mirroring
-   how Encoding.v itself builds repr_rel_mm2_R (Encoding.v:1316-1325). *)
+   bounded_output_repr_rel' (KA/bounded_output.v) already handles all
+   the pad_rel/pad_lang lifting internally (finite_state_pad_rel,
+   bounded_output_pad_rel, pad_rel_pad_lang_1/2, prefix_free_pad_lang),
+   so no separate "primed" version of repr_rel_via_bounded_output is
+   needed: this file embeds mm2_R/T at the unpadded mm_sym QF level
+   directly (reusing BoundedOutputTransport.v's transport lemmas, which
+   are generic over any finite alphabet), then hands the embedded,
+   still-unpadded terms straight to bounded_output_repr_rel' -- exactly
+   mirroring how Encoding.v itself builds repr_rel_mm2_R.
+
+   This is what closes the source paper's actual Theorem 18/19 over the
+   canonical 2-symbol alphabet, not just Encoding.v's machine-specific
+   alphabet. *)
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia Bool.
 Require Import ssreflect.

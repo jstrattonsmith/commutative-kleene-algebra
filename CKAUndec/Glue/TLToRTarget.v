@@ -1,13 +1,14 @@
 (* Bridges T_L (Rocq's own L-interpreter, compiled via the library's
-   FRACTRAN->MMA2 chain, then spliced via MM2/Splice.v) to Encoding.v's own
+   FRACTRAN->MMA2 chain, then spliced via coq-library-undecidability's Reductions/MM2_Splice.v) to Encoding.v's own
    R_target/red_leq convention (halt EXACTLY at (0,(0,0))).
 
-   MM2/Splice.v builds Psplice, a program that runs a compiled FRACTRAN
+   coq-library-undecidability's Reductions/MM2_Splice.v builds Psplice, a program that runs a compiled FRACTRAN
    program then tests/redirects on the output register's divisibility by
    qs 1 -- entirely MM2-generic, no mention of Encoding.v or R_target. This
    file is the CKA/T_L-specific glue connecting that construction to
    Encoding.v's own soundness/completeness pair (mm2_R_completeness/
-   soundness), closing with R_TL_R_target_connection. *)
+   soundness), closing with R_TL_R_target_connection -- the connection
+   CKAUndec/K.v builds its effective-inseparability argument on. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia Relations.
 From Undecidability Require Import FRACTRAN.
@@ -50,7 +51,7 @@ apply L_computable_closed_to_MMA_computable.
 exact T_L_Uniform.L_computable_closed_R_TL.
 Qed.
 
-(* --- Connect MM2/Splice.v's construction to Encoding.v's own R_target
+(* --- Connect coq-library-undecidability's Reductions/MM2_Splice.v's construction to Encoding.v's own R_target
    directly (bypassing Theta_ours_MM2 entirely -- R_target c y :=
    red_leq (progOf c) (1,(y,0)) is already stated for ANY program via
    mm2_R_completeness/soundness, generalized over P inside Encoding.v's own
@@ -99,7 +100,7 @@ Definition R_TL_MMA2_pinned := FRACTRAN_computable_to_MMA2_pinned R_TL_FRACTRAN_
 (* --- Payoff: R_TL bridged all the way to Encoding.v's own R_target.
 
    The `m <= 1` hypothesis is not a limitation of the splice construction
-   itself (Psplice/the divides-test in MM2/Splice.v works for any m,
+   itself (Psplice/the divides-test in coq-library-undecidability's Reductions/MM2_Splice.v works for any m,
    distinguishing "m = 0" from "m > 0" via a single divisibility check)
    -- it's here because it's all A0_L/B1_L (CKAUndec.K.v,
    Computability/TL_Bridge.v) ever need: those sets only ever ask about

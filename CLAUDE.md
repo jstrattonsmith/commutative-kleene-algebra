@@ -166,9 +166,8 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
    (`Shared.partial`, `Axioms.EA`, `Synthetic.{Definitions,
    EnumerabilityFacts}`), and `coq-synthetic-computability`'s own scope is
    `L`-only -- adding MM2-specific machinery there would be over-specific
-   to this project, not that library's general purpose (revisit if Arthur
-   wants it there instead). `Θ_ours_MM2` renamed to `Θ_MM2` in the same
-   pass ("ours" was uninformative).
+   to this project, not that library's general purpose (revisit if that
+   library's own maintainers want it there instead).
 
 2. **`MM2/RtcBridge.v`** (~25 lines): `crt_to_rtc`, bridging Coq's
    `clos_refl_trans` (what the upstream MM2 facts are now stated over) to
@@ -197,8 +196,8 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
   available (`semidec_of_MM2` is CKA-project-local, not something to also
   move upstream). Fixing this properly would mean re-deriving the
   ~150-line extraction chain a second time, locally, purely for this
-  non-critical-path pair of files -- decided (Jeremy, 2026-08-31) to leave
-  them excluded rather than do that.
+  non-critical-path pair of files -- left excluded rather than doing
+  that.
 
 ### `KA/`: the pre-Kleene-algebra framework, groundwork for the MM2-as-KA-terms encoding, binary embedding machinery
 

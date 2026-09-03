@@ -1,3 +1,13 @@
+(* Shows that if a monoid `T`'s own equivalence `≡` is enumerable, so is
+   the induced `ka_eq`/`⊑` on `ka_term T`: a sound-and-complete syntactic
+   derivation system over the 12 pre-KA axiom schemes, reified as an
+   inductive predicate `D` with a decidable proof-search procedure
+   (`check`/`check_sound`/`check_complete`). This is the generic
+   "finitary axiomatization gives enumerability" argument that
+   CKAUndec/KEnumerable.v instantiates for the MM2 encoding's own
+   carrier monoid, giving the enumerability of the KA-term inequality
+   relation needed for the final Sigma^0_1-completeness result. *)
+
 Require Import ssreflect.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts.
 From Undecidability.Synthetic Require Import DecidabilityFacts.

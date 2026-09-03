@@ -1,3 +1,10 @@
+(* Formal languages over word monoids: the `lang` record and the
+   interpretation `l : ka_term T -> lang` sending a KA term to the
+   language it denotes. Establishes `l_alt` (string membership agrees
+   with term ordering), `l_inj_finite`, and `either_empty_or_nonzero` --
+   foundational language-semantics facts (the paper's Theorem 5,
+   Corollaries 7-8) that KA/automata.v and KA/repr_rel.v build on. *)
+
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.

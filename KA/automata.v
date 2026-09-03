@@ -1,3 +1,12 @@
+(* Finite-state automata over an arbitrary pre-KA carrier: the `fsa`
+   record, product (`fsa_mul'`) and star (`fsa_star'`) constructions, the
+   `finite_state`/`finite_stateb` predicates identifying which KA terms
+   admit a finite-state automaton, and the expansion lemma
+   `fsa_elem_k_decomp_gen` (the paper's Lemma 27). `string_match`
+   connects automaton acceptance back to KA/lang.v's language semantics.
+   This is the automata-theoretic layer KA/repr_rel.v's representable
+   relations are built on top of. *)
+
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.

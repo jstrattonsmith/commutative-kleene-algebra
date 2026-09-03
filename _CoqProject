@@ -5,45 +5,42 @@
 -R . kacc
 
 # MM2/: the Church's-Thesis-witness wrapper around
-# coq-library-undecidability's own MM2 simulator (Stepper.v/
-# FractranCompiler.v/Splice.v's pure MM2 content moved there 2026-08-31 --
-# see Util/MM2_{stepper,embed_nat,simulator}.v and
-# Reductions/{FRACTRAN_computable_to_MM2_computable,MM2_Splice}.v), plus
-# RtcBridge.v, a small piece of genuinely CKA-specific glue that couldn't
-# move (bridges Coq's clos_refl_trans to stdpp's relations.rtc).
+# coq-library-undecidability's own MM2 simulator (see
+# Util/MM2_{stepper,embed_nat,simulator}.v and
+# Reductions/{FRACTRAN_computable_to_MM2_computable,MM2_Splice}.v for the
+# general-purpose MM2 content itself), plus RtcBridge.v, a small piece of
+# CKA-specific glue (bridges Coq's clos_refl_trans to stdpp's
+# relations.rtc).
 MM2/Simulator.v
 MM2/RtcBridge.v
 
 # MM2/Legacy/: an earlier, self-contained axiom-free S-M-N-style
-# construction directly at the MM2 level, predating the T_L-based route
-# above (which superseded it for the main argument). Not on the
-# critical path. Genuinely MM2-generic (no CKA content, confirmed).
+# construction directly at the MM2 level, predating and superseded by
+# the T_L-based route above (used in the main argument). Not on the
+# critical path. Genuinely MM2-generic, no CKA content.
 MM2/Legacy/TLUniform_MM2.v
 MM2/Legacy/MM2_PrefixSplice.v
 
 # MM2/Legacy/EffectiveInseparability_MM2_Race.v and MM2/Legacy/SMN_MM2.v
-# (which Requires it) EXCLUDED as of 2026-08-31, pending a decision --
-# not deleted, not fixed. Their semidec_of_MM2_computable needs `extract`
-# to compose the already-registered mm2_haltedAt_computable/
-# progOf_computable instances (now upstream, in
-# Undecidability.MinskyMachines.Util.MM2_simulator) across a file
-# boundary; confirmed this genuinely fails both via `extract` and via
-# plain `typeclasses eauto` (not just an ordering/import fix -- a real
-# MetaRocq cross-file extraction-composition limitation, same class of
-# issue documented in MM2_simulator.v's own header, but this time with
-# no colocation fix available since semidec_of_MM2 itself is CKA-project-
-# local, not something to also move upstream). Fixing this properly
-# would mean re-deriving the ~150-line extraction chain
+# (which Requires it) are excluded here, not deleted. Their
+# semidec_of_MM2_computable needs `extract` to compose the
+# already-registered mm2_haltedAt_computable/progOf_computable instances
+# (now upstream, in Undecidability.MinskyMachines.Util.MM2_simulator)
+# across a file boundary; this genuinely fails both via `extract` and via
+# plain `typeclasses eauto` -- the same class of MetaRocq cross-file
+# extraction-composition limitation documented in MM2_simulator.v's own
+# header, but with no colocation fix available here since semidec_of_MM2
+# is CKA-project-local, not something to also move upstream. Fixing this
+# properly would mean re-deriving the ~150-line extraction chain
 # (mm2_atom_fun_computable through mm2_haltedAt_computable) a second
-# time, locally, purely to satisfy this one non-critical-path file --
-# flagged to Jeremy rather than done unilaterally.
+# time, locally, purely for this non-critical-path pair of files.
 # MM2/Legacy/EffectiveInseparability_MM2_Race.v
 # MM2/Legacy/SMN_MM2.v
 
-# Computability/ is gone as of 2026-08-31: its four files (pure
+# Computability/ no longer exists here: its four files (pure
 # effective-inseparability/creative/m-complete theory over an abstract
-# numbering, plus T_L/CT_L/EA bridging -- zero MM2 or KA content) moved
-# to coq-synthetic-computability, as
+# numbering, plus T_L/CT_L/EA bridging -- zero MM2 or KA content) live in
+# coq-synthetic-computability instead, as
 # ReducibilityDegrees/EffectiveInseparabilityCore.v, Models/EA_L.v,
 # Models/EA_L_Myhill.v (renamed to avoid colliding with the pre-existing
 # Basic/Myhill.v, a different classical result), and Models/T_L_Bridge.v.
