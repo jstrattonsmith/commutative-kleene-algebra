@@ -22,41 +22,12 @@ dependencies as independent git repos:
   reducibility degrees), including a set of files originally built for
   this project too (see Dependencies below).
 
-As of 2026-08-31, the development is organized into two reusable libraries
-(the third, `Computability/`, has been fully upstreamed and no longer
-exists here) plus the CKA-specific payoff that combines everything:
-
-- **`MM2/`** (`RtcBridge.v` + `Legacy/`): a small piece of genuinely
-  CKA-specific glue bridging Coq's `clos_refl_trans` to stdpp's
-  `relations.rtc`. The pure MM2 execution-model content (Gödel-coding,
-  step-indexed simulator, FRACTRAN-to-MM2 compiler, splicing) lives in
-  `coq-library-undecidability` instead -- see Dependencies below.
-  `Legacy/` holds an evaluator wrapper not on the critical path -- see
-  its own header comment for why.
-- **`KA/`** (~6,045 lines, 10 files): the paper's own pre-Kleene-algebra
-  framework, plus a binary-alphabet embedding
-  (`BinaryAlphabetTransport.v`, `BoundedOutputTransport.v`) transporting
-  representable-relation facts along a fixed-length injective character
-  encoding. Independent of `MM2/`/`CKAUndec/` -- touches neither, the
-  most foundational library in the repo. Fully admit-free.
-- **`CKAUndec/` and `CKAUndec/Glue/`** (~2,740 lines, 9 files): the actual
-  payoff -- encodes MM2 as KA terms (Definitions 11-13,
-  `CKAUndec/Encoding.v`), proves the soundness/completeness pair connecting
-  MM2 reachability to a KA-term inequality (Theorems 15-16), and builds up
-  effective inseparability (Theorem 17, admit- and axiom-free) and
-  Sigma^0_1-completeness of the KA-term inequality (matching the paper's own
-  closing remark that it adapted Kuznetsov's ICTAC 2023 completeness
-  argument) both over the machine-specific alphabet and over the paper's own
-  canonical, minimal 2-symbol alphabet
-  (`CKAUndec/BinaryAlphabet.v`/`CKAUndec/BinaryAlphabetMComplete.v`, closing
-  the source paper's actual Theorem 18/19 statement rather than a
-  machine-specific analogue of it) -- conditional on two named, standard
-  hypotheses (`CT_L`, Church's Thesis for Rocq's `L` language; `MP`, Markov's
-  Principle) -- see `CKAUndec/KMComplete.v`'s header comment for exactly why
-  each is needed and where. `CKAUndec/Glue/*.v` files are thin connective
-  code wiring `MM2/` and `coq-synthetic-computability`'s `Models/` content
-  into `CKAUndec/`. Named `CKAUndec/` rather than `CKA/` to stay visually
-  distinct from `KA/` in a file tree.
+The development is organized into `MM2/` (small CKA-specific glue, plus
+a `Legacy/` evaluator wrapper not on the critical path), `KA/` (the
+paper's own pre-Kleene-algebra framework and binary-alphabet embedding,
+independent of `MM2/`/`CKAUndec/`), and `CKAUndec/`/`CKAUndec/Glue/`
+(the actual MM2-as-KA-terms payoff) -- see File Structure below for the
+file-by-file breakdown of each.
 
 This whole development depends heavily on the sibling
 `coq-synthetic-computability` project (see Dependencies below) -- in
@@ -363,13 +334,8 @@ naming.
 
 - Lines are capped at 80 characters, including in Markdown files.  You should
   aim to fully utilize the 80 character limit. Avoid short lines if possible.
-- Use **ssreflect** tactics (`move=>`, `rewrite`, `apply/`, `case/`, `elim:`,
-  `/=`) extensively.  Avoid `destruct`, `induction`, `exfalso`, etc.  This
-  applies to `KA/` (files 9-18 above). The `MM2/` and `CKAUndec/` files
-  deliberately use plain Coq tactics instead (`intros`, `destruct`,
-  `apply`) -- they interface directly with `coq-synthetic-computability`'s
-  own plain-tactic style, and mixing ssreflect in at that boundary wasn't
-  worth the friction.
+- `KA/`-specific tactic conventions (ssreflect usage) are documented in
+  `KA/CLAUDE.md`, loaded only when working under that directory.
 - The `congruence` tactic is allowed.
 - `Set Implicit Arguments` is active -- beware that arguments inferable from
   later ones become implicit.  Use `@lemma_name` to pass all arguments
