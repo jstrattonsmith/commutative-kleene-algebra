@@ -57,6 +57,7 @@ Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilit
 Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparability.
 Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityTransport.
 Require Import SyntheticComputability.ReducibilityDegrees.simple.
+Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Import SyntheticComputability.Axioms.EA.
 Require Import SyntheticComputability.CRM.principles.
 Require Import SyntheticComputability.Synthetic.reductions.
@@ -122,4 +123,21 @@ intros q Hq.
 apply (red_m_transitive (CKAUndec.K.K c) (@KA_ineq c)).
 - exact (Hc q Hq).
 - exists (K_to_KA_ineq c). exact (K_to_KA_ineq_spec c).
+Qed.
+
+(* Closes the source paper's Theorem 18 analogue over the machine-specific
+   alphabet: raw undecidability of K, conditional on the same two
+   hypotheses K_m_complete already needs -- via
+   ReducibilityDegrees/simple.v's m_complete_undecidable, not a fresh
+   argument. Genuinely conditional, not axiom-free: getting from K's
+   hypothetical decision procedure to a W_L-index needs CT_L (EA_L is
+   only ever built from it), and the creative-set route
+   m_complete_undecidable goes through needs MP too (via
+   eff_insep_to_creative's own use of MP_to_MP_partial). *)
+Theorem K_undecidable : CT_L -> MP -> exists c : nat, ~ decidable (CKAUndec.K.K c).
+Proof.
+intros ct MP_assm.
+destruct (K_m_complete ct MP_assm) as [c Hc].
+exists c.
+exact (@m_complete_undecidable (EA_L ct) _ (K_enumerable c) Hc).
 Qed.

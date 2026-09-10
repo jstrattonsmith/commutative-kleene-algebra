@@ -76,6 +76,7 @@ Require Import SyntheticComputability.Axioms.EA.
 Require Import SyntheticComputability.CRM.principles.
 Require Import SyntheticComputability.Synthetic.Definitions
   SyntheticComputability.Synthetic.EnumerabilityFacts
+  SyntheticComputability.Synthetic.DecidabilityFacts
   SyntheticComputability.Synthetic.reductions.
 Require Import SyntheticComputability.Shared.embed_nat.
 
@@ -226,6 +227,38 @@ destruct (K_bin_m_complete ct MP_assm) as [c [k [bEnc [Hlen [Hk_pos Hc]]]]].
 intros q Hq.
 apply (red_m_transitive (K_bin (c := c) Hlen Hk_pos) KA_ineq_bin).
 - exact (Hc q Hq).
+- exists (K_to_KA_ineq_bin (bEnc := bEnc) Hlen Hk_pos).
+  exact (K_to_KA_ineq_bin_spec Hlen Hk_pos).
+Qed.
+
+(* Closes the source paper's Theorem 18 over the canonical binary
+   alphabet: raw undecidability of K_bin, conditional on the same two
+   hypotheses KA_ineq_bin_m_complete already needs (see KMComplete.v's
+   K_undecidable for why this can't be made axiom-free). *)
+Theorem K_bin_undecidable : CT_L -> MP ->
+  exists (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
+    (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat),
+  ~ decidable (K_bin (c := c) Hlen Hk_pos).
+Proof.
+intros ct MP_assm.
+destruct (K_bin_m_complete ct MP_assm) as [c [k [bEnc [Hlen [Hk_pos Hc]]]]].
+exists c, k, bEnc, Hlen, Hk_pos.
+exact (@m_complete_undecidable (EA_L ct) _ (K_bin_enumerable Hlen Hk_pos) Hc).
+Qed.
+
+(* KA_ineq_bin itself is not nat-valued (its domain is a pair of ka_terms
+   over Tm_bin), so simple.v's creative/m_complete_undecidable (stated
+   only over nat -> Prop, since productive is defined via W : nat -> nat
+   -> Prop) cannot apply to it directly. Transport K_bin's undecidability
+   across the same reduction KA_ineq_bin_m_complete's own proof already
+   builds instead, via red_m_transports's contrapositive
+   (p ⪯ₘ q -> ~ decidable p -> ~ decidable q). *)
+Theorem KA_ineq_bin_undecidable : CT_L -> MP -> ~ decidable KA_ineq_bin.
+Proof.
+intros ct MP_assm.
+destruct (K_bin_undecidable ct MP_assm) as [c [k [bEnc [Hlen [Hk_pos Hnd]]]]].
+intros Hdec % (red_m_transports (K_bin (c := c) Hlen Hk_pos) KA_ineq_bin).
+- exact (Hnd Hdec).
 - exists (K_to_KA_ineq_bin (bEnc := bEnc) Hlen Hk_pos).
   exact (K_to_KA_ineq_bin_spec Hlen Hk_pos).
 Qed.
