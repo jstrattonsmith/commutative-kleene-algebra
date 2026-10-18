@@ -535,7 +535,7 @@ have /app_inv_head H' := H.
 by have [= ->] := app_inv_head _ _ _ H'.
 Qed.
 
-Local Lemma translate_state_spec pc :
+Lemma translate_state_spec pc :
   pc < n →
   fin_to_nat (translate_state (S pc)) =
   S (S pc).
@@ -546,7 +546,7 @@ have [fi Hfi] := @nat_to_fin_lt n pc Hpc.
 by rewrite Hfi /= (nat_to_finK Hfi).
 Qed.
 
-Local Lemma mm2_prog_spec pc ρ :
+Lemma mm2_prog_spec pc ρ :
   nth_error P pc = Some ρ →
   mm2_prog (translate_state (S pc)) =
   mm2_to_instr ρ.
