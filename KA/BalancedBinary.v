@@ -312,10 +312,13 @@ apply: (bal_univ_complete (Pre := Phi P ⊔ bad) (D := k * D)).
     by rewrite encw_length.
 Qed.
 
-Theorem bin_sound (E P : ka_term MT) :
-  bstarB ⊑ bin_ub E P → ∀ w, l (E ⊔ P ⋅ bstarT) (w, length w).
+(* Only the balanced words of `bin_ub E P` matter, so soundness also holds
+   for any upper bound whose balanced words are those of `bin_ub E P`. *)
+Theorem bin_sound_lang (E P : ka_term MT) :
+  (∀ u, l (bin_ub E P) (u, length u)) →
+  ∀ w, l (E ⊔ P ⋅ bstarT) (w, length w).
 Proof.
-move=> H w; have := bal_univ_sound (encw w) H; rewrite encw_length.
+move=> H w; have := H (encw w); rewrite encw_length.
 case/l_join => [/l_join [HE|HP]|HPart].
 - apply/l_joinT; left; case/l_Phi: HE => w' [n [/encw_inj -> [En HE]]].
   by have <- : n = length w' by apply: mul_k_inj; lia.
@@ -343,5 +346,9 @@ case/l_join => [/l_join [HE|HP]|HPart].
   + have := Nat.mul_le_mono_l _ _ k Hwj; lia.
   + have := Nat.mul_le_mono_l _ _ k Hwj; rewrite Nat.mul_succ_r; lia.
 Qed.
+
+Theorem bin_sound (E P : ka_term MT) :
+  bstarB ⊑ bin_ub E P → ∀ w, l (E ⊔ P ⋅ bstarT) (w, length w).
+Proof. by move=> H; apply: bin_sound_lang => u; exact: bal_univ_sound. Qed.
 
 End BalancedBinary.

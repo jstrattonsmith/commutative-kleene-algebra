@@ -1,7 +1,8 @@
 (* The analogue of CKAUndec/Glue/TLToRTarget.v for the universality
    encodings of CKAUndec/UnivEncoding.v: connects R_TL, through
    coq-library-undecidability's Reductions/MM2_Splice.v, to R_target_univ
-   and its binary-alphabet counterpart R_target_univ_bin. The splice
+   and its binary-alphabet counterpart R_target_univ_bin, and to their
+   full-universality versions in KA (CKAUndec/UnivTop.v). The splice
    argument is stated once (R_TL_connection_of), for any family of
    propositions that is complete for runs halting at (0,(0,0)) and sound
    for halting runs. Feeds CKAUndec/UnivMComplete.v. *)
@@ -26,7 +27,7 @@ From Undecidability.MinskyMachines.Reductions Require Import
 From Undecidability.MinskyMachines.Util Require Import MM2_simulator.
 From kacc Require Import CKAUndec.Glue.RtcBridge.
 From kacc Require Import CKAUndec.Glue.TLToRTarget.
-From kacc Require Import CKAUndec.UnivEncoding.
+From kacc Require Import CKAUndec.UnivEncoding CKAUndec.UnivTop.
 
 Require Import SyntheticComputability.Models.T_L_Uniform.
 From stdpp Require relations.
@@ -119,4 +120,22 @@ Theorem R_TL_R_target_univ_bin_connection :
 Proof.
 exact (@R_TL_connection_of univ_leq_bin (@univ_completeness_bin)
          (@univ_soundness_bin)).
+Qed.
+
+Theorem R_TL_R_target_univ_top_connection :
+  exists c : nat, forall (v : Vector.t nat 2) (m : nat),
+    m <= 1 -> T_L_Uniform.R_TL v m ->
+    (m = 1 <-> R_target_univ_top c (ps 1 * enc 2 v)).
+Proof.
+exact (@R_TL_connection_of univ_top_leq (@univ_top_completeness)
+         (@univ_top_soundness)).
+Qed.
+
+Theorem R_TL_R_target_univ_top_bin_connection :
+  exists c : nat, forall (v : Vector.t nat 2) (m : nat),
+    m <= 1 -> T_L_Uniform.R_TL v m ->
+    (m = 1 <-> R_target_univ_top_bin c (ps 1 * enc 2 v)).
+Proof.
+exact (@R_TL_connection_of univ_top_leq_bin (@univ_top_completeness_bin)
+         (@univ_top_soundness_bin)).
 Qed.

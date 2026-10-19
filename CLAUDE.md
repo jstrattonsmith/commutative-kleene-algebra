@@ -183,7 +183,26 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     Includes `l_alt` (Theorem 5: string membership <-> term ordering),
     `l_inj_finite` (Corollary 7), `either_empty_or_nonzero` (Corollary 8).
 
-14. **`KA/balanced.v`** (~200 lines): the pre-KA engine behind
+14. **`KA/ka.v`** (~530 lines): Kleene algebras (`KAMixin`, Kozen's two
+    star induction rules, on top of `PreKAMixin`) with basic theory
+    (`ka_star_mono`, `ka_star_one`, `ka_star_comm`, and
+    `ka_star_join_comm`: `(x ⊔ y)^* ≡ (1 ⊔ x x^* ⊔ y y^*) (x y)^*` when
+    `x y ≡ y x`), and languages as a KA (`lang_ka`). `free_ka P` is the
+    free KA over a pre-KA `P` (terms over `P` modulo pre-KA laws, the
+    operation table of `P` and star induction), with unit `free_ka_unit`,
+    lift `free_ka_lift` and uniqueness `free_ka_ext`. `free_ka_mon M :=
+    free_ka (ka_term_pre_ka M)` is the free KA over a monoid, and `ka_leq`
+    the KA ordering on `ka_term M`, sound for languages (`ka_leq_lang`).
+    Over a finitely generated monoid, `pseudo_top` is the top element of
+    the free KA (`ka_top_greatest`).
+
+15. **`KA/ka_enumerable.v`** (~280 lines): the analogue of
+    `KA/enumerable.v` for the free KA: derivations of `free_ka_eq` (pre-KA
+    laws, operation table, star induction) reified as `DK` and checked by
+    `checkK`, giving `free_ka_eq_enumerable` and
+    `ka_leq_slice_enumerable_r`.
+
+16. **`KA/balanced.v`** (~200 lines): the pre-KA engine behind
     `CKAUndec/UnivEncoding.v`. Defines the additive `nat` monoid
     (`nat_add_monoid`; beware that a bare `1` in `ka_scope` at type `nat`
     elaborates to its unit, i.e. `0`) and, over `list A * nat`, the star of
@@ -194,17 +213,27 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     with `Pre ⋅ bal_star ⊑ x`. `bal_univ_sound` is the converse direction
     through the language model.
 
-15. **`KA/BalancedBinary.v`** (~350 lines): transports balanced
+17. **`KA/BalancedBinary.v`** (~350 lines): transports balanced
     universality to the fixed carrier `list bool * nat`. Letters are
     encoded by an injective fixed-length `enc` (length `k`) and weights are
     scaled by `k` (`phi (w, n) = (encw w, k * n)`, so balanced words stay
     balanced). For an upper bound `E ⊔ P ⋅ bal_star`, `bin_ub E P` adds
     detectors for an invalid block (`bad`) and for an incomplete final
     block (`partial`). `bin_complete` derives binary universality from the
-    same language-level facts `bal_univ_complete` uses; `bin_sound` gives
-    back membership of every balanced word over the original alphabet.
+    same language-level facts `bal_univ_complete` uses; `bin_sound` (and
+    its language-level form `bin_sound_lang`) gives back membership of
+    every balanced word over the original alphabet.
 
-16. **`KA/automata.v`** (~1080 lines): FSA/NFA definitions: `fsa` record with
+18. **`KA/BalancedKA.v`** (~140 lines): from balanced to full
+    universality in KA over `list A * nat`. `sigma_top` (`Σ*`, an instance
+    of `pseudo_top`) is `star (letA ⊔ letB)`, and since the two commute,
+    `ka_star_join_comm` gives `KA ⊢ Σ* ≡ bal_star ⊔ unbal`
+    (`sigma_top_ka`), where `unbal` are the words with the wrong number of
+    commuting letters. Hence `bal_star ⊑ x` in pre-KA gives `Σ* ⊑ x ⊔
+    unbal` in KA (`ka_top_complete`), and the latter puts every balanced
+    word in `l x` (`ka_top_sound`).
+
+19. **`KA/automata.v`** (~1080 lines): FSA/NFA definitions: `fsa` record with
     `fsa_elem`, `fsa_state`, `fsa_interp`, `fsa_initial`, `fsa_trans`,
     `fsa_trans_s`. Product (`fsa_mul'`) and star (`fsa_star'`) constructions.
     `finite_state` predicate and its boolean analogue `finite_stateb` (+
@@ -212,19 +241,19 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     `fsa_elem_k_decomp_gen` (Lemma 27). `ka_term_proj1`, `ka_term_proj2`,
     `ka_term_diag`. `string_match` / `string_match_complete_sized`.
 
-17. **`KA/repr_rel.v`** (~855 lines): Representable relations (`repr_rel`
+20. **`KA/repr_rel.v`** (~855 lines): Representable relations (`repr_rel`
     record with `next`, `residue`, `expand_rel`). `diff` term. Iteration
     lemmas (`repr_rel_iter`, Lemma 21; `repr_rel_iter_empty`, Theorem 22).
     Also `pad_lang`/`pad_rel` and `repr_rel_iter_final` -- padding/
     termination combinators added specifically to support
     `CKAUndec/Encoding.v`'s MM2 encoding below.
 
-18. **`KA/BinaryAlphabetTransport.v`** (~180 lines): the fixed-length
+21. **`KA/BinaryAlphabetTransport.v`** (~180 lines): the fixed-length
     injective character encoding shared by both binary-alphabet embedding
     routes (`finite_binary_encoding`, `Embed_pair`, `Embed_word`,
     `Embed_proj1_natural`/`Embed_proj2_natural`, all proved, axiom-free).
 
-19. **`KA/bounded_output.v`** (~815 lines): Bounded-output terms (Definition
+22. **`KA/bounded_output.v`** (~815 lines): Bounded-output terms (Definition
     28). Closure under join, mul, star (Lemma 30). `bounded_outputb` boolean
     check. Prefix-free terms (Definition 32). `list_diverge` (Lemma 33). Lemma
     31 (paper version): `lemma_31_paper` restricts the expansion to
@@ -232,7 +261,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     primed variant `bounded_output_repr_rel'` used by `CKAUndec/Encoding.v`)
     is fully proved, admit-free.
 
-20. **`KA/BoundedOutputTransport.v`** (~275 lines): route 1 of the
+23. **`KA/BoundedOutputTransport.v`** (~275 lines): route 1 of the
     binary-alphabet embedding, and the one actually used downstream
     (`CKAUndec/BinaryAlphabet.v`). Reuses `KA/bounded_output.v`'s Lemma 34
     directly (already generic over any finite alphabet) by transporting its
@@ -243,7 +272,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
 
 ### `CKAUndec/` and `CKAUndec/Glue/`: the actual MM2-as-KA-terms payoff, plus the glue wiring `coq-synthetic-computability` into it
 
-21. **`CKAUndec/Encoding.v`** (~1335 lines): encodes two-counter (MM2) Minsky
+24. **`CKAUndec/Encoding.v`** (~1335 lines): encodes two-counter (MM2) Minsky
     machines as KA terms over a doubled/commutable alphabet (Definitions
     11-13): `mm_sym`, `encode_instr`, `transition_rel` (`R_M`), `config_set`
     (`C_M`). Connects to `coq-library-undecidability`'s `MM2` library via
@@ -263,7 +292,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     decision problem the whole argument is ultimately about, and a
     direct consequence of `mm2_R_soundness`/`mm2_R_completeness` above.
 
-22. **`CKAUndec/Glue/RtcBridge.v`** (~25 lines): `crt_to_rtc`, bridging Coq's
+25. **`CKAUndec/Glue/RtcBridge.v`** (~25 lines): `crt_to_rtc`, bridging Coq's
     `clos_refl_trans` (what the upstream MM2 facts are now stated over) to
     stdpp's `relations.rtc` (what this project's own KA-term encoding
     needs). Genuinely CKA-specific glue, not MM2-generic content -- it only
@@ -271,7 +300,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     stdpp's relation vocabulary. Used by the next item and by
     `CKAUndec/Glue/BinaryAlphabetConnection.v` below.
 
-23. **`CKAUndec/Glue/TLToRTarget.v`** (~130 lines): builds a single uniform
+26. **`CKAUndec/Glue/TLToRTarget.v`** (~130 lines): builds a single uniform
     MM2 program for `T_L` via `coq-library-undecidability`'s
     `Reductions.FRACTRAN_computable_to_MM2_computable`, then splices its
     divisibility-encoded output convention
@@ -279,7 +308,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     exact `(0,(0,0))`-halting convention, connecting all the way to
     `R_target` (`R_TL_R_target_connection`).
 
-24. **`CKAUndec/K.v`** (~105 lines): closes Theorem 17. Defines `z_vec`,
+27. **`CKAUndec/K.v`** (~105 lines): closes Theorem 17. Defines `z_vec`,
     `K z := R_target c (...)` -- a genuine `red_lb ⊑ red_ub` KA-term-level
     statement -- and proves it's effectively inseparable from `B1_L` (in the
     unbundled sense both source papers state their own Theorem 17 in:
@@ -287,7 +316,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     `coq-synthetic-computability`'s `ReducibilityDegrees.EffectiveInseparabilityCore`'s
     superset-transport lemma (Kuznetsov's Proposition 9).
 
-25. **`CKAUndec/KEnumerable.v`** (~110 lines): shows `K` is genuinely
+28. **`CKAUndec/KEnumerable.v`** (~110 lines): shows `K` is genuinely
     enumerable, by identifying `CKAUndec/Encoding.v`'s carrier monoid (a
     product of free monoids over an `option`-padded, finite, decidable-
     equality alphabet) and applying `KA/enumerable.v`'s generic finitary-
@@ -295,7 +324,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     `{(x,y) | x ⊑ y}` relation over that carrier (`K` is one fixed-rhs slice
     of it), via `ka_sqsubseteq_enumerable`.
 
-26. **`CKAUndec/KMComplete.v`** (~135 lines): the full chain from `K`'s
+29. **`CKAUndec/KMComplete.v`** (~135 lines): the full chain from `K`'s
     bundled effective inseparability (`eff_insep_shape_K_B1_L`, upgrading
     `CKAUndec/K.v`'s unbundled result now that enumerability is in hand)
     through Myhill's theorem (`K_creative`, `K_m_complete`, instantiating
@@ -305,7 +334,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     (`KA_ineq_m_complete`, composing `K_m_complete` with the reduction
     `K ⪯ₘ KA_ineq` via `red_m_transitive`).
 
-27. **`CKAUndec/BinaryAlphabet.v`** (~390 lines): the CKA-specific wiring
+30. **`CKAUndec/BinaryAlphabet.v`** (~390 lines): the CKA-specific wiring
     that actually closes the source paper's Theorem 18/19 (undecidability/
     completeness stated over the canonical, minimal 2-symbol alphabet
     `{0,1}`, not `mm_sym Q`) -- applies `KA/BoundedOutputTransport.v`'s
@@ -320,14 +349,14 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     only ever used -- tracing to the same missing star-induction axiom
     documented in `KA/BinaryAlphabetTransport.v`'s header comment.
 
-28. **`CKAUndec/Glue/BinaryAlphabetConnection.v`** (~120 lines): the
+31. **`CKAUndec/Glue/BinaryAlphabetConnection.v`** (~120 lines): the
     binary-alphabet analogue of `CKAUndec/Glue/TLToRTarget.v` -- mirrors
     `Psplice_R_target_divides`/`_not_divides`/`R_TL_R_target_connection`,
     substituting `CKAUndec/BinaryAlphabet.v`'s `mm2_R_completeness'`/
     `mm2_R_soundness'` for the unembedded originals, closing with
     `R_TL_R_target_connection_bin`.
 
-29. **`CKAUndec/BinaryAlphabetMComplete.v`** (~325 lines): the
+32. **`CKAUndec/BinaryAlphabetMComplete.v`** (~325 lines): the
     binary-alphabet analogue of `CKAUndec/KMComplete.v`, generalized over an
     abstract Prop family/carrier monoid wherever the original argument only
     used `K`/`red_leq` as an opaque interface (verified faithful to the
@@ -344,7 +373,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     `coq-synthetic-computability`'s `Models/T_L_Bridge.v` rather than
     redefined locally.
 
-30. **`CKAUndec/UnivEncoding.v`** (~1300 lines): a second, independent MM2
+33. **`CKAUndec/UnivEncoding.v`** (~1300 lines): a second, independent MM2
     encoding, adapted from the universality construction of Xu, Zhou,
     Walker and Kincaid (arXiv:2607.09635, Section 4) to pre-KA. Over the
     carrier `list (option (mm_sym Q)) * nat`, a run is the word
@@ -362,25 +391,35 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     feed the binary version: `univ_ub_bin` (via `KA/BalancedBinary.v` and
     `KA/BinaryAlphabetTransport.v`'s one-hot `enc_onehot`),
     `univ_completeness_bin`/`univ_soundness_bin`, `R_target_univ_bin`. Full
-    `Σ*` on the left (i.e. `pseudo_top`) would not work, see
-    `KA/balanced.v`'s header comment.
+    `Σ*` on the left (i.e. `pseudo_top`) would not work in pre-KA, see
+    `KA/balanced.v`'s header comment; it does in KA, see the next item.
 
-31. **`CKAUndec/Glue/UnivConnection.v`** (~120 lines): the analogue of
+34. **`CKAUndec/UnivTop.v`** (~90 lines): full universality in the free
+    KA. `univ_top_ub := univ_ub_mm2 ⊔ unbal` (and `univ_top_ub_bin` over
+    `list bool * nat`) satisfy `univ_top_completeness`/`_soundness` with
+    `ka_leq sigma_top` on the left, via `KA/BalancedKA.v`.
+    `univ_top_leq`/`R_target_univ_top` (and `_bin`) mirror
+    `univ_leq`/`R_target_univ`.
+
+35. **`CKAUndec/Glue/UnivConnection.v`** (~120 lines): the analogue of
     `CKAUndec/Glue/TLToRTarget.v`, stated once for any family complete for
     runs halting at (0,(0,0)) and sound for halting runs
     (`R_TL_connection_of`), then instantiated as
-    `R_TL_R_target_univ_connection` and
-    `R_TL_R_target_univ_bin_connection`.
+    `R_TL_R_target_univ_connection`,
+    `R_TL_R_target_univ_bin_connection` and their KA counterparts
+    `R_TL_R_target_univ_top(_bin)_connection`.
 
-32. **`CKAUndec/UnivMComplete.v`** (~175 lines): `K_univ c := K_of
+36. **`CKAUndec/UnivMComplete.v`** (~265 lines): `K_univ c := K_of
     (R_target_univ c)` is enumerable and m-complete (conditional on
     `CT_L`/`MP`), and so is the balanced universality problem `Univ c :=
     {e | bal_star ⊑ e}` (`Univ_m_complete`). Over the fixed carrier `list
     bool * nat`, `Univ_bin_m_complete : CT_L -> MP -> m-complete Univ_bin`
-    needs no existential over the machine. Restates
-    `BinaryAlphabetMComplete.v`'s `eff_insep_shape_K_of_B1_L` as
-    `eff_insep_shape_of_connection` so as not to depend on
-    `CKAUndec/KMComplete.v`.
+    needs no existential over the machine. In the free KA, full
+    universality `Univ_top c := {e | KA ⊢ Σ* ⊑ e}` is m-complete too
+    (`Univ_top_m_complete`, `Univ_top_bin_m_complete`; enumerability from
+    `KA/ka_enumerable.v`). Restates `BinaryAlphabetMComplete.v`'s
+    `eff_insep_shape_K_of_B1_L` as `eff_insep_shape_of_connection` so as
+    not to depend on `CKAUndec/KMComplete.v`.
 
 ## Style Guidelines
 

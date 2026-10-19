@@ -31,9 +31,12 @@ KA/algebra.v
 KA/pre_ka.v
 KA/enumerable.v
 KA/lang.v
+KA/ka.v
+KA/ka_enumerable.v
 # balanced.v: the pre-KA engine for UnivEncoding.v (balanced universality).
 KA/balanced.v
 KA/BalancedBinary.v
+KA/BalancedKA.v
 KA/automata.v
 KA/repr_rel.v
 KA/BinaryAlphabetTransport.v
@@ -62,6 +65,7 @@ CKAUndec/BinaryAlphabetMComplete.v
 # A second, independent MM2 encoding: balanced universality over
 # list T * nat (after Xu, Zhou, Walker and Kincaid), with its own glue.
 CKAUndec/UnivEncoding.v
+CKAUndec/UnivTop.v
 CKAUndec/Glue/UnivConnection.v
 CKAUndec/UnivMComplete.v
 

@@ -2,7 +2,7 @@
 
 - Use **ssreflect** tactics (`move=>`, `rewrite`, `apply/`, `case/`, `elim:`,
   `/=`) extensively. Avoid `destruct`, `induction`, `exfalso`, etc. This
-  applies to `KA/` (files 9-20 in the root `CLAUDE.md`'s File Structure
+  applies to `KA/` (files 9-23 in the root `CLAUDE.md`'s File Structure
   section). The `MM2_Legacy/` and `CKAUndec/` files deliberately use plain Coq
   tactics instead (`intros`, `destruct`, `apply`) -- they interface
   directly with `coq-synthetic-computability`'s own plain-tactic style,
