@@ -694,10 +694,10 @@ split.
       have Hext_L : Unit (sl' ++ wl) ⊑ L.
       { etransitivity; last exact: Hdom'.
         exact: semi_lattice_morphism_sqsubseteq_proper Hin_e. }
-      have Hlen_s' : length s' = S p
-        by apply elem_of_enum_list_eq in Hlen.
       have Hsum : length sl' + length sr' = S p.
-      { have Hl : sl' = sum_lefts s'.
+      { have Hlen_s' : length s' = S p
+          by apply elem_of_enum_list_eq in Hlen.
+        have Hl : sl' = sum_lefts s'.
         { transitivity
             (∏ g ∈ sum_lefts s',
               generator_interp g).
@@ -719,20 +719,15 @@ split.
         by move/Nat.leb_le. }
       have Hsl_gt : length sl' > n
         by rewrite /p in Hsum; nia.
-      have Hne : sl' ≠ xs.
-      { move=> Heq. rewrite Heq /n in Hsl_gt. lia. }
       have Hne' : sl' ++ wl ≠ xs.
       { move=> Heq. have := f_equal length Heq.
         rewrite length_app /n. lia. }
-      have [Hn1 Hn2] :=
+      have [Hn1 _] :=
         prefix_free_not_prefix Hpf Hxs Hext_L
           (fun H => Hne' (eq_sym H)).
       have Hxs_npfx : ¬ (∃ t, sl' = xs ++ t).
       { move=> [t Ht]. apply: Hn1.
         exists (t ++ wl). by rewrite assoc_L Ht. }
-      have Hsl_npfx : ¬ (∃ t, xs = sl' ++ t).
-      { move=> [t Ht]. have := f_equal length Ht.
-        rewrite length_app /n. lia. }
       have Hn1' : ¬ (∃ t, sl' = (xs ++ sr') ++ t).
       { move=> [t Ht]. apply: Hxs_npfx.
         exists (sr' ++ t). by rewrite app_assoc. }
