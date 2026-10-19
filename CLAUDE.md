@@ -409,7 +409,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     `R_TL_R_target_univ_bin_connection` and their KA counterparts
     `R_TL_R_target_univ_top(_bin)_connection`.
 
-36. **`CKAUndec/UnivMComplete.v`** (~265 lines): `K_univ c := K_of
+36. **`CKAUndec/UnivMComplete.v`** (~250 lines): `K_univ c := K_of
     (R_target_univ c)` is enumerable and m-complete (conditional on
     `CT_L`/`MP`), and so is the balanced universality problem `Univ c :=
     {e | bal_star ⊑ e}` (`Univ_m_complete`). Over the fixed carrier `list
@@ -417,9 +417,8 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     needs no existential over the machine. In the free KA, full
     universality `Univ_top c := {e | KA ⊢ Σ* ⊑ e}` is m-complete too
     (`Univ_top_m_complete`, `Univ_top_bin_m_complete`; enumerability from
-    `KA/ka_enumerable.v`). Restates `BinaryAlphabetMComplete.v`'s
-    `eff_insep_shape_K_of_B1_L` as `eff_insep_shape_of_connection` so as
-    not to depend on `CKAUndec/KMComplete.v`.
+    `KA/ka_enumerable.v`). Effective inseparability of each `K_of` family
+    comes from `BinaryAlphabetMComplete.v`'s `eff_insep_shape_K_of_B1_L`.
 
 ## Style Guidelines
 

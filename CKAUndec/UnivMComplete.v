@@ -10,12 +10,7 @@
    Univ_bin_m_complete, with no existential over the machine. In the free
    KA, the same holds for full universality `Σ* ⊑ e` (CKAUndec/UnivTop.v,
    enumerable by KA/ka_enumerable.v): Univ_top_m_complete and
-   Univ_top_bin_m_complete.
-
-   eff_insep_shape_of_connection restates BinaryAlphabetMComplete.v's
-   eff_insep_shape_K_of_B1_L: that file depends on CKAUndec/KMComplete.v,
-   which does not currently build (see the upstream
-   m_complete_undecidable). *)
+   Univ_top_bin_m_complete. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia.
 From Undecidability Require Import FRACTRAN.
@@ -28,6 +23,7 @@ From kacc Require Import CKAUndec.Encoding CKAUndec.UnivEncoding.
 From kacc Require Import KA.ka KA.ka_enumerable KA.BalancedKA.
 From kacc Require Import CKAUndec.UnivTop.
 From kacc Require Import CKAUndec.Glue.UnivConnection.
+From kacc Require CKAUndec.BinaryAlphabetMComplete.
 From Undecidability.MinskyMachines.Util Require Import MM2_simulator.
 
 Require Import SyntheticComputability.Models.T_L_Bridge.
@@ -111,26 +107,14 @@ Qed.
 
 End UnivMComplete.
 
-Theorem eff_insep_shape_of_connection (Pred : nat -> Prop)
-    (Hc : forall (v : Vector.t nat 2) (m : nat),
-      (m <= 1)%nat -> T_L_Uniform.R_TL v m -> (m = 1 <-> Pred (ps 1 * enc 2 v)))
-    (Henum : enumerable (K_of Pred)) :
-  eff_insep_shape W_L (K_of Pred) B1_L.
-Proof.
-eapply eff_insep_shape_superset.
-- exact eff_insep_A0_B1_L_via_generic.
-- exact Henum.
-- exact (A0_L_subset_K_of Hc).
-- exact (K_of_B1_L_disjoint Hc).
-Qed.
-
 Theorem K_univ_m_complete : CT_L -> MP -> exists c, m-complete (K_univ c).
 Proof.
 intros ct MP_assm.
 destruct R_TL_R_target_univ_connection as [c Hc].
 exists c.
 exact (m_complete_of_eff_insep_shape ct MP_assm
-         (eff_insep_shape_of_connection Hc (K_univ_enumerable c))).
+         (BinaryAlphabetMComplete.eff_insep_shape_K_of_B1_L
+            Hc (K_univ_enumerable c))).
 Qed.
 
 Theorem Univ_m_complete : CT_L -> MP -> exists c, m-complete (@Univ c).
@@ -185,7 +169,8 @@ intros ct MP_assm.
 destruct R_TL_R_target_univ_bin_connection as [c Hc].
 exists c.
 exact (m_complete_of_eff_insep_shape ct MP_assm
-         (eff_insep_shape_of_connection Hc (K_univ_bin_enumerable c))).
+         (BinaryAlphabetMComplete.eff_insep_shape_K_of_B1_L
+            Hc (K_univ_bin_enumerable c))).
 Qed.
 
 (* Balanced universality over the fixed binary carrier is
@@ -211,7 +196,8 @@ intros ct MP_assm.
 destruct R_TL_R_target_univ_top_connection as [c Hc].
 exists c.
 exact (m_complete_of_eff_insep_shape ct MP_assm
-         (eff_insep_shape_of_connection Hc (K_univ_top_enumerable c))).
+         (BinaryAlphabetMComplete.eff_insep_shape_K_of_B1_L
+            Hc (K_univ_top_enumerable c))).
 Qed.
 
 Theorem Univ_top_m_complete : CT_L -> MP -> exists c, m-complete (@Univ_top c).
@@ -251,7 +237,8 @@ intros ct MP_assm.
 destruct R_TL_R_target_univ_top_bin_connection as [c Hc].
 exists c.
 exact (m_complete_of_eff_insep_shape ct MP_assm
-         (eff_insep_shape_of_connection Hc (K_univ_top_bin_enumerable c))).
+         (BinaryAlphabetMComplete.eff_insep_shape_K_of_B1_L
+            Hc (K_univ_top_bin_enumerable c))).
 Qed.
 
 (* Universality `Σ* ⊑ e` in the free KA over the fixed binary carrier
