@@ -1,5 +1,5 @@
-(* Transporting balanced universality (KA/balanced.v) from `list T * nat`
-   to the fixed binary carrier `list bool * nat`.
+(* Transporting balanced universality (Universality/balanced.v) from
+   `list T * nat` to the fixed binary carrier `list bool * nat`.
 
    Letters are encoded by an injective `enc : T → list bool` of fixed
    length `k > 0`, and weights are scaled by `k`, so that the monoid
@@ -15,8 +15,8 @@
    For an upper bound of the shape `E ⊔ P ⋅ bal_star` over `T`,
    `bin_ub E P := Phi E ⊔ (Phi P ⊔ bad) ⋅ bal_star ⊔ partial`. The two
    theorems reduce binary universality to the language-level facts that
-   KA/balanced.v's `bal_univ_complete` consumes (`bin_complete`), and give
-   back membership of every balanced word over `T` (`bin_sound`). *)
+   Universality/balanced.v's `bal_univ_complete` consumes (`bin_complete`),
+   and give back membership of every balanced word over `T` (`bin_sound`). *)
 
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
@@ -29,10 +29,11 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang KA.balanced.
+From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang.
+From kacc Require Import Universality.balanced.
 
-(* See KA/balanced.v: a bare `1` would be the unit of the additive `nat`
-   monoid. *)
+(* See Universality/balanced.v: a bare `1` would be the unit of the additive
+   `nat` monoid. *)
 Local Open Scope nat_scope.
 
 (** Binary words of a given length. *)

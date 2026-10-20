@@ -1,16 +1,16 @@
-(* m-completeness for the universality encoding of CKAUndec/UnivEncoding.v,
-   following CKAUndec/BinaryAlphabetMComplete.v's generic route:
-   K_univ c := K_of (R_target_univ c) is effectively inseparable from
-   B1_L (via CKAUndec/Glue/UnivConnection.v), enumerable (via
-   KA/enumerable.v), hence m-complete under CT_L and MP. Composing with
-   the reduction z ↦ univ_ub_mm2 ... gives m-completeness of
+(* m-completeness for the universality encoding of
+   Universality/UnivEncoding.v, following CKAUndec/BinaryAlphabetMComplete.v's
+   generic route: K_univ c := K_of (R_target_univ c) is effectively
+   inseparable from B1_L (via Universality/UnivConnection.v), enumerable (via
+   KA/ka_enumerable.v), hence m-complete under CT_L and MP.
+   Composing with the reduction z ↦ univ_ub_mm2 ... gives m-completeness of
    `Univ c := {e | bal_star ⊑ e}`, the balanced universality problem
    over the carrier `list (option (mm_sym Q)) * nat`. The same argument over
-   the fixed carrier `list bool * nat` (via KA/BalancedBinary.v) gives
-   Univ_bin_m_complete, with no existential over the machine. In the free
-   KA, the same holds for full universality `Σ* ⊑ e` (CKAUndec/UnivTop.v,
-   enumerable by KA/ka_enumerable.v): Univ_top_m_complete and
-   Univ_top_bin_m_complete. *)
+   the fixed carrier `list bool * nat` (via Universality/BalancedBinary.v)
+   gives Univ_bin_m_complete, with no existential over the machine. In the
+   free KA, the same holds for full universality `Σ* ⊑ e`
+   (Universality/UnivTop.v, enumerable by KA/ka_enumerable.v):
+   Univ_top_m_complete and Univ_top_bin_m_complete. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia.
 From Undecidability Require Import FRACTRAN.
@@ -18,11 +18,13 @@ From Undecidability.FRACTRAN Require Import prime_seq.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
 From stdpp Require base decidable countable fin finite.
-From kacc Require Import KA.algebra KA.pre_ka KA.enumerable KA.balanced.
-From kacc Require Import CKAUndec.Encoding CKAUndec.UnivEncoding.
-From kacc Require Import KA.ka KA.ka_enumerable KA.BalancedKA.
-From kacc Require Import CKAUndec.UnivTop.
-From kacc Require Import CKAUndec.Glue.UnivConnection.
+From kacc Require Import KA.algebra KA.pre_ka KA.preka_enumerable.
+From kacc Require Import Universality.balanced.
+From kacc Require Import CKAUndec.Encoding Universality.UnivEncoding.
+From kacc Require Import KA.ka KA.ka_enumerable.
+From kacc Require Import Universality.BalancedKA.
+From kacc Require Import Universality.UnivTop.
+From kacc Require Import Universality.UnivConnection.
 From kacc Require CKAUndec.BinaryAlphabetMComplete.
 From Undecidability.MinskyMachines.Util Require Import MM2_simulator.
 

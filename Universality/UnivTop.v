@@ -1,11 +1,11 @@
-(* Full universality in KA: the encodings of CKAUndec/UnivEncoding.v, with
-   `Σ*` (KA/BalancedKA.v's `sigma_top`, i.e. `pseudo_top`) on the left
-   instead of `bal_star`. The upper bounds are those of UnivEncoding.v
-   joined with `unbal`, the words with the wrong number of commuting
-   letters. Completeness comes from the pre-KA completeness theorems
-   through `ka_top_complete`; soundness goes through the language model
-   (`ka_top_sound`). This needs star induction and so holds in the free
-   KA, not in the free pre-KA. *)
+(* Full universality in KA: the encodings of Universality/UnivEncoding.v, with
+   `Σ*` (Universality/BalancedKA.v's `sigma_top`, i.e. `pseudo_top`) on the
+   left instead of `bal_star`. The upper bounds are those of UnivEncoding.v
+   joined with `unbal`, the words with the wrong number of commuting letters.
+   Completeness comes from the pre-KA completeness theorems through
+   `ka_top_complete`; soundness goes through the language model
+   (`ka_top_sound`). This needs star induction and so holds in the free KA,
+   not in the free pre-KA. *)
 
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
@@ -17,10 +17,12 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang KA.balanced.
-From kacc Require Import KA.BinaryAlphabetTransport KA.BalancedBinary.
-From kacc Require Import KA.ka KA.BalancedKA.
-From kacc Require Import CKAUndec.Encoding CKAUndec.UnivEncoding.
+From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang.
+From kacc Require Import Universality.balanced.
+From kacc Require Import KA.BinaryAlphabetTransport.
+From kacc Require Import Universality.BalancedBinary.
+From kacc Require Import KA.ka Universality.BalancedKA.
+From kacc Require Import CKAUndec.Encoding Universality.UnivEncoding.
 From Undecidability.MinskyMachines.Util Require Import
   MM2_facts MM2_stepper MM2_simulator.
 From Undecidability.MinskyMachines Require Import MM2.

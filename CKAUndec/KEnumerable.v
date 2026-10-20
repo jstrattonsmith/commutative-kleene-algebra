@@ -1,4 +1,4 @@
-(* Follow-up to CKAUndec/K.v: KA/enumerable.v proves exactly the
+(* Follow-up to CKAUndec/K.v: KA/preka_enumerable.v proves exactly the
    "provability from a finite axiomatisation is r.e." bridge needed to
    show K enumerable -- ka_sqsubseteq_enumerable shows that ⊑ on
    ka_term T is enumerable whenever the carrier monoid T's own ≡ is.
@@ -17,7 +17,7 @@ From Undecidability Require Import FRACTRAN.
 From Undecidability.FRACTRAN Require Import prime_seq.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
-From kacc Require Import KA.algebra KA.pre_ka KA.enumerable.
+From kacc Require Import KA.algebra KA.pre_ka KA.preka_enumerable.
 From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_stepper MM2_embed_nat MM2_simulator.
 From kacc Require Import CKAUndec.Encoding.
 Require Import SyntheticComputability.Models.T_L_Bridge.

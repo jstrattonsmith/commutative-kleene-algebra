@@ -29,14 +29,12 @@ MM2_Legacy/Simulator.v
 KA/utils.v
 KA/algebra.v
 KA/pre_ka.v
-KA/enumerable.v
+KA/preka_enumerable.v
 KA/lang.v
+# ka.v/ka_enumerable.v: full Kleene algebras (star induction) and the
+# free KA, used by Universality/.
 KA/ka.v
 KA/ka_enumerable.v
-# balanced.v: the pre-KA engine for UnivEncoding.v (balanced universality).
-KA/balanced.v
-KA/BalancedBinary.v
-KA/BalancedKA.v
 KA/automata.v
 KA/repr_rel.v
 KA/BinaryAlphabetTransport.v
@@ -62,12 +60,17 @@ CKAUndec/BinaryAlphabet.v
 CKAUndec/Glue/BinaryAlphabetConnection.v
 CKAUndec/BinaryAlphabetMComplete.v
 
-# A second, independent MM2 encoding: balanced universality over
-# list T * nat (after Xu, Zhou, Walker and Kincaid), with its own glue.
-CKAUndec/UnivEncoding.v
-CKAUndec/UnivTop.v
-CKAUndec/Glue/UnivConnection.v
-CKAUndec/UnivMComplete.v
+# Universality/: a second, independent MM2 encoding via balanced
+# universality over list T * nat (after Xu, Zhou, Walker and Kincaid);
+# see Universality/README.md.
+# Depends on KA/ and CKAUndec/; nothing outside it depends on it.
+Universality/balanced.v
+Universality/BalancedBinary.v
+Universality/BalancedKA.v
+Universality/UnivEncoding.v
+Universality/UnivTop.v
+Universality/UnivConnection.v
+Universality/UnivMComplete.v
 
 # SimulatorToRTarget.v: connects MM2_Legacy/Simulator.v's Theta_MM2 to
 # CKAUndec/Encoding.v's R_target (plus an embedded-alphabet analogue) --

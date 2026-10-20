@@ -26,8 +26,8 @@
    "connection -> effective inseparability" argument
    (coq-synthetic-computability's Models/T_L_Bridge.v, generalizing
    CKAUndec/K.v's own instantiation) and the enumerability argument
-   (KA/enumerable.v). K_eq_K_of_R_target verifies this generic route is
-   faithful to CKAUndec/KMComplete.v's argument -- K and the new K_bin
+   (KA/preka_enumerable.v). K_eq_K_of_R_target verifies this generic route
+   is faithful to CKAUndec/KMComplete.v's argument -- K and the new K_bin
    are proven by the SAME lemmas, not two copies.
 
    Closes with KA_ineq_bin_m_complete : CT_L -> MP -> m-complete
@@ -55,7 +55,7 @@ From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
   DecidabilityFacts MoreReducibilityFacts.
 From stdpp Require base decidable.
-From kacc Require Import KA.algebra KA.pre_ka KA.enumerable.
+From kacc Require Import KA.algebra KA.pre_ka KA.preka_enumerable.
 From kacc Require Import CKAUndec.Glue.TLToRTarget.
 Require Import SyntheticComputability.Models.T_L_Bridge.
 Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityCore.
@@ -107,9 +107,10 @@ exists c, k, bEnc, Hlen, Hk_pos.
 exact (eff_insep_K_of_B1_L Hc).
 Qed.
 
-(* --- 3. K_bin_enumerable: one-line instantiation of KA/enumerable.v's
-   generic slice_enumerable (T_equiv_dec/T_equiv_enumerable/
-   KA_ineq_over/KA_ineq_over_enumerable/slice_enumerable), already
+(* --- 3. K_bin_enumerable: one-line instantiation of
+   KA/preka_enumerable.v's generic slice_enumerable
+   (T_equiv_dec/T_equiv_enumerable/KA_ineq_over/KA_ineq_over_enumerable/
+   slice_enumerable), already
    generic over ANY carrier monoid with countable, Leibniz-equal ≡ --
    the only CKA-specific content is Tm_bin itself and the "K_bin is a
    fixed-rhs slice of ⊑" fact below. *)
