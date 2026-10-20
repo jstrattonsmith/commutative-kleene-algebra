@@ -368,4 +368,18 @@ apply: (@enumerable_red nat (ka_term (monoid_car T) * ka_term (monoid_car T))
 - exact: KA_ineq_over_enumerable.
 Qed.
 
+(* The same with the left-hand side fixed and the right-hand side
+   varying, as in CKAUndec/UnivMComplete.v's `bal_star ⊑ e`. *)
+Theorem slice_enumerable_r
+    (lhs : ka_term (monoid_car T)) (rhs : nat -> ka_term (monoid_car T)) :
+  enumerable (fun z => lhs ⊑ rhs z).
+Proof.
+apply: (@enumerable_red nat (ka_term (monoid_car T) * ka_term (monoid_car T))
+  (fun z => lhs ⊑ rhs z) KA_ineq_over).
+- exists (fun z => (lhs, rhs z)). intros z. reflexivity.
+- exists (fun n => Some n). intros n. exists n. reflexivity.
+- apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
+- exact: KA_ineq_over_enumerable.
+Qed.
+
 End SliceEnumerable.

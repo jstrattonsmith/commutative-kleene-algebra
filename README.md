@@ -47,15 +47,18 @@ between the paper and the formalization.
   and builds up effective inseparability (Theorem 17) and
   Sigma^0_1-completeness of the KA-term inequality (Theorems 18-19), both
   over the machine-specific alphabet and the paper's own canonical
-  2-symbol alphabet.
+  2-symbol alphabet. It also contains a second, independent MM2 encoding
+  via balanced universality over `list T * nat` (after Xu, Zhou, Walker
+  and Kincaid), giving Sigma^0_1-completeness of universality.
 
 ## Main results
 
 All proofs are complete -- there are no admitted lemmas anywhere in the
 development. No axioms appear except two named, standard hypotheses
 (`CT_L`, Church's Thesis for Rocq's `L` language; `MP`, Markov's
-Principle), both isolated to `CKAUndec/KMComplete.v`, needed only for the
-final Sigma^0_1-completeness step.
+Principle), stated as hypotheses only in the final
+Sigma^0_1-completeness files (`CKAUndec/KMComplete.v`,
+`CKAUndec/BinaryAlphabetMComplete.v`, `CKAUndec/UnivMComplete.v`).
 
 - **`mm2_R_soundness`** / **`mm2_R_completeness`** (`CKAUndec/Encoding.v`):
   soundness and completeness of the MM2-as-KA-terms encoding (paper
@@ -67,6 +70,12 @@ final Sigma^0_1-completeness step.
   Sigma^0_1-completeness of the KA-term inequality, both per-machine and
   over the paper's own fixed canonical alphabet (paper Theorems 18-19),
   conditional on `CT_L`/`MP`.
+- **`CKAUndec/UnivMComplete.v`**: Sigma^0_1-completeness of balanced
+  universality `bal_star ⊑ e` in pre-KA (`Univ_m_complete`,
+  `Univ_bin_m_complete`) and of full universality `Σ* ⊑ e` in the free
+  KA (`Univ_top_m_complete`, `Univ_top_bin_m_complete`), the `_bin`
+  variants over the single fixed carrier `list bool * nat`; conditional
+  on `CT_L`/`MP`.
 
 ## Usage
 
