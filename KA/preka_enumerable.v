@@ -42,6 +42,39 @@ Proof.
 exists decode_nat => x; exists (encode_nat x); exact: decode_encode_nat.
 Qed.
 
+(** A relation is enumerable if some checker over a countable type of
+    derivations computes exactly its graph: enumerate the derivations and
+    keep what they prove. *)
+Lemma checker_enumerable {X D : Type} `{Countable D}
+    (R : X → Prop) (check : D → option X) :
+  (∀ d x, check d = Some x → R x) →
+  (∀ x, R x → ∃ d, check d = Some x) →
+  enumerable R.
+Proof.
+move=> Hs Hc.
+have [enD HenD] := @countable_enumerableT D _ _.
+exists (fun n => match enD n with Some d => check d | None => None end).
+move=> x; split.
+- move=> /Hc [d Hd].
+  by have [n Hn] := HenD d; exists n; rewrite Hn.
+- move=> [n]; case E: (enD n) => [d|] // Hd.
+  exact: Hs Hd.
+Qed.
+
+(** [enumerable_red] specialized to a countable source and a target with
+    decidable equality, the shape of every reduction in this project. *)
+Lemma enumerable_reduce {X Y : Type} `{Countable X} `{EqDecision Y}
+    (P : X → Prop) (Q : Y → Prop) (f : X → Y) :
+  (∀ x, P x ↔ Q (f x)) → enumerable Q → enumerable P.
+Proof.
+move=> Hf.
+apply: (@enumerable_red X Y P Q).
+- by exists f.
+- exact: countable_enumerableT.
+- apply/discrete_iff; constructor => x y.
+  by case: (decide (x = y)); [left | right].
+Qed.
+
 (** Tags for the twelve "constant" equational axiom schemes. *)
 Inductive ax_tag :=
   | AMul | LMulId | RMulId | AJoin | CJoin | LJoinId
@@ -281,18 +314,11 @@ Theorem ka_eq_enumerable :
   enumerable (fun p : ka_term T * ka_term T => p.1 ≡ p.2).
 Proof.
 move=> [g Hg].
-have Hgs : ∀ n x y, g n = Some (x, y) → x ≡ y.
-  by move=> n x y Hn; apply/(Hg (x, y)); exists n.
-have Hgc : ∀ x y, x ≡ y → ∃ n, g n = Some (x, y).
+apply: (checker_enumerable (check := check g)).
+- move=> d [a b] /=; apply: check_sound => n x y Hn.
+  by apply/(Hg (x, y)); exists n.
+- move=> [a b] /= Hab; apply: check_complete Hab.
   by move=> x y /(Hg (x, y)).
-have [enD HenD] := @countable_enumerableT D _ _.
-exists (fun n => match enD n with Some d => check g d | None => None end).
-move=> [e1 e2] /=; split.
-- move=> H12.
-  have [d Hd] := check_complete Hgc H12.
-  by have [n Hn] := HenD d; exists n; rewrite Hn.
-- move=> [n]; case E: (enD n) => [d|] // Hd.
-  exact: (check_sound Hgs Hd).
 Qed.
 
 (** The canonical order [⊑] on [ka_term T], characterised by
@@ -305,12 +331,9 @@ Theorem ka_sqsubseteq_enumerable :
   enumerable (fun p : ka_term T * ka_term T => p.1 ⊑ p.2).
 Proof.
 move=> Henum.
-apply: (@enumerable_red (ka_term T * ka_term T) (ka_term T * ka_term T)
-          (fun p => p.1 ⊑ p.2) (fun q => q.1 ≡ q.2)).
-- exists (fun p => (p.1 ⊔ p.2, p.2)).
-  by move=> [a b] /=; exact: sqsubseteq_iff.
-- exact: (@countable_enumerableT (ka_term T * ka_term T) _ _).
-- apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
+eapply (enumerable_reduce (f := fun p => (p.1 ⊔ p.2, p.2))
+          (Q := fun q => q.1 ≡ q.2)).
+- move=> [a b] /=. exact: sqsubseteq_iff.
 - exact: ka_eq_enumerable Henum.
 Qed.
 
@@ -323,7 +346,7 @@ End KaEqEnumerable.
     needs: a carrier monoid [T] with decidable, countable, Leibniz-equal
     [≡] gives [⊑] on [ka_term T] enumerable (via [KA_ineq_over]), and
     hence any fixed-rhs SLICE of it (a family [lhs : nat -> ka_term T]
-    against one fixed [rhs]) enumerable too, via [enumerable_red].
+    against one fixed [rhs]) enumerable too, via [enumerable_reduce].
     Originally proved twice, once each for the machine-specific carrier
     [TmMonoid] (CKAUndec/KEnumerable.v) and the binary-alphabet carrier
     [Tm_bin] (CKAUndec/BinaryAlphabetMComplete.v) -- factored out here
@@ -360,12 +383,9 @@ Theorem slice_enumerable
     (lhs : nat -> ka_term (monoid_car T)) (rhs : ka_term (monoid_car T)) :
   enumerable (fun z => lhs z ⊑ rhs).
 Proof.
-apply: (@enumerable_red nat (ka_term (monoid_car T) * ka_term (monoid_car T))
-  (fun z => lhs z ⊑ rhs) KA_ineq_over).
-- exists (fun z => (lhs z, rhs)). intros z. reflexivity.
-- exists (fun n => Some n). intros n. exists n. reflexivity.
-- apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
-- exact: KA_ineq_over_enumerable.
+apply: (enumerable_reduce (f := fun z => (lhs z, rhs)) (Q := KA_ineq_over))
+  => //.
+exact: KA_ineq_over_enumerable.
 Qed.
 
 (* The same with the left-hand side fixed and the right-hand side
@@ -374,12 +394,9 @@ Theorem slice_enumerable_r
     (lhs : ka_term (monoid_car T)) (rhs : nat -> ka_term (monoid_car T)) :
   enumerable (fun z => lhs ⊑ rhs z).
 Proof.
-apply: (@enumerable_red nat (ka_term (monoid_car T) * ka_term (monoid_car T))
-  (fun z => lhs ⊑ rhs z) KA_ineq_over).
-- exists (fun z => (lhs, rhs z)). intros z. reflexivity.
-- exists (fun n => Some n). intros n. exists n. reflexivity.
-- apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
-- exact: KA_ineq_over_enumerable.
+apply: (enumerable_reduce (f := fun z => (lhs, rhs z)) (Q := KA_ineq_over))
+  => //.
+exact: KA_ineq_over_enumerable.
 Qed.
 
 End SliceEnumerable.

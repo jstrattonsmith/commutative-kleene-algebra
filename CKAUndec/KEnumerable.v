@@ -63,21 +63,6 @@ Proof. apply _. Defined.
 Instance Tm_leibniz : LeibnizEquiv Tm.
 Proof. apply _. Defined.
 
-Instance Tm_equiv_dec (x y : Tm) : Decision (x ≡ y).
-Proof.
-destruct (decide (x = y)) as [-> | Hne].
-- left. reflexivity.
-- right. intros H % leibniz_equiv_iff. exact (Hne H).
-Defined.
-
-Lemma Tm_equiv_enumerable : enumerable (fun p : Tm * Tm => p.1 ≡ p.2).
-Proof.
-apply: dec_count_enum.
-- exists (fun p => bool_decide (p.1 ≡ p.2)).
-  intros p. unfold reflects. symmetry. apply bool_decide_eq_true.
-- exact: (@countable_enumerableT (Tm * Tm) _ _).
-Qed.
-
 (* --- The actual general KA-term inequality relation over this
    carrier -- not K itself, which is only ever a SLICE of it (the
    right-hand side fixed to red_ub Prog). This is what the source
@@ -91,7 +76,7 @@ Qed.
 Definition KA_ineq : ka_term Tm * ka_term Tm -> Prop := fun p => p.1 ⊑ p.2.
 
 Theorem KA_ineq_enumerable : enumerable KA_ineq.
-Proof. exact: ka_sqsubseteq_enumerable Tm_equiv_enumerable. Qed.
+Proof. exact: (@KA_ineq_over_enumerable TmMonoid _ _ Tm_leibniz). Qed.
 
 Definition K_to_KA_ineq (z : nat) : ka_term Tm * ka_term Tm :=
   (Encoding.red_lb Prog ((1, (ps 1 * enc 2 (z_vec z), 0))%nat), Encoding.red_ub Prog).
@@ -101,11 +86,8 @@ Proof. reflexivity. Qed.
 
 Theorem K_enumerable : enumerable (K c).
 Proof.
-apply: (@enumerable_red nat (ka_term Tm * ka_term Tm) (K c) KA_ineq).
-- exists K_to_KA_ineq. exact: K_to_KA_ineq_spec.
-- exists (fun n => Some n). intros n. exists n. reflexivity.
-- apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
-- exact: KA_ineq_enumerable.
+apply: (enumerable_reduce (f := K_to_KA_ineq) (Q := KA_ineq));
+[exact: K_to_KA_ineq_spec | exact: KA_ineq_enumerable].
 Qed.
 
 End KEnumerable.

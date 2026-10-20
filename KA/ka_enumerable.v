@@ -229,18 +229,11 @@ Theorem free_ka_eq_enumerable :
   enumerable (fun p : ka_term P * ka_term P => free_ka_eq p.1 p.2).
 Proof.
 move=> [g Hg].
-have Hgs : ∀ n a b, g n = Some (a, b) → a ≡ b.
-  by move=> n a b Hn; apply/(Hg (a, b)); exists n.
-have Hgc : ∀ a b, a ≡ b → ∃ n, g n = Some (a, b).
-  by move=> a b /(Hg (a, b)).
-have [enD HenD] := @countable_enumerableT DK _ _.
-exists (fun n => match enD n with Some d => checkK g d | None => None end).
-move=> [e1 e2] /=; split.
-- move=> H12.
-  have [d Hd] := checkK_complete Hgc H12.
-  by have [n Hn] := HenD d; exists n; rewrite Hn.
-- move=> [n]; case E: (enD n) => [d|] // Hd.
-  exact: (checkK_sound Hgs Hd).
+apply: (checker_enumerable (check := checkK g)).
+- move=> d [a b] /=; apply: checkK_sound => n a' b' Hn.
+  by apply/(Hg (a', b')); exists n.
+- move=> [a b] /= Hab; apply: checkK_complete Hab.
+  by move=> a' b' /(Hg (a', b')).
 Qed.
 
 End FreeKAEqEnumerable.
@@ -271,12 +264,9 @@ Theorem fka_le_slice_enumerable_r
     (lhs : ka_term T) (rhs : nat → ka_term T) :
   enumerable (fun z => FKA lhs ⊑ FKA (rhs z)).
 Proof.
-apply: (@enumerable_red nat (ka_term (ka_term T) * ka_term (ka_term T))
-  (fun z => FKA lhs ⊑ FKA (rhs z)) (fun p => free_ka_eq p.1 p.2)).
-- exists (fun z => (Unit (lhs ⊔ rhs z), Unit (rhs z))) => z.
-  exact: fka_le_iff.
-- exists (fun n => Some n) => n; by exists n.
-- apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
+apply: (enumerable_reduce (f := fun z => (Unit (lhs ⊔ rhs z), Unit (rhs z)))
+          (Q := fun p : ka_term (ka_term T) * _ => free_ka_eq p.1 p.2)).
+- move=> z; exact: fka_le_iff.
 - exact: fka_eq_enumerable.
 Qed.
 
