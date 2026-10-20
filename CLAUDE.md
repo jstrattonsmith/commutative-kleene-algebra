@@ -183,24 +183,26 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     Includes `l_alt` (Theorem 5: string membership <-> term ordering),
     `l_inj_finite` (Corollary 7), `either_empty_or_nonzero` (Corollary 8).
 
-14. **`KA/ka.v`** (~530 lines): Kleene algebras (`KAMixin`, Kozen's two
+14. **`KA/ka.v`** (~630 lines): Kleene algebras (`KAMixin`, Kozen's two
     star induction rules, on top of `PreKAMixin`) with basic theory
     (`ka_star_mono`, `ka_star_one`, `ka_star_comm`, and
     `ka_star_join_comm`: `(x ⊔ y)^* ≡ (1 ⊔ x x^* ⊔ y y^*) (x y)^*` when
     `x y ≡ y x`), and languages as a KA (`lang_ka`). `free_ka P` is the
-    free KA over a pre-KA `P` (terms over `P` modulo pre-KA laws, the
-    operation table of `P` and star induction), with unit `free_ka_unit`,
-    lift `free_ka_lift` and uniqueness `free_ka_ext`. `free_ka_mon M :=
-    free_ka (ka_term_pre_ka M)` is the free KA over a monoid, and `ka_leq`
-    the KA ordering on `ka_term M`, sound for languages (`ka_leq_lang`).
-    Over a finitely generated monoid, `pseudo_top` is the top element of
-    the free KA (`ka_top_greatest`).
+    free KA over a pre-KA `P` (boxed terms over `P` modulo pre-KA laws,
+    the operation table of `P` and star induction), with unit
+    `free_ka_unit`, lift `free_ka_lift` and uniqueness `free_ka_ext`.
+    `fka M` is the free KA over a monoid: boxed terms over `M` (`FKA`, a
+    coercion that is always printed), compared by KA derivability, so
+    `FKA e1 ⊑ FKA e2` reads "KA proves `e1 ⊑ e2`"; `fka_le_of_pre`
+    (pre-KA inequalities hold in KA), `fka_lift`/`fka_ext`, `fka_lang`
+    (soundness for languages). Over a finitely generated monoid,
+    `FKA pseudo_top` is its top element (`fka_top_greatest`, `fka_top_iff`).
 
 15. **`KA/ka_enumerable.v`** (~280 lines): the analogue of
     `KA/enumerable.v` for the free KA: derivations of `free_ka_eq` (pre-KA
     laws, operation table, star induction) reified as `DK` and checked by
     `checkK`, giving `free_ka_eq_enumerable` and
-    `ka_leq_slice_enumerable_r`.
+    `fka_le_slice_enumerable_r`.
 
 16. **`KA/balanced.v`** (~200 lines): the pre-KA engine behind
     `CKAUndec/UnivEncoding.v`. Defines the additive `nat` monoid
@@ -397,7 +399,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
 34. **`CKAUndec/UnivTop.v`** (~90 lines): full universality in the free
     KA. `univ_top_ub := univ_ub_mm2 ⊔ unbal` (and `univ_top_ub_bin` over
     `list bool * nat`) satisfy `univ_top_completeness`/`_soundness` with
-    `ka_leq sigma_top` on the left, via `KA/BalancedKA.v`.
+    `FKA sigma_top ⊑ FKA _`, via `KA/BalancedKA.v`.
     `univ_top_leq`/`R_target_univ_top` (and `_bin`) mirror
     `univ_leq`/`R_target_univ`.
 

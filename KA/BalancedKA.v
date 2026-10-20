@@ -9,10 +9,11 @@
      KA ⊢ Σ* ≡ bal_star ⊔ unbal                       (sigma_top_ka)
 
    Hence, for any `x`, a pre-KA proof of `bal_star ⊑ x` gives a KA proof
-   of `Σ* ⊑ x ⊔ unbal` (`ka_top_complete`), and conversely a KA proof of
-   `Σ* ⊑ x ⊔ unbal` puts every balanced word in the language of `x`
-   (`ka_top_sound`), since `unbal` contains no balanced word. The
-   splitting needs star induction: in pre-KA it can fail. *)
+   of `Σ* ⊑ x ⊔ unbal`, i.e. `FKA sigma_top ⊑ FKA (x ⊔ unbal)`
+   (`ka_top_complete`), and conversely a KA proof of `Σ* ⊑ x ⊔ unbal` puts
+   every balanced word in the language of `x` (`ka_top_sound`), since
+   `unbal` contains no balanced word. The splitting needs star induction:
+   in pre-KA it can fail. *)
 
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
@@ -41,7 +42,6 @@ Section BalancedKA.
 Context {A : setoid} `{!LeibnizEquiv A, !EqDecision A, !Finite A}.
 
 Notation M := (prod_monoid (list_monoid A) nat_add_monoid).
-Local Notation fk := (free_ka_of_term (M := M)).
 
 Implicit Types (w : list A) (x : ka_term M).
 
@@ -74,22 +74,22 @@ rewrite /letA /bal_gen join_list_right_dist.
 by apply: join_list_proper => // t; rewrite -ka_mul_distr.
 Qed.
 
-Theorem sigma_top_ka : fk sigma_top ≡ fk (bal_star ⊔ unbal).
+Theorem sigma_top_ka : FKA sigma_top ≡ FKA (bal_star ⊔ unbal).
 Proof.
-have Hc : fk letA ⋅ fk letB ≡ fk letB ⋅ fk letA.
-  rewrite -!pre_ka_morphism_mul; f_equiv.
-  by rewrite letA_letB letB_letA.
-rewrite sigma_top_eq pre_ka_morphism_star pre_ka_morphism_join.
-rewrite (ka_star_join_comm Hc) -pre_ka_morphism_mul letA_letB /unbal.
-rewrite /bal_star !pre_ka_morphism_join !pre_ka_morphism_mul.
-rewrite !pre_ka_morphism_star.
-rewrite !pre_ka_left_dist left_id pre_ka_morphism_join !pre_ka_morphism_mul.
-by rewrite !pre_ka_morphism_star pre_ka_left_dist assoc.
+have Hc : FKA letA ⋅ FKA letB ≡ FKA letB ⋅ FKA letA.
+  by apply: fka_of_pre; rewrite letA_letB letB_letA.
+rewrite (fka_of_pre sigma_top_eq).
+change (star (FKA letA ⊔ FKA letB) ≡ FKA (bal_star ⊔ unbal)).
+rewrite (ka_star_join_comm Hc).
+change (FKA ((1 ⊔ letA ⋅ star letA ⊔ letB ⋅ star letB) ⋅ star (letA ⋅ letB))
+        ≡ FKA (bal_star ⊔ unbal)).
+apply: fka_of_pre; rewrite letA_letB /unbal /bal_star.
+by rewrite !pre_ka_left_dist left_id assoc.
 Qed.
 
-Theorem ka_top_complete x : bal_star ⊑ x → ka_leq sigma_top (x ⊔ unbal).
+Theorem ka_top_complete x : bal_star ⊑ x → FKA sigma_top ⊑ FKA (x ⊔ unbal).
 Proof.
-move=> H; rewrite /ka_leq sigma_top_ka; apply: pre_ka_ka_leq.
+move=> H; rewrite sigma_top_ka; apply: fka_le_of_pre.
 by rewrite H.
 Qed.
 
@@ -121,15 +121,14 @@ have [] : l (letA ⋅ star letA) (w1, k1) ∨ l (letB ⋅ star letB) (w1, k1).
 Qed.
 
 Theorem ka_top_sound x :
-  ka_leq sigma_top (x ⊔ unbal) → ∀ w, l x (w, length w).
+  FKA sigma_top ⊑ FKA (x ⊔ unbal) → ∀ w, l x (w, length w).
 Proof.
 move=> H w.
-have Hb : ka_leq bal_star (x ⊔ unbal).
-  rewrite /ka_leq in H *; apply: transitivity H.
-  rewrite sigma_top_ka; apply: pre_ka_ka_leq.
+have Hb : FKA bal_star ⊑ FKA (x ⊔ unbal).
+  apply: transitivity H; rewrite sigma_top_ka; apply: fka_le_of_pre.
   exact: sqsubseteq_join_left.
 have Hw : l bal_star (w, length w) by apply/l_bal_star.
-have [] : l x (w, length w) ∨ l unbal (w, length w) := ka_leq_lang Hb Hw.
+have [] : l x (w, length w) ∨ l unbal (w, length w) := fka_lang Hb Hw.
   by [].
 by move/l_unbal.
 Qed.

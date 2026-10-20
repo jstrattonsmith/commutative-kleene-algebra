@@ -88,7 +88,8 @@ Qed.
 (* Full universality in KA over the same carrier: `Σ* ⊑ e`, with `Σ*`
    the star of all generators of `list T * nat`. *)
 Definition Univ_top : ka_term (monoid_car Tm_univ) → Prop :=
-  fun e => ka_leq (sigma_top (A := option_setoid (@mm_sym_setoid QF))) e.
+  fun e => base.sqsubseteq
+    (FKA (sigma_top (A := option_setoid (@mm_sym_setoid QF)))) (FKA e).
 
 Definition K_univ_top : nat → Prop := K_of (R_target_univ_top c).
 
@@ -100,7 +101,7 @@ Proof. reflexivity. Qed.
 
 Theorem K_univ_top_enumerable : enumerable K_univ_top.
 Proof.
-have [f Hf] := @ka_leq_slice_enumerable_r Tm_univ _ _ Tm_univ_leibniz
+have [f Hf] := @fka_le_slice_enumerable_r Tm_univ _ _ Tm_univ_leibniz
   (sigma_top (A := option_setoid (@mm_sym_setoid QF))) K_to_Univ_top.
 by exists f => z; rewrite K_to_Univ_top_spec; exact: Hf z.
 Qed.
@@ -211,7 +212,7 @@ apply (red_m_transitive (K_univ_top c) (@Univ_top c)).
 Qed.
 
 Definition Univ_top_bin : ka_term (monoid_car Tm_ubin) → Prop :=
-  fun e => ka_leq (sigma_top (A := bool_setoid)) e.
+  fun e => base.sqsubseteq (FKA (sigma_top (A := bool_setoid))) (FKA e).
 
 Definition K_univ_top_bin (c : nat) : nat → Prop :=
   K_of (R_target_univ_top_bin c).
@@ -225,7 +226,7 @@ Proof. reflexivity. Qed.
 
 Theorem K_univ_top_bin_enumerable c : enumerable (K_univ_top_bin c).
 Proof.
-have [f Hf] := @ka_leq_slice_enumerable_r Tm_ubin _ _ Tm_ubin_leibniz
+have [f Hf] := @fka_le_slice_enumerable_r Tm_ubin _ _ Tm_ubin_leibniz
   (sigma_top (A := bool_setoid)) (K_to_Univ_top_bin c).
 by exists f => z; rewrite K_to_Univ_top_bin_spec; exact: Hf z.
 Qed.

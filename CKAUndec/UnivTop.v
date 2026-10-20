@@ -36,12 +36,12 @@ Definition univ_top_ub (s1 : mm2_state) := univ_ub_mm2 P s1 ⊔ unbal.
 
 Theorem univ_top_completeness s1 :
   rtc (mm2_step P) s1 (0, (0, 0)) →
-  ka_leq (sigma_top (A := TL)) (univ_top_ub s1).
+  FKA (sigma_top (A := TL)) ⊑ FKA (univ_top_ub s1).
 Proof. by move/univ_completeness; exact: ka_top_complete. Qed.
 
 Theorem univ_top_soundness s1 s2 :
   rtc (mm2_step P) s1 s2 → mm2_stop P s2 →
-  ka_leq (sigma_top (A := TL)) (univ_top_ub s1) →
+  FKA (sigma_top (A := TL)) ⊑ FKA (univ_top_ub s1) →
   s2 = (0, (0, 0)).
 Proof.
 case/rtc_uchain => cs [cs' [Hc E]] Hstop /ka_top_sound Hl.
@@ -56,12 +56,12 @@ Definition univ_top_ub_bin (s1 : mm2_state) := univ_ub_bin P s1 ⊔ unbal.
 
 Theorem univ_top_completeness_bin s1 :
   rtc (mm2_step P) s1 (0, (0, 0)) →
-  ka_leq (sigma_top (A := bool_setoid)) (univ_top_ub_bin s1).
+  FKA (sigma_top (A := bool_setoid)) ⊑ FKA (univ_top_ub_bin s1).
 Proof. by move/univ_completeness_bin; exact: ka_top_complete. Qed.
 
 Theorem univ_top_soundness_bin s1 s2 :
   rtc (mm2_step P) s1 s2 → mm2_stop P s2 →
-  ka_leq (sigma_top (A := bool_setoid)) (univ_top_ub_bin s1) →
+  FKA (sigma_top (A := bool_setoid)) ⊑ FKA (univ_top_ub_bin s1) →
   s2 = (0, (0, 0)).
 Proof.
 case/rtc_uchain => cs [cs' [Hc E]] Hstop /ka_top_sound Hle.

@@ -3,9 +3,9 @@
    over a countable pre-KA `P` is enumerable, so is `free_ka_eq`: its
    derivations are reified as `DK` and checked by `checkK`, exactly as
    KA/enumerable.v does for the pre-KA axioms, with two extra rules for
-   star induction. `ka_leq_slice_enumerable_r` packages the result for the
-   KA ordering on terms over a discrete countable monoid, with a fixed
-   left-hand side. *)
+   star induction. `fka_le_slice_enumerable_r` packages the result for the
+   KA ordering `FKA e1 ⊑ FKA e2` on terms over a discrete countable monoid,
+   with a fixed left-hand side. *)
 
 Require Import ssreflect.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts.
@@ -252,7 +252,7 @@ Context (T : monoid).
 Context `{HeqT : !RelDecision (@Logic.eq (monoid_car T))}.
 Context `{!Countable (monoid_car T)} (HLeibniz : LeibnizEquiv (monoid_car T)).
 
-Lemma free_ka_mon_eq_enumerable :
+Lemma fka_eq_enumerable :
   enumerable (fun p : ka_term (ka_term T) * ka_term (ka_term T) =>
                 free_ka_eq p.1 p.2).
 Proof.
@@ -262,21 +262,21 @@ apply: ka_eq_enumerable.
 exact: T_equiv_enumerable HLeibniz.
 Qed.
 
-Lemma ka_leq_iff (e1 e2 : ka_term T) :
-  ka_leq e1 e2 ↔ free_ka_eq (Unit e1 ⊔ Unit e2) (Unit e2).
+Lemma fka_le_iff (e1 e2 : ka_term T) :
+  FKA e1 ⊑ FKA e2 ↔ free_ka_eq (Unit (e1 ⊔ e2)) (Unit e2).
 Proof. exact: default_sqsubseteq_eq. Qed.
 
-Theorem ka_leq_slice_enumerable_r
+Theorem fka_le_slice_enumerable_r
     (lhs : ka_term T) (rhs : nat → ka_term T) :
-  enumerable (fun z => ka_leq lhs (rhs z)).
+  enumerable (fun z => FKA lhs ⊑ FKA (rhs z)).
 Proof.
 apply: (@enumerable_red nat (ka_term (ka_term T) * ka_term (ka_term T))
-  (fun z => ka_leq lhs (rhs z)) (fun p => free_ka_eq p.1 p.2)).
-- exists (fun z => (Unit lhs ⊔ Unit (rhs z), Unit (rhs z))) => z.
-  exact: ka_leq_iff.
+  (fun z => FKA lhs ⊑ FKA (rhs z)) (fun p => free_ka_eq p.1 p.2)).
+- exists (fun z => (Unit (lhs ⊔ rhs z), Unit (rhs z))) => z.
+  exact: fka_le_iff.
 - exists (fun n => Some n) => n; by exists n.
 - apply: discrete_prod; apply/discrete_iff; constructor; exact: ka_term_eq_dec.
-- exact: free_ka_mon_eq_enumerable.
+- exact: fka_eq_enumerable.
 Qed.
 
 End KaLeqEnumerable.

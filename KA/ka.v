@@ -8,15 +8,17 @@
    morphism through which every pre-KA morphism into a KA factors uniquely
    (`free_ka_lift`, `free_ka_lift_unit`, `free_ka_ext`). The unit need not be
    injective: it identifies whatever `P` distinguishes only through the
-   absence of star induction. Composing with the free pre-KA `ka_term M`
-   gives the free KA over a monoid, `free_ka_mon M`, and the KA ordering on
-   terms, `ka_leq`, which is sound for languages (`ka_leq_lang`).
+   absence of star induction. Pulling the free KA over the free pre-KA
+   `ka_term M` back to `ka_term M` gives the free KA over a monoid, `fka M`:
+   boxed terms (`FKA`, a coercion), compared by KA derivability, so that
+   `FKA e1 ⊑ e2` reads "KA proves `e1 ⊑ e2`". It is sound for languages
+   (`fka_lang`).
 
    In any KA, the star of a sum of commuting elements splits as
    `star (x ⊔ y) ≡ (1 ⊔ x ⋅ star x ⊔ y ⋅ star y) ⋅ star (x ⋅ y)`
    (`ka_star_join_comm`), and over a finitely generated monoid `pseudo_top`
-   is the greatest element of the free KA (`ka_top_greatest`). Both use star
-   induction. *)
+   is the greatest element of the free KA (`fka_top_greatest`). Both use
+   star induction. *)
 
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
@@ -236,10 +238,10 @@ Canonical Structure lang_ka :=
 
 End LangKA.
 
-(** * The free Kleene algebra over a pre-Kleene algebra *)
+(** * The free Kleene algebra over a pre-Kleene algebra
 
-Definition free_ka_car (P : pre_ka) : Type := ka_term P.
-#[global] Typeclasses Opaque free_ka_car.
+    Its elements are terms over `P` in a box, so that their instances do not
+    conflict with those of `ka_term P`. *)
 
 Section FreeKA.
 
@@ -273,28 +275,30 @@ Inductive free_ka_eq : relation (ka_term P) :=
       free_ka_eq ((e2 ⊔ e3 ⋅ e1) ⊔ e3) e3 →
       free_ka_eq (e2 ⋅ star e1 ⊔ e3) e3.
 
-Global Instance free_ka_equiv : Equiv (free_ka_car P) := free_ka_eq.
-Global Instance free_ka_join : Join (free_ka_car P) := @ka_term_join P.
-Global Instance free_ka_bottom : Bottom (free_ka_car P) := @ka_term_bottom P.
-Global Instance free_ka_mul : Mul (free_ka_car P) := @ka_term_mul P.
-Global Instance free_ka_one : One (free_ka_car P) := @Unit P 1.
-Global Instance free_ka_star : Star (free_ka_car P) := @ka_term_star P.
-Global Instance free_ka_sqsubseteq : SqSubsetEq (free_ka_car P) :=
+Record free_ka_car := FreeKA { free_ka_term : ka_term P }.
+
+Global Instance free_ka_equiv : Equiv free_ka_car :=
+  λ a b, free_ka_eq (free_ka_term a) (free_ka_term b).
+Global Instance free_ka_join : Join free_ka_car :=
+  λ a b, FreeKA (free_ka_term a ⊔ free_ka_term b).
+Global Instance free_ka_bottom : Bottom free_ka_car := FreeKA ⊥.
+Global Instance free_ka_mul : Mul free_ka_car :=
+  λ a b, FreeKA (free_ka_term a ⋅ free_ka_term b).
+Global Instance free_ka_one : One free_ka_car := FreeKA 1.
+Global Instance free_ka_star : Star free_ka_car :=
+  λ a, FreeKA (star (free_ka_term a)).
+Global Instance free_ka_sqsubseteq : SqSubsetEq free_ka_car :=
   default_sqsubseteq.
 
-Global Instance free_ka_equivalence : Equivalence (≡@{free_ka_car P}).
+Global Instance free_ka_equivalence : Equivalence (≡@{free_ka_car}).
 Proof.
 constructor.
-- exact: fk_refl.
-- exact: fk_sym.
-- exact: fk_trans.
+- move=> ?; exact: fk_refl.
+- move=> ??; exact: fk_sym.
+- move=> ???; exact: fk_trans.
 Qed.
 
-Lemma free_ka_of_pre (e1 e2 : ka_term P) :
-  e1 ≡ e2 → (e1 : free_ka_car P) ≡ e2.
-Proof. exact: fk_pre. Qed.
-
-Lemma free_ka_monoid_mixin : MonoidMixin (free_ka_car P).
+Lemma free_ka_monoid_mixin : MonoidMixin free_ka_car.
 Proof.
 constructor.
 - by move=> ???; apply: fk_pre; apply: ka_mul_assoc.
@@ -303,7 +307,7 @@ constructor.
 - by move=> ?? H1 ?? H2; apply: fk_mul_proper.
 Qed.
 
-Lemma free_ka_semi_lattice_mixin : SemiLatticeMixin (free_ka_car P).
+Lemma free_ka_semi_lattice_mixin : SemiLatticeMixin free_ka_car.
 Proof.
 apply: default_semi_lattice_mixin.
 - by move=> ???; apply: fk_pre; apply: ka_join_assoc.
@@ -313,7 +317,7 @@ apply: default_semi_lattice_mixin.
 - by move=> ?? H1 ?? H2; apply: fk_join_proper.
 Qed.
 
-Lemma free_ka_pre_ka_mixin : PreKAMixin (free_ka_car P).
+Lemma free_ka_pre_ka_mixin : PreKAMixin free_ka_car.
 Proof.
 constructor.
 - by move=> ???; apply: fk_pre; apply: ka_mul_join_right.
@@ -321,24 +325,24 @@ constructor.
 - by move=> ?; apply: fk_pre; apply: ka_mul_left_absorb.
 - by move=> ?; apply: fk_pre; apply: ka_mul_right_absorb.
 - by move=> ?; apply: fk_pre; apply: ka_star_unfold.
-- by move=> ??; apply: fk_star_proper.
+- by move=> ?? H; apply: fk_star_proper.
 Qed.
 
-Lemma free_ka_ka_mixin : KAMixin (free_ka_car P).
+Lemma free_ka_ka_mixin : KAMixin free_ka_car.
 Proof.
-constructor=> x y z /default_sqsubseteq_eq H; apply/default_sqsubseteq_eq.
+constructor=> a b c /default_sqsubseteq_eq H; apply/default_sqsubseteq_eq.
 - exact: fk_star_ind_l.
 - exact: fk_star_ind_r.
 Qed.
 
 Canonical Structure free_ka :=
-  @KA' (free_ka_car P) _ _ _ _ _ _ _ _
+  @KA' free_ka_car _ _ _ _ _ _ _ _
        free_ka_monoid_mixin
        free_ka_semi_lattice_mixin
        free_ka_pre_ka_mixin
        free_ka_ka_mixin.
 
-Definition free_ka_unit (x : P) : free_ka := Unit x.
+Definition free_ka_unit (x : P) : free_ka := FreeKA (Unit x).
 
 Global Instance free_ka_unit_morphism : PreKAMorphism free_ka_unit.
 Proof.
@@ -356,12 +360,13 @@ Section Lift.
 Variables (K : ka) (f : P → K).
 Context `{!PreKAMorphism f}.
 
-Definition free_ka_lift : free_ka → K := ka_term_elim f.
+Definition free_ka_lift (a : free_ka) : K := ka_term_elim f (free_ka_term a).
 
 Global Instance free_ka_lift_morphism : PreKAMorphism free_ka_lift.
 Proof.
 constructor => //=.
-- move=> e1 e2; rewrite /free_ka_lift; elim: e1 e2 / => /=.
+- move=> [e1] [e2] H; change (free_ka_eq e1 e2) in H.
+  rewrite /free_ka_lift /=; elim: e1 e2 / H => /=.
   + by [].
   + by move=> ?? _ ->.
   + by move=> ??? _ -> _ ->.
@@ -376,7 +381,7 @@ constructor => //=.
     exact: ka_star_ind_l.
   + move=> e1 e2 e3 _ /sqsubseteq_iff H; apply/sqsubseteq_iff.
     exact: ka_star_ind_r.
-- rewrite /free_ka_lift /one /free_ka_one /=; exact: pre_ka_morphism_one.
+- rewrite /free_ka_lift /=; exact: pre_ka_morphism_one.
 Qed.
 
 Lemma free_ka_lift_unit x : free_ka_lift (free_ka_unit x) = f x.
@@ -389,47 +394,138 @@ End Lift.
 Lemma free_ka_ext (S : pre_ka) (g h : free_ka → S) :
   PreKAMorphism g → PreKAMorphism h →
   (∀ x, g (free_ka_unit x) ≡ h (free_ka_unit x)) →
-  ∀ e : free_ka, g e ≡ h e.
+  ∀ a : free_ka, g a ≡ h a.
 Proof.
-move=> Hg Hh Hunit e0; elim: (e0 : ka_term P) => /=.
+move=> Hg Hh Hunit [e]; elim: e.
 - exact: Hunit.
-- by rewrite -[ka_term_bottom]/(⊥ : free_ka) !pre_ka_morphism_bottom.
-- move=> e1 IH1 e2 IH2.
-  by rewrite -[ka_term_join _ _]/(e1 ⊔ e2 : free_ka) !pre_ka_morphism_join
-    IH1 IH2.
-- move=> e1 IH1 e2 IH2.
-  by rewrite -[ka_term_mul _ _]/(e1 ⋅ e2 : free_ka) !pre_ka_morphism_mul
-    IH1 IH2.
-- move=> e IH.
-  by rewrite -[ka_term_star _]/(star e : free_ka) !pre_ka_morphism_star IH.
+- change (g ⊥ ≡ h ⊥); by rewrite !pre_ka_morphism_bottom.
+- move=> e1 IH1 e2 IH2; change (g (FreeKA e1 ⊔ FreeKA e2) ≡
+                                 h (FreeKA e1 ⊔ FreeKA e2)).
+  by rewrite !pre_ka_morphism_join IH1 IH2.
+- move=> e1 IH1 e2 IH2; change (g (FreeKA e1 ⋅ FreeKA e2) ≡
+                                 h (FreeKA e1 ⋅ FreeKA e2)).
+  by rewrite !pre_ka_morphism_mul IH1 IH2.
+- move=> e IH; change (g (star (FreeKA e)) ≡ h (star (FreeKA e))).
+  by rewrite !pre_ka_morphism_star IH.
 Qed.
 
 End FreeKA.
 
+Add Printing Constructor free_ka_car.
+
 (** * The free Kleene algebra over a monoid
 
-    The composite of the free pre-KA `ka_term M` and the free KA over a
-    pre-KA. *)
+    `fka M` boxes the terms over `M`. Its operations are those of
+    `ka_term M`, and two terms are equivalent when KA proves them equal,
+    i.e. when the free KA over the free pre-KA `ka_term M` identifies them.
+    `FKA` is a coercion, so `FKA e1 ⊑ e2` states that KA proves
+    `e1 ⊑ e2`. *)
 
-Section FreeKAMonoid.
+Section FKA.
 
 Variable M : monoid.
 
-Definition free_ka_mon : ka := free_ka (ka_term_pre_ka M).
+Implicit Types (e : ka_term M).
 
-Definition free_ka_of_term (e : ka_term M) : free_ka_mon := free_ka_unit e.
+Record fka := FKA { fka_term : ka_term M }.
 
-Global Instance free_ka_of_term_morphism : PreKAMorphism free_ka_of_term.
-Proof. rewrite /free_ka_of_term; apply _. Qed.
+Definition fka_embed (a : fka) : free_ka (ka_term_pre_ka M) :=
+  free_ka_unit (fka_term a).
 
-Definition free_ka_mon_unit (x : M) : free_ka_mon := free_ka_of_term (Unit x).
+Global Instance fka_equiv : Equiv fka := λ a b, fka_embed a ≡ fka_embed b.
+Global Instance fka_join : Join fka := λ a b, FKA (fka_term a ⊔ fka_term b).
+Global Instance fka_bottom : Bottom fka := FKA ⊥.
+Global Instance fka_mul : Mul fka := λ a b, FKA (fka_term a ⋅ fka_term b).
+Global Instance fka_one : One fka := FKA 1.
+Global Instance fka_star : Star fka := λ a, FKA (star (fka_term a)).
+Global Instance fka_sqsubseteq : SqSubsetEq fka := default_sqsubseteq.
 
-Global Instance free_ka_mon_unit_morphism : MonoidMorphism free_ka_mon_unit.
+Global Instance fka_equivalence : Equivalence (≡@{fka}).
 Proof.
-rewrite /free_ka_mon_unit; constructor.
-- by move=> x y exy; rewrite exy.
-- by [].
-- by move=> x y; rewrite ka_mul_distr pre_ka_morphism_mul.
+constructor.
+- by move=> a; rewrite /equiv /fka_equiv.
+- by move=> a b; rewrite /equiv /fka_equiv.
+- by move=> a b c; rewrite /equiv /fka_equiv => ->.
+Qed.
+
+Lemma fka_of_pre e1 e2 : e1 ≡ e2 → FKA e1 ≡ FKA e2.
+Proof. exact: (pre_ka_morphism_proper (f := free_ka_unit (P := _))). Qed.
+
+Lemma fka_embed_join a b : fka_embed (a ⊔ b) ≡ fka_embed a ⊔ fka_embed b.
+Proof. exact: pre_ka_morphism_join. Qed.
+
+Lemma fka_embed_mul a b : fka_embed (a ⋅ b) ≡ fka_embed a ⋅ fka_embed b.
+Proof. exact: pre_ka_morphism_mul. Qed.
+
+Lemma fka_embed_star a : fka_embed (star a) ≡ star (fka_embed a).
+Proof. exact: pre_ka_morphism_star. Qed.
+
+Lemma fka_monoid_mixin : MonoidMixin fka.
+Proof.
+constructor.
+- by move=> ???; apply: fka_of_pre; apply: ka_mul_assoc.
+- by move=> ?; apply: fka_of_pre; apply: ka_mul_left_id.
+- by move=> ?; apply: fka_of_pre; apply: ka_mul_right_id.
+- move=> ?? H1 ?? H2; move: H1 H2; rewrite /equiv /fka_equiv => H1 H2.
+  by rewrite !fka_embed_mul H1 H2.
+Qed.
+
+Lemma fka_semi_lattice_mixin : SemiLatticeMixin fka.
+Proof.
+apply: default_semi_lattice_mixin.
+- by move=> ???; apply: fka_of_pre; apply: ka_join_assoc.
+- by move=> ??; apply: fka_of_pre; apply: ka_join_comm.
+- by move=> ?; apply: fka_of_pre; apply: ka_join_left_id.
+- by move=> ?; apply: fka_of_pre; apply: ka_join_idemp.
+- move=> ?? H1 ?? H2; move: H1 H2; rewrite /equiv /fka_equiv => H1 H2.
+  by rewrite !fka_embed_join H1 H2.
+Qed.
+
+Lemma fka_pre_ka_mixin : PreKAMixin fka.
+Proof.
+constructor.
+- by move=> ???; apply: fka_of_pre; apply: ka_mul_join_right.
+- by move=> ???; apply: fka_of_pre; apply: ka_mul_join_left.
+- by move=> ?; apply: fka_of_pre; apply: ka_mul_left_absorb.
+- by move=> ?; apply: fka_of_pre; apply: ka_mul_right_absorb.
+- by move=> ?; apply: fka_of_pre; apply: ka_star_unfold.
+- move=> ?? H; move: H; rewrite /equiv /fka_equiv => H.
+  by rewrite !fka_embed_star H.
+Qed.
+
+Lemma fka_ka_mixin : KAMixin fka.
+Proof.
+constructor=> a b c /default_sqsubseteq_eq H; apply/default_sqsubseteq_eq;
+  move: H; rewrite /equiv /fka_equiv !fka_embed_join !fka_embed_mul
+    fka_embed_star => /sqsubseteq_iff H; apply/sqsubseteq_iff.
+- exact: ka_star_ind_l.
+- exact: ka_star_ind_r.
+Qed.
+
+Canonical Structure fka_ka :=
+  @KA' fka _ _ _ _ _ _ _ _
+       fka_monoid_mixin
+       fka_semi_lattice_mixin
+       fka_pre_ka_mixin
+       fka_ka_mixin.
+
+Canonical Structure fka_setoid := @Setoid fka _ fka_equivalence.
+Canonical Structure fka_monoid := @Monoid' fka _ _ _ _ fka_monoid_mixin.
+Canonical Structure fka_semi_lattice :=
+  @SemiLattice' fka _ _ _ _ _ fka_semi_lattice_mixin.
+Canonical Structure fka_pre_ka :=
+  @PreKA' fka _ _ _ _ _ _ _ _
+          fka_monoid_mixin fka_semi_lattice_mixin fka_pre_ka_mixin.
+
+Global Instance FKA_morphism :
+  PreKAMorphism (T := ka_term_pre_ka M) (S := fka_ka) FKA.
+Proof. constructor => //; exact: fka_of_pre. Qed.
+
+(* Every inequality of pre-KA holds in KA. *)
+Lemma fka_le_of_pre e1 e2 : e1 ⊑ e2 → FKA e1 ⊑ FKA e2.
+Proof.
+exact: (semi_lattice_morphism_sqsubseteq_proper
+          (T := ka_term_pre_ka M) (S := fka_ka) (f := FKA)).
 Qed.
 
 Section Lift.
@@ -437,104 +533,96 @@ Section Lift.
 Variables (K : ka) (f : M → K).
 Context `{!MonoidMorphism f}.
 
-Definition free_ka_mon_lift : free_ka_mon → K :=
-  free_ka_lift (ka_term_elim f).
+Definition fka_lift (a : fka) : K := ka_term_elim f (fka_term a).
 
-Global Instance free_ka_mon_lift_morphism : PreKAMorphism free_ka_mon_lift.
-Proof. rewrite /free_ka_mon_lift; apply _. Qed.
+Global Instance fka_lift_morphism : PreKAMorphism fka_lift.
+Proof.
+constructor => //=.
+- move=> a b H.
+  exact: (pre_ka_morphism_proper (f := free_ka_lift (ka_term_elim f)) H).
+- rewrite /fka_lift /=; exact: monoid_morphism_one.
+Qed.
 
-Lemma free_ka_mon_lift_unit x : free_ka_mon_lift (free_ka_mon_unit x) = f x.
-Proof. by []. Qed.
-
-Lemma free_ka_mon_lift_of_term e :
-  free_ka_mon_lift (free_ka_of_term e) = ka_term_elim f e.
+Lemma fka_lift_unit x : fka_lift (FKA (Unit x)) = f x.
 Proof. by []. Qed.
 
 End Lift.
 
-Lemma free_ka_mon_ext (S : pre_ka) (g h : free_ka_mon → S) :
+Lemma fka_ext (S : pre_ka) (g h : fka → S) :
   PreKAMorphism g → PreKAMorphism h →
-  (∀ x, g (free_ka_mon_unit x) ≡ h (free_ka_mon_unit x)) →
-  ∀ e : free_ka_mon, g e ≡ h e.
+  (∀ x, g (FKA (Unit x)) ≡ h (FKA (Unit x))) →
+  ∀ a, g a ≡ h a.
 Proof.
-move=> Hg Hh Hunit; apply: free_ka_ext => e.
-rewrite -/((g ∘ free_ka_of_term) e) -/((h ∘ free_ka_of_term) e).
-exact: (ka_term_ext (g := g ∘ free_ka_of_term) (h := h ∘ free_ka_of_term)).
+move=> Hg Hh Hunit [e]; elim: e.
+- exact: Hunit.
+- change (g ⊥ ≡ h ⊥); by rewrite !pre_ka_morphism_bottom.
+- move=> e1 IH1 e2 IH2; change (g (FKA e1 ⊔ FKA e2) ≡ h (FKA e1 ⊔ FKA e2)).
+  by rewrite !pre_ka_morphism_join IH1 IH2.
+- move=> e1 IH1 e2 IH2; change (g (FKA e1 ⋅ FKA e2) ≡ h (FKA e1 ⋅ FKA e2)).
+  by rewrite !pre_ka_morphism_mul IH1 IH2.
+- move=> e IH; change (g (star (FKA e)) ≡ h (star (FKA e))).
+  by rewrite !pre_ka_morphism_star IH.
 Qed.
 
-(* Derivability of an inequality between terms in KA. *)
-Definition ka_leq (e1 e2 : ka_term M) : Prop :=
-  free_ka_of_term e1 ⊑ free_ka_of_term e2.
-
-Lemma pre_ka_ka_leq (e1 e2 : ka_term M) : e1 ⊑ e2 → ka_leq e1 e2.
-Proof. exact: semi_lattice_morphism_sqsubseteq_proper. Qed.
-
-Lemma ka_leq_lang (e1 e2 : ka_term M) : ka_leq e1 e2 → l e1 ⊑ l e2.
+(* KA is sound for languages. *)
+Lemma fka_lang e1 e2 : FKA e1 ⊑ FKA e2 → l e1 ⊑ l e2.
 Proof.
-move=> /(semi_lattice_morphism_sqsubseteq_proper
-          (f := free_ka_mon_lift (K := lang_ka M) (lang_sing (T := M)))).
-by rewrite !free_ka_mon_lift_of_term.
+exact: (semi_lattice_morphism_sqsubseteq_proper
+          (f := fka_lift (K := lang_ka M) (lang_sing (T := M)))).
 Qed.
 
-End FreeKAMonoid.
+End FKA.
+
+(* Always printed, so that `FKA e1 ⊑ FKA e2` (KA) is not displayed like
+   `e1 ⊑ e2` (pre-KA). *)
+#[warnings="-uniform-inheritance"]
+Coercion FKA : ka_term >-> fka.
+Add Printing Coercion FKA.
+Add Printing Constructor fka.
 
 (** * `pseudo_top` is the top element of the free KA
 
     Over a finitely generated monoid, the star of all generators is above
-    every term in KA. This fails in pre-KA, where star need not be
-    monotone. *)
+    every term in KA. *)
 
 Section PseudoTopKA.
 
 Context {G : Type} {M : monoid} `{!MonoidGen G M, !EqDecision G, !Finite G}.
 
-Definition ka_top : free_ka_mon M := free_ka_of_term pseudo_top.
+Notation top := (FKA (@pseudo_top G M _ _ _)).
 
-Lemma ka_top_star : ka_top ≡ star (free_ka_of_term
-                              (⨆ g ∈ enum G, Unit (generator_interp g))).
-Proof. exact: pre_ka_morphism_star. Qed.
+Lemma fka_top_star :
+  top = star (FKA (⨆ g ∈ enum G, Unit (generator_interp g))).
+Proof. by []. Qed.
 
-Lemma ka_top_closed_mul (x y : free_ka_mon M) :
-  x ⊑ ka_top → y ⊑ ka_top → x ⋅ y ⊑ ka_top.
-Proof. rewrite ka_top_star; exact: ka_mul_le_star. Qed.
+Lemma fka_top_closed_mul (a b : fka M) : a ⊑ top → b ⊑ top → a ⋅ b ⊑ top.
+Proof. rewrite fka_top_star; exact: ka_mul_le_star. Qed.
 
-Lemma ka_top_closed_star (x : free_ka_mon M) : x ⊑ ka_top → star x ⊑ ka_top.
+Lemma fka_top_closed_star (a : fka M) : a ⊑ top → star a ⊑ top.
 Proof.
-move=> Hx; apply: ka_star_le; apply/join_sqsubseteq; split.
-  rewrite ka_top_star; exact: pre_ka_one_star.
-exact: ka_top_closed_mul.
+move=> Ha; apply: ka_star_le; apply/join_sqsubseteq; split.
+  rewrite fka_top_star; exact: pre_ka_one_star.
+exact: fka_top_closed_mul.
 Qed.
 
-Lemma ka_leq_pseudo_top (e : ka_term M) : ka_leq e pseudo_top.
+Theorem fka_top_greatest (a : fka M) : a ⊑ top.
 Proof.
-rewrite /ka_leq -/ka_top; elim: e.
-- by move=> x; apply: pre_ka_ka_leq; exact: unit_le_pseudo_top.
-- change (free_ka_of_term ⊥ ⊑ ka_top).
-  rewrite pre_ka_morphism_bottom; exact: bottom_sqsubseteq.
-- move=> e1 IH1 e2 IH2; change (free_ka_of_term (e1 ⊔ e2) ⊑ ka_top).
-  by rewrite pre_ka_morphism_join; apply/join_sqsubseteq.
-- move=> e1 IH1 e2 IH2; change (free_ka_of_term (e1 ⋅ e2) ⊑ ka_top).
-  by rewrite pre_ka_morphism_mul; exact: ka_top_closed_mul.
-- move=> e IH; change (free_ka_of_term (star e) ⊑ ka_top).
-  by rewrite pre_ka_morphism_star; exact: ka_top_closed_star.
-Qed.
-
-Theorem ka_top_greatest (e : free_ka_mon M) : e ⊑ ka_top.
-Proof.
-elim: (e : ka_term (ka_term M)) => /=.
-- exact: ka_leq_pseudo_top.
+case: a => e; elim: e.
+- by move=> x; apply: fka_le_of_pre; exact: unit_le_pseudo_top.
 - exact: bottom_sqsubseteq.
-- by move=> e1 IH1 e2 IH2; apply/join_sqsubseteq.
-- by move=> e1 IH1 e2 IH2; exact: ka_top_closed_mul.
-- by move=> e1 IH1; exact: ka_top_closed_star.
+- move=> e1 IH1 e2 IH2; change (FKA e1 ⊔ FKA e2 ⊑ top).
+  by apply/join_sqsubseteq.
+- move=> e1 IH1 e2 IH2; change (FKA e1 ⋅ FKA e2 ⊑ top).
+  exact: fka_top_closed_mul.
+- move=> e IH; change (star (FKA e) ⊑ top).
+  exact: fka_top_closed_star.
 Qed.
 
 (* Universality: `Σ* ⊑ e` and `e ≡ Σ*` coincide in KA. *)
-Corollary ka_leq_top_iff (e : ka_term M) :
-  ka_leq pseudo_top e ↔ free_ka_of_term e ≡ ka_top.
+Corollary fka_top_iff (a : fka M) : top ⊑ a ↔ a ≡ top.
 Proof.
-split => [H|H]; last by rewrite /ka_leq -/ka_top -H.
-apply: (anti_symm (⊑)) => //; exact: ka_top_greatest.
+split => [H|->]; last by [].
+apply: (anti_symm (⊑)) => //; exact: fka_top_greatest.
 Qed.
 
 End PseudoTopKA.
