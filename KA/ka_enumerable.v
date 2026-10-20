@@ -3,9 +3,9 @@
    pre-KA equivalence on terms over a countable pre-KA `P` is enumerable,
    so is `free_ka_eq`: its derivations are reified as `DK` and checked by
    `checkK`, exactly as KA/preka_enumerable.v does for the pre-KA axioms,
-   with two extra rules for star induction. `ka_leq_slice_enumerable_r`
-   packages the result for the KA ordering on terms over a discrete
-   countable monoid, with a fixed left-hand side. *)
+   with two extra rules for star induction. `fka_le_slice_enumerable_r`
+   packages the result for the KA ordering `FKA e1 ⊑ FKA e2` on terms over
+   a discrete countable monoid, with a fixed left-hand side. *)
 
 Require Import ssreflect.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts.

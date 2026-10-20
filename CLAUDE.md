@@ -184,7 +184,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     Includes `l_alt` (Theorem 5: string membership <-> term ordering),
     `l_inj_finite` (Corollary 7), `either_empty_or_nonzero` (Corollary 8).
 
-14. **`KA/ka.v`** (~540 lines): Kleene algebras (`KAMixin`, Kozen's two
+14. **`KA/ka.v`** (~630 lines): Kleene algebras (`KAMixin`, Kozen's two
     star induction rules, on top of `PreKAMixin`) with basic theory
     (`ka_star_mono`, `ka_star_one`, `ka_star_comm`, and
     `ka_star_join_comm`: `(x ⊔ y)^* ≡ (1 ⊔ x x^* ⊔ y y^*) (x y)^*` when
@@ -203,7 +203,7 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     `KA/preka_enumerable.v` for the free KA: derivations of `free_ka_eq`
     (pre-KA laws, operation table, star induction) reified as `DK` and
     checked by `checkK`, giving `free_ka_eq_enumerable` and
-    `ka_leq_slice_enumerable_r`.
+    `fka_le_slice_enumerable_r`.
 
 16. **`KA/automata.v`** (~1080 lines): FSA/NFA definitions: `fsa` record with
     `fsa_elem`, `fsa_state`, `fsa_interp`, `fsa_initial`, `fsa_trans`,
@@ -413,7 +413,7 @@ no longer `Local` (`Universality/UnivEncoding.v` reuses them). Unlike
 34. **`Universality/UnivTop.v`** (~90 lines): full universality in the free
     KA. `univ_top_ub := univ_ub_mm2 ⊔ unbal` (and `univ_top_ub_bin` over
     `list bool * nat`) satisfy `univ_top_completeness`/`_soundness` with
-    `ka_leq sigma_top` on the left, via `Universality/BalancedKA.v`.
+    `FKA sigma_top ⊑ FKA _`, via `Universality/BalancedKA.v`.
     `univ_top_leq`/`R_target_univ_top` (and `_bin`) mirror
     `univ_leq`/`R_target_univ`.
 

@@ -80,10 +80,10 @@ they are library code rather than anything specific to universality
 
 - `KA/ka.v`: Kleene algebras (`KAMixin`, Kozen's star induction rules) on
   top of `KA/pre_ka.v`'s `PreKAMixin`. Also languages as a KA, the free KA
-  over a pre-KA or a monoid, the KA ordering `ka_leq`, and `pseudo_top` as
-  the top element.
+  over a pre-KA or a monoid (`fka`, with `FKA e1 ⊑ FKA e2` meaning "KA
+  proves `e1 ⊑ e2`"), and `FKA pseudo_top` as the top element.
 - `KA/ka_enumerable.v`: enumerability of free-KA derivability, the
-  analogue of `KA/preka_enumerable.v` (`ka_leq_slice_enumerable_r`).
+  analogue of `KA/preka_enumerable.v` (`fka_le_slice_enumerable_r`).
 
 The pre-KA `slice_enumerable_r` lives in `KA/preka_enumerable.v`, beside
 `slice_enumerable`.
