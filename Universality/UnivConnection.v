@@ -1,11 +1,11 @@
 (* The analogue of CKAUndec/Glue/TLToRTarget.v for the universality
-   encodings of CKAUndec/UnivEncoding.v: connects R_TL, through
+   encodings of Universality/UnivEncoding.v: connects R_TL, through
    coq-library-undecidability's Reductions/MM2_Splice.v, to R_target_univ
    and its binary-alphabet counterpart R_target_univ_bin, and to their
-   full-universality versions in KA (CKAUndec/UnivTop.v). The splice
+   full-universality versions in KA (Universality/UnivTop.v). The splice
    argument is stated once (R_TL_connection_of), for any family of
    propositions that is complete for runs halting at (0,(0,0)) and sound
-   for halting runs. Feeds CKAUndec/UnivMComplete.v. *)
+   for halting runs. Feeds Universality/UnivMComplete.v. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia Relations.
 From Undecidability Require Import FRACTRAN.
@@ -27,7 +27,7 @@ From Undecidability.MinskyMachines.Reductions Require Import
 From Undecidability.MinskyMachines.Util Require Import MM2_simulator.
 From kacc Require Import CKAUndec.Glue.RtcBridge.
 From kacc Require Import CKAUndec.Glue.TLToRTarget.
-From kacc Require Import CKAUndec.UnivEncoding CKAUndec.UnivTop.
+From kacc Require Import Universality.UnivEncoding Universality.UnivTop.
 
 Require Import SyntheticComputability.Models.T_L_Uniform.
 From stdpp Require relations.

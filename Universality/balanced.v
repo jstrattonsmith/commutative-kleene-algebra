@@ -1,5 +1,5 @@
 (* Balanced universality over the monoid `list A * nat`: the pre-KA engine
-   behind CKAUndec/UnivEncoding.v. The second component counts a single
+   behind Universality/UnivEncoding.v. The second component counts a single
    letter that commutes with everything (the `b` of Xu, Zhou, Walker and
    Kincaid's universality encoding, arXiv:2607.09635, Section 4).
 

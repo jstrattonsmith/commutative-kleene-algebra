@@ -35,8 +35,8 @@ between the paper and the formalization.
 
 - **`KA/`** -- the paper's own pre-Kleene-algebra framework: utilities,
   the algebraic hierarchy, free `ka_term` syntax, language semantics,
-  finite automata, representable relations, and the binary-alphabet
-  embedding.
+  full Kleene algebras and the free KA, finite automata, representable
+  relations, and the binary-alphabet embedding.
 - **`MM2_Legacy/`** -- a thin Church's-Thesis-witness wrapper around
   `coq-library-undecidability`'s own MM2 (two-counter machine) simulator
   (the pure MM2 execution-model machinery itself lives upstream, in
@@ -47,9 +47,12 @@ between the paper and the formalization.
   and builds up effective inseparability (Theorem 17) and
   Sigma^0_1-completeness of the KA-term inequality (Theorems 18-19), both
   over the machine-specific alphabet and the paper's own canonical
-  2-symbol alphabet. It also contains a second, independent MM2 encoding
-  via balanced universality over `list T * nat` (after Xu, Zhou, Walker
-  and Kincaid), giving Sigma^0_1-completeness of universality.
+  2-symbol alphabet.
+- **`Universality/`** -- a second, independent MM2 encoding via balanced
+  universality over `list T * nat` (after Xu, Zhou, Walker and Kincaid),
+  giving Sigma^0_1-completeness of universality in pre-KA and, via
+  `KA/ka.v`'s star induction, in KA. Builds on `KA/` and `CKAUndec/`; see
+  [`Universality/README.md`](Universality/README.md).
 
 ## Main results
 
@@ -58,7 +61,7 @@ development. No axioms appear except two named, standard hypotheses
 (`CT_L`, Church's Thesis for Rocq's `L` language; `MP`, Markov's
 Principle), stated as hypotheses only in the final
 Sigma^0_1-completeness files (`CKAUndec/KMComplete.v`,
-`CKAUndec/BinaryAlphabetMComplete.v`, `CKAUndec/UnivMComplete.v`).
+`CKAUndec/BinaryAlphabetMComplete.v`, `Universality/UnivMComplete.v`).
 
 - **`mm2_R_soundness`** / **`mm2_R_completeness`** (`CKAUndec/Encoding.v`):
   soundness and completeness of the MM2-as-KA-terms encoding (paper
@@ -70,12 +73,12 @@ Sigma^0_1-completeness files (`CKAUndec/KMComplete.v`,
   Sigma^0_1-completeness of the KA-term inequality, both per-machine and
   over the paper's own fixed canonical alphabet (paper Theorems 18-19),
   conditional on `CT_L`/`MP`.
-- **`CKAUndec/UnivMComplete.v`**: Sigma^0_1-completeness of balanced
+- **`Universality/UnivMComplete.v`**: Sigma^0_1-completeness of balanced
   universality `bal_star ⊑ e` in pre-KA (`Univ_m_complete`,
   `Univ_bin_m_complete`) and of full universality `Σ* ⊑ e` in the free
   KA (`Univ_top_m_complete`, `Univ_top_bin_m_complete`), the `_bin`
   variants over the single fixed carrier `list bool * nat`; conditional
-  on `CT_L`/`MP`.
+  on `CT_L`/`MP`. See [`Universality/README.md`](Universality/README.md).
 
 ## Usage
 

@@ -7,16 +7,16 @@
    `a^n q b^m`.
 
    The inequality is `bal_star ⊑ univ_ub c0`, where `bal_star` (from
-   KA/balanced.v) is the star of the balanced letters `([t], 1)`. The
-   upper bound collects error detectors: each one recognizes a
-   balanced prefix that cannot be the prefix of a correct run reaching
+   Universality/balanced.v) is the star of the balanced letters `([t], 1)`.
+   The upper bound collects error detectors: each one recognizes a balanced
+   prefix that cannot be the prefix of a correct run reaching
    `(0, q0, 0)`, padded with `bal_star`. Weighted letters (`(a, 0)`,
    `(a, 2)`, ...) make a pattern balanced exactly when a counter
    changes incorrectly between two consecutive configurations.
 
    - Completeness (`univ_complete_gen`): if the run halts at
      `(0, q0, 0)`, every word deviating from the run word is caught at
-     the letter where it deviates, so KA/balanced.v's
+     the letter where it deviates, so Universality/balanced.v's
      `bal_univ_complete` applies with `D` = length of the run word + 1.
    - Soundness (`univ_sound_gen`): the run word of a run halting
      elsewhere is matched by no detector.
@@ -36,8 +36,10 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang KA.balanced.
-From kacc Require Import KA.BinaryAlphabetTransport KA.BalancedBinary.
+From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang.
+From kacc Require Import Universality.balanced.
+From kacc Require Import KA.BinaryAlphabetTransport.
+From kacc Require Import Universality.BalancedBinary.
 From kacc Require Import CKAUndec.Encoding.
 From Undecidability.MinskyMachines.Util Require Import
   MM2_facts MM2_stepper MM2_simulator.
@@ -45,8 +47,8 @@ From Undecidability.MinskyMachines Require Import MM2.
 Import MM2Notations.
 
 (* `ka_scope` reads a bare `1` as the unit of the ambient monoid, which for
-   the weights (KA/balanced.v's additive `nat`) is `0`. Numerals here are
-   natural numbers; the unit of KA terms is written `1%ka`. *)
+   the weights (Universality/balanced.v's additive `nat`) is `0`. Numerals
+   here are natural numbers; the unit of KA terms is written `1%ka`. *)
 Local Open Scope nat_scope.
 
 Section UnivGeneric.
@@ -1104,8 +1106,9 @@ elim: w w0 => [|t w IH] [|t0 w0].
   + by right; right; exists [], t, t0, w, w0.
 Qed.
 
-(* The language-level facts KA/balanced.v's bal_univ_complete consumes,
-   with D = |run word| + 1; also used by KA/BalancedBinary.v. *)
+(* The language-level facts Universality/balanced.v's bal_univ_complete
+   consumes, with D = |run word| + 1; also used by
+   Universality/BalancedBinary.v. *)
 Lemma univ_complete_lang c0 cs cs' :
   uchain (c0 :: cs) → c0 :: cs = cs' ++ [(0, q0, 0)] →
   let D := S (length (run (c0 :: cs))) in
