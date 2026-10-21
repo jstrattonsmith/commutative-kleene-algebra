@@ -29,6 +29,7 @@ MM2_Legacy/Simulator.v
 KA/utils.v
 KA/algebra.v
 KA/pre_ka.v
+KA/rules_enumerable.v
 KA/preka_enumerable.v
 KA/lang.v
 # ka.v/ka_enumerable.v: full Kleene algebras (star induction) and the
