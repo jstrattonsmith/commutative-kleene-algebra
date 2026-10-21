@@ -272,13 +272,19 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     stdpp's relation vocabulary. Used by the next item and by
     `CKAUndec/Glue/BinaryAlphabetConnection.v` below.
 
-23. **`CKAUndec/Glue/TLToRTarget.v`** (~130 lines): builds a single uniform
+23. **`CKAUndec/Glue/TLToRTarget.v`** (~155 lines): builds a single uniform
     MM2 program for `T_L` via `coq-library-undecidability`'s
     `Reductions.FRACTRAN_computable_to_MM2_computable`, then splices its
     divisibility-encoded output convention
     (`Reductions.MM2_Splice`'s `Psplice`) into `CKAUndec/Encoding.v`'s
-    exact `(0,(0,0))`-halting convention, connecting all the way to
-    `R_target` (`R_TL_R_target_connection`).
+    exact `(0,(0,0))`-halting convention. The splice argument is stated
+    once, for any predicate on start states that is complete for runs
+    halting at (0,(0,0)) and sound for halting runs
+    (`R_TL_connection_gen`, whose witness `c` does not depend on the
+    predicate, and its per-program-family form `R_TL_connection_of`).
+    `R_TL_R_target_connection` instantiates it at `R_target`; so do
+    `CKAUndec/Glue/BinaryAlphabetConnection.v` and
+    `Universality/UnivConnection.v`.
 
 24. **`CKAUndec/K.v`** (~105 lines): closes Theorem 17. Defines `z_vec`,
     `K z := R_target c (...)` -- a genuine `red_lb ⊑ red_ub` KA-term-level
@@ -326,12 +332,11 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     only ever used -- tracing to the same missing star-induction axiom
     documented in `KA/BinaryAlphabetTransport.v`'s header comment.
 
-28. **`CKAUndec/Glue/BinaryAlphabetConnection.v`** (~120 lines): the
-    binary-alphabet analogue of `CKAUndec/Glue/TLToRTarget.v` -- mirrors
-    `Psplice_R_target_divides`/`_not_divides`/`R_TL_R_target_connection`,
-    substituting `CKAUndec/BinaryAlphabet.v`'s `mm2_R_completeness'`/
-    `mm2_R_soundness'` for the unembedded originals, closing with
-    `R_TL_R_target_connection_bin`.
+28. **`CKAUndec/Glue/BinaryAlphabetConnection.v`** (~45 lines): the
+    binary-alphabet analogue of `R_TL_R_target_connection`:
+    `R_TL_R_target_connection_bin` instantiates `TLToRTarget.v`'s
+    `R_TL_connection_gen` with `CKAUndec/BinaryAlphabet.v`'s
+    `mm2_R_completeness'`/`mm2_R_soundness'`.
 
 29. **`CKAUndec/BinaryAlphabetMComplete.v`** (~325 lines): the
     binary-alphabet analogue of `CKAUndec/KMComplete.v`, generalized over an
@@ -422,10 +427,8 @@ no longer `Local` (`Universality/UnivEncoding.v` reuses them). Unlike
     `univ_top_leq`/`R_target_univ_top` (and `_bin`) mirror
     `univ_leq`/`R_target_univ`.
 
-35. **`Universality/UnivConnection.v`** (~120 lines): the analogue of
-    `CKAUndec/Glue/TLToRTarget.v`, stated once for any family complete for
-    runs halting at (0,(0,0)) and sound for halting runs
-    (`R_TL_connection_of`), then instantiated as
+35. **`Universality/UnivConnection.v`** (~50 lines): instances of
+    `CKAUndec/Glue/TLToRTarget.v`'s generic `R_TL_connection_of`:
     `R_TL_R_target_univ_connection`,
     `R_TL_R_target_univ_bin_connection` and their KA counterparts
     `R_TL_R_target_univ_top(_bin)_connection`.

@@ -67,8 +67,9 @@ The files are listed in dependency order, matching `_CoqProject`.
   its soundness and completeness, both generic and for MM2, over the
   machine alphabet and the binary one.
 - `UnivTop.v`: the same with `Σ*` on the left, in the free KA.
-- `UnivConnection.v`: wiring from `T_L` to the universality targets. It is
-  the analogue of `CKAUndec/Glue/TLToRTarget.v`.
+- `UnivConnection.v`: wiring from `T_L` to the universality targets, as
+  instances of `CKAUndec/Glue/TLToRTarget.v`'s generic
+  `R_TL_connection_of`.
 - `UnivMComplete.v`: enumerability and m-completeness. Each theorem is
   an instance of `CKAUndec/KMComplete.v`'s generic
   `m_complete_of_K_of` (effective inseparability, then Myhill, then the
