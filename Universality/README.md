@@ -28,7 +28,11 @@ Assumptions` is otherwise closed.
 
 The second component of the carrier counts a letter that commutes with
 everything. `bal_star` is the star of the balanced letters `([t], 1)`, with
-language `{(w, |w|)}`. `Σ*` is the star of all generators.
+language `{(w, |w|)}`. `Σ*` is the star of all generators. The two
+problems are defined once, as `bal_universal` (`balanced.v`) and
+`fka_universal` (`KA/ka.v`, for any finitely generated monoid), and the
+`Univ*` predicates are their instances. `fka_universal_iff` shows that KA
+proving `Σ* ⊑ e` is the same as KA proving `e ≡ Σ*`.
 
 The encoding itself is axiom-free: `univ_completeness` and
 `univ_soundness` (`UnivEncoding.v`) say that an MM2 machine halts at
@@ -65,9 +69,10 @@ The files are listed in dependency order, matching `_CoqProject`.
 - `UnivTop.v`: the same with `Σ*` on the left, in the free KA.
 - `UnivConnection.v`: wiring from `T_L` to the universality targets. It is
   the analogue of `CKAUndec/Glue/TLToRTarget.v`.
-- `UnivMComplete.v`: enumerability and m-completeness. Effective
-  inseparability comes from `CKAUndec/BinaryAlphabetMComplete.v`'s generic
-  `eff_insep_shape_K_of_B1_L`.
+- `UnivMComplete.v`: enumerability and m-completeness. Each theorem is
+  an instance of `CKAUndec/KMComplete.v`'s generic
+  `m_complete_of_K_of` (effective inseparability, then Myhill, then the
+  reduction).
 
 The root [`CLAUDE.md`](../CLAUDE.md) (items 30-36) gives a fuller
 file-by-file description.
@@ -92,7 +97,7 @@ The pre-KA `slice_enumerable_r` lives in `KA/preka_enumerable.v`, beside
 
 - **Imports:** from `KA/` (`utils`, `algebra`, `pre_ka`, `lang`,
   `preka_enumerable`, `ka`, `ka_enumerable`, `BinaryAlphabetTransport`),
-  from `CKAUndec/` (`Encoding`, `BinaryAlphabetMComplete`,
+  from `CKAUndec/` (`Encoding`, `KMComplete`,
   `Glue/RtcBridge`, `Glue/TLToRTarget`), and from `coq-synthetic-computability`/`coq-library-undecidability`.
 - **One change outside this directory:** `CKAUndec/Encoding.v`'s
   `translate_state_spec` and `mm2_prog_spec` are no longer `Local`, so

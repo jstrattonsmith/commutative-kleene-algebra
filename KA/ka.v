@@ -18,7 +18,8 @@
    `star (x ⊔ y) ≡ (1 ⊔ x ⋅ star x ⊔ y ⋅ star y) ⋅ star (x ⋅ y)`
    (`ka_star_join_comm`), and over a finitely generated monoid `pseudo_top`
    is the greatest element of the free KA (`fka_top_greatest`). Both use
-   star induction. *)
+   star induction. The latter makes universality, `fka_universal e` (KA
+   proves `pseudo_top ⊑ e`), the same as KA proving `e ≡ pseudo_top`. *)
 
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
@@ -618,11 +619,16 @@ case: a => e; elim: e.
   exact: fka_top_closed_star.
 Qed.
 
-(* Universality: `Σ* ⊑ e` and `e ≡ Σ*` coincide in KA. *)
 Corollary fka_top_iff (a : fka M) : top ⊑ a ↔ a ≡ top.
 Proof.
 split => [H|->]; last by [].
 apply: (anti_symm (⊑)) => //; exact: fka_top_greatest.
 Qed.
+
+(* Universality: KA proves `Σ* ⊑ e`, or equivalently `e ≡ Σ*`. *)
+Definition fka_universal (e : ka_term M) : Prop := top ⊑ FKA e.
+
+Lemma fka_universal_iff e : fka_universal e ↔ FKA e ≡ top.
+Proof. exact: fka_top_iff. Qed.
 
 End PseudoTopKA.

@@ -95,6 +95,10 @@ Definition bal_gen : ka_term M := ⨆ t ∈ enum A, bal [t].
 
 Definition bal_star : ka_term M := star bal_gen.
 
+(** Balanced universality, the pre-KA stand-in for universality: `x` is
+    above the slice `{(w, |w|)}`. *)
+Definition bal_universal (x : ka_term M) : Prop := bal_star ⊑ x.
+
 Lemma bal_app w u : bal (w ++ u) ≡ bal w ⋅ bal u.
 Proof.
 rewrite /bal -monoid_morphism_mul; apply: ka_unit_proper.

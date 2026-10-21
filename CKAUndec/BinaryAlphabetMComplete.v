@@ -140,23 +140,8 @@ have [f Hf] := @slice_enumerable Tm_bin _ _ Tm_bin_leibniz
 exists f. intros z. rewrite /K_bin /K_of red_leq'_shape. exact: Hf z.
 Qed.
 
-(* --- 4. GENERALIZATION of CKAUndec.KMComplete.v: eff_insep_shape_superset
-   (EffectiveInseparabilityTransport.v, sibling project) is already
-   generic over any A'/enumerability witness -- the only CKA-specific
-   content is bundling K_of Pred's own enumerability in. *)
-
-Theorem eff_insep_shape_K_of_B1_L (Pred : nat -> Prop)
-    (Hc : forall (v : Vector.t nat 2) (m : nat),
-      (m <= 1)%nat -> T_L_Uniform.R_TL v m -> (m = 1 <-> Pred (ps 1 * enc 2 v)))
-    (Henum : enumerable (K_of Pred)) :
-  eff_insep_shape W_L (K_of Pred) B1_L.
-Proof.
-eapply EffectiveInseparabilityTransport.eff_insep_shape_superset.
-- exact eff_insep_A0_B1_L_via_generic.
-- exact Henum.
-- exact (A0_L_subset_K_of Hc).
-- exact (K_of_B1_L_disjoint Hc).
-Qed.
+(* --- 4. eff_insep_shape_K_of_B1_L and m_complete_of_K_of, generic over
+   the Prop family Pred, live in CKAUndec/KMComplete.v. *)
 
 Theorem eff_insep_shape_K_bin_B1_L :
   exists (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
@@ -224,12 +209,9 @@ Proof. rewrite /K_bin /K_of /K_to_KA_ineq_bin /KA_ineq_bin /=. exact: red_leq'_s
 Theorem KA_ineq_bin_m_complete : CT_L -> MP -> m-complete KA_ineq_bin.
 Proof.
 intros ct MP_assm.
-destruct (K_bin_m_complete ct MP_assm) as [c [k [bEnc [Hlen [Hk_pos Hc]]]]].
-intros q Hq.
-apply (red_m_transitive (K_bin (c := c) Hlen Hk_pos) KA_ineq_bin).
-- exact (Hc q Hq).
-- exists (K_to_KA_ineq_bin (bEnc := bEnc) Hlen Hk_pos).
-  exact (K_to_KA_ineq_bin_spec Hlen Hk_pos).
+destruct R_TL_R_target_connection_bin as [c [k [bEnc [Hlen [Hk_pos Hc]]]]].
+exact (m_complete_of_K_of Hc (K_bin_enumerable Hlen Hk_pos)
+         (K_to_KA_ineq_bin_spec (bEnc := bEnc) Hlen Hk_pos) ct MP_assm).
 Qed.
 
 (* Closes the source paper's Theorem 18 over the canonical binary

@@ -39,9 +39,11 @@
    {(x,y) | x ⊑ y}. CKAUndec/KEnumerable.v already builds the reduction
    K_to_KA_ineq witnessing K ⪯ₘ KA_ineq (used there in the opposite
    direction, to import KA_ineq's enumerability into K); composing
-   K_m_complete's hardness with that same reduction via
-   red_m_transitive transports m-completeness out of K and into
-   KA_ineq. *)
+   K's m-completeness with that same reduction via red_m_transitive
+   transports m-completeness out of K and into KA_ineq. The generic
+   m_complete_of_K_of packages this route for any K_of Pred, and is
+   reused by CKAUndec/BinaryAlphabetMComplete.v and
+   Universality/UnivMComplete.v. *)
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia.
 Require Import ssreflect.
@@ -61,17 +63,51 @@ Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Import SyntheticComputability.Axioms.EA.
 Require Import SyntheticComputability.CRM.principles.
 Require Import SyntheticComputability.Synthetic.reductions.
+Require Import SyntheticComputability.Models.T_L_Bridge.
+Require Import SyntheticComputability.Models.T_L_Uniform.
+From Undecidability Require Import FRACTRAN.
+From Undecidability.FRACTRAN Require Import prime_seq.
+
+(* Generic over the Prop family Pred, so that CKAUndec/BinaryAlphabetMComplete.v
+   and Universality/UnivMComplete.v reuse it: eff_insep_shape_superset
+   (EffectiveInseparabilityTransport.v) is already generic over any
+   A'/enumerability witness, and the only CKA-specific content is bundling
+   K_of Pred's own enumerability in. *)
+Theorem eff_insep_shape_K_of_B1_L {Pred : nat -> Prop}
+    (Hc : forall (v : Vector.t nat 2) (m : nat),
+      (m <= 1)%nat -> R_TL v m -> (m = 1 <-> Pred (ps 1 * enc 2 v)))
+    (Henum : enumerable (K_of Pred)) :
+  eff_insep_shape W_L (K_of Pred) B1_L.
+Proof.
+eapply EffectiveInseparabilityTransport.eff_insep_shape_superset.
+- exact eff_insep_A0_B1_L_via_generic.
+- exact Henum.
+- exact (A0_L_subset_K_of Hc).
+- exact (K_of_B1_L_disjoint Hc).
+Qed.
+
+(* The whole route at once: a problem P that K_of Pred reduces to (by f)
+   is m-complete under CT_L and MP. *)
+Theorem m_complete_of_K_of {Pred : nat -> Prop} {X : Type} {P : X -> Prop}
+    {f : nat -> X}
+    (Hc : forall (v : Vector.t nat 2) (m : nat),
+      (m <= 1)%nat -> R_TL v m -> (m = 1 <-> Pred (ps 1 * enc 2 v)))
+    (Henum : enumerable (K_of Pred))
+    (Hf : forall z, K_of Pred z <-> P (f z)) :
+  CT_L -> MP -> m-complete P.
+Proof.
+intros ct MP_assm q Hq.
+apply (red_m_transitive (K_of Pred) P).
+- exact (m_complete_of_eff_insep_shape ct MP_assm
+           (eff_insep_shape_K_of_B1_L Hc Henum) Hq).
+- by exists f.
+Qed.
 
 Theorem eff_insep_shape_K_B1_L :
   exists c : nat, eff_insep_shape W_L (CKAUndec.K.K c) B1_L.
 Proof.
 destruct R_TL_R_target_connection as [c Hc].
-exists c.
-eapply EffectiveInseparabilityTransport.eff_insep_shape_superset.
-- exact eff_insep_A0_B1_L_via_generic.
-- exact (K_enumerable c).
-- exact (@A0_L_subset_K c Hc).
-- exact (@K_B1_L_disjoint c Hc).
+exists c. exact (eff_insep_shape_K_of_B1_L Hc (K_enumerable c)).
 Qed.
 
 (* `creative` is stated relative to an ambient EA instance's own
@@ -116,13 +152,9 @@ Qed.
 
 Theorem KA_ineq_m_complete : CT_L -> MP -> exists c : nat, m-complete (@KA_ineq c).
 Proof.
-intros ct MP_assm.
-destruct (K_m_complete ct MP_assm) as [c Hc].
+intros ct MP_assm. destruct R_TL_R_target_connection as [c Hc].
 exists c.
-intros q Hq.
-apply (red_m_transitive (CKAUndec.K.K c) (@KA_ineq c)).
-- exact (Hc q Hq).
-- exists (K_to_KA_ineq c). exact (K_to_KA_ineq_spec c).
+exact (m_complete_of_K_of Hc (K_enumerable c) (K_to_KA_ineq_spec c) ct MP_assm).
 Qed.
 
 (* Closes the source paper's Theorem 18 analogue over the machine-specific

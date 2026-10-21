@@ -303,8 +303,13 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
     `coq-synthetic-computability`'s `Models.EA_L_Myhill`'s generic machinery
     at `P := K c`, conditional on `CT_L`/`MP`) to full Sigma^0_1-completeness
     of the actual KA-term inequality relation, not just its `K`-slice
-    (`KA_ineq_m_complete`, composing `K_m_complete` with the reduction
-    `K ⪯ₘ KA_ineq` via `red_m_transitive`).
+    (`KA_ineq_m_complete`). The route is packaged generically over the
+    Prop family `Pred` as `eff_insep_shape_K_of_B1_L` and
+    `m_complete_of_K_of` (effective inseparability of `K_of Pred`, Myhill,
+    then a reduction `K_of Pred ⪯ₘ P` via `red_m_transitive`), which
+    `KA_ineq_m_complete`, `BinaryAlphabetMComplete.v`'s
+    `KA_ineq_bin_m_complete` and the four `Universality/UnivMComplete.v`
+    theorems instantiate.
 
 27. **`CKAUndec/BinaryAlphabet.v`** (~390 lines): the CKA-specific wiring
     that actually closes the source paper's Theorem 18/19 (undecidability/
@@ -425,17 +430,19 @@ no longer `Local` (`Universality/UnivEncoding.v` reuses them). Unlike
     `R_TL_R_target_univ_bin_connection` and their KA counterparts
     `R_TL_R_target_univ_top(_bin)_connection`.
 
-36. **`Universality/UnivMComplete.v`** (~250 lines): `K_univ c := K_of
-    (R_target_univ c)` is enumerable and m-complete (conditional on
-    `CT_L`/`MP`), and so is the balanced universality problem `Univ c :=
-    {e | bal_star ⊑ e}` (`Univ_m_complete`). Over the fixed carrier `list
+36. **`Universality/UnivMComplete.v`** (~200 lines): `K_univ c := K_of
+    (R_target_univ c)` is enumerable, so the balanced universality problem
+    `Univ c := bal_universal`, i.e. `{e | bal_star ⊑ e}`, is m-complete
+    (conditional on `CT_L`/`MP`; `Univ_m_complete`). Over the fixed carrier `list
     bool * nat`, `Univ_bin_m_complete : CT_L -> MP -> m-complete Univ_bin`
     needs no existential over the machine. In the free KA, full
-    universality `Univ_top c := {e | KA ⊢ Σ* ⊑ e}` is m-complete too
+    universality `Univ_top c := fka_universal`, i.e. `{e | KA ⊢ Σ* ⊑ e}`,
+    is m-complete too
     (`Univ_top_m_complete`, `Univ_top_bin_m_complete`; enumerability from
-    `KA/ka_enumerable.v`). Effective inseparability of each
-    `K_of` family comes from `CKAUndec/BinaryAlphabetMComplete.v`'s
-    `eff_insep_shape_K_of_B1_L`.
+    `KA/ka_enumerable.v`). Each proof is one instance of
+    `CKAUndec/KMComplete.v`'s `m_complete_of_K_of`, which
+    combines `eff_insep_shape_K_of_B1_L`, `m_complete_of_eff_insep_shape`
+    and the reduction out of `K_of`.
 
 ## Style Guidelines
 
