@@ -11,8 +11,6 @@
 
 Require Import ssreflect.
 From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts.
-From Undecidability.Synthetic Require Import DecidabilityFacts.
-From Undecidability.Synthetic Require Import MoreReducibilityFacts.
 From stdpp Require Import base countable decidable.
 From kacc Require Import KA.utils KA.algebra KA.pre_ka.
 From kacc Require Export KA.rules_enumerable.

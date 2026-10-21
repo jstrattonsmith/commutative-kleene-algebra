@@ -8,9 +8,7 @@
    a discrete countable monoid, with a fixed left-hand side. *)
 
 Require Import ssreflect.
-From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts.
-From Undecidability.Synthetic Require Import DecidabilityFacts.
-From Undecidability.Synthetic Require Import MoreReducibilityFacts.
+From Undecidability.Synthetic Require Import Definitions.
 From stdpp Require Import base countable decidable.
 From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.preka_enumerable.
 From kacc Require Import KA.ka.

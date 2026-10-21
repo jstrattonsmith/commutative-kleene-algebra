@@ -16,9 +16,7 @@
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia.
 From Undecidability Require Import FRACTRAN.
 From Undecidability.FRACTRAN Require Import prime_seq.
-From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
-  DecidabilityFacts MoreReducibilityFacts.
-From stdpp Require base decidable countable fin finite.
+From stdpp Require base countable finite.
 From kacc Require Import KA.algebra KA.pre_ka KA.preka_enumerable.
 From kacc Require Import Universality.balanced.
 From kacc Require Import CKAUndec.Encoding Universality.UnivEncoding.
@@ -30,13 +28,7 @@ From kacc Require CKAUndec.KMComplete.
 From Undecidability.MinskyMachines.Util Require Import MM2_simulator.
 
 Require Import SyntheticComputability.Models.T_L_Bridge.
-Require Import SyntheticComputability.Models.EA_L_Myhill.
 Require Import SyntheticComputability.Models.CT.
-Require Import SyntheticComputability.Models.EffectiveInseparability_L.
-From SyntheticComputability.ReducibilityDegrees Require Import
-  EffectiveInseparabilityTransport EffectiveInseparabilityGeneric
-  EffectiveInseparability.
-Require Import SyntheticComputability.ReducibilityDegrees.simple.
 Require Import SyntheticComputability.Axioms.EA.
 Require Import SyntheticComputability.CRM.principles.
 Require Import SyntheticComputability.Synthetic.Definitions

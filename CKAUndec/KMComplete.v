@@ -56,7 +56,6 @@ Require Import SyntheticComputability.Models.EA_L_Myhill.
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.EffectiveInseparability_L.
 Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityGeneric.
-Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparability.
 Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityTransport.
 Require Import SyntheticComputability.ReducibilityDegrees.simple.
 Require Import SyntheticComputability.Synthetic.DecidabilityFacts.

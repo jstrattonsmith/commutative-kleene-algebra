@@ -40,28 +40,16 @@
    machine. *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia.
-From Undecidability Require Import FRACTRAN.
 From Undecidability.MinskyMachines Require Import MM2 MMA.
-Import MM2Notations.
 From Undecidability.Shared.Libs.DLW Require Import gcd pos vec.
-Import vec_notations.
-Import Vector.VectorNotations.
-From Undecidability.MinskyMachines Require Import mm_defs mma_defs fractran_mma
-  mma_utils.
 From Undecidability.FRACTRAN Require Import fractran_utils prime_seq mm_fractran.
-From Undecidability.Shared.Libs.DLW Require Import utils sss subcode.
-From Undecidability.MinskyMachines.Reductions Require Import MMA2_to_MM2.
 
-From Undecidability.Synthetic Require Import Definitions EnumerabilityFacts
-  DecidabilityFacts MoreReducibilityFacts.
-From stdpp Require base decidable.
+From stdpp Require base.
 From kacc Require Import KA.algebra KA.pre_ka KA.preka_enumerable.
-From kacc Require Import CKAUndec.Glue.TLToRTarget.
 Require Import SyntheticComputability.Models.T_L_Bridge.
 Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityCore.
 From kacc Require Import CKAUndec.BinaryAlphabet.
 From kacc Require Import CKAUndec.Glue.BinaryAlphabetConnection.
-From kacc Require Import CKAUndec.K CKAUndec.KEnumerable.
 Require Import SyntheticComputability.Models.EA_L.
 Require Import SyntheticComputability.Models.EA_L_Myhill.
 From kacc Require Import CKAUndec.KMComplete.
@@ -70,7 +58,6 @@ From kacc Require Import CKAUndec.Encoding.
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.EffectiveInseparability_L.
 Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparabilityGeneric.
-Require Import SyntheticComputability.ReducibilityDegrees.EffectiveInseparability.
 Require Import SyntheticComputability.ReducibilityDegrees.simple.
 Require Import SyntheticComputability.Axioms.EA.
 Require Import SyntheticComputability.CRM.principles.
@@ -78,7 +65,6 @@ Require Import SyntheticComputability.Synthetic.Definitions
   SyntheticComputability.Synthetic.EnumerabilityFacts
   SyntheticComputability.Synthetic.DecidabilityFacts
   SyntheticComputability.Synthetic.reductions.
-Require Import SyntheticComputability.Shared.embed_nat.
 
 (* algebra.v/pre_ka.v open ka_scope, whose `0`/`1` typeclass-resolved
    literals otherwise hijack every plain nat literal below (vec_nil
