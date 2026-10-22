@@ -14,7 +14,7 @@
    that the two versions agree, and RuleEnumStdpp.v obtains [enumeratorT]
    from stdpp's [Countable]. *)
 
-From Stdlib Require Import List Arith Cantor.
+From Stdlib Require Import List Arith Cantor Eqdep_dec.
 Import ListNotations.
 
 (** * Enumerability *)
@@ -108,6 +108,61 @@ Proof.
   intros Hf Hg y.
   destruct (Hg y) as [x <-], (Hf x) as [n Hn].
   exists n; now rewrite Hn.
+Qed.
+
+(** ** Projections
+
+    A predicate on a sum or sigma type restricts to each summand. This is
+    how a family of mutual inductive predicates, presented as one
+    predicate on tagged judgments, gives back each member. *)
+
+Lemma enumerable_inl {A B} (P : A + B -> Prop) :
+  enumerable P -> enumerable (fun a => P (inl a)).
+Proof.
+  intros [f Hf].
+  exists (fun n => match f n with Some (inl a) => Some a | _ => None end).
+  intros a; split.
+  - intros [n Hn]%Hf; exists n; now rewrite Hn.
+  - intros [n Hn]; apply Hf; exists n.
+    destruct (f n) as [[a'|]|]; try discriminate.
+    now injection Hn as ->.
+Qed.
+
+Lemma enumerable_inr {A B} (P : A + B -> Prop) :
+  enumerable P -> enumerable (fun b => P (inr b)).
+Proof.
+  intros [f Hf].
+  exists (fun n => match f n with Some (inr b) => Some b | _ => None end).
+  intros b; split.
+  - intros [n Hn]%Hf; exists n; now rewrite Hn.
+  - intros [n Hn]; apply Hf; exists n.
+    destruct (f n) as [[|b']|]; try discriminate.
+    now injection Hn as ->.
+Qed.
+
+(** For an indexed family, recognising which index an enumerated element
+    has needs decidable equality on the indices. *)
+Lemma enumerable_sigT {I} {A : I -> Type}
+    (eqI : forall i j : I, {i = j} + {i <> j}) (P : {i : I & A i} -> Prop) (i : I) :
+  enumerable P -> enumerable (fun a : A i => P (existT A i a)).
+Proof.
+  intros [f Hf].
+  exists (fun n => match f n with
+           | Some (existT _ j a) =>
+               match eqI j i with
+               | left e => Some (eq_rect j A a i e)
+               | right _ => None
+               end
+           | None => None
+           end).
+  intros a; split.
+  - intros [n Hn]%Hf; exists n; rewrite Hn.
+    destruct (eqI i i) as [e|]; [|contradiction].
+    now rewrite (UIP_dec eqI e eq_refl).
+  - intros [n Hn]; apply Hf; exists n.
+    destruct (f n) as [[j b]|]; [|discriminate].
+    destruct (eqI j i) as [<-|]; [|discriminate].
+    now injection Hn as ->.
 Qed.
 
 (** * Checkers

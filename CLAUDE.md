@@ -164,9 +164,18 @@ under a standalone `-Q . RuleEnum`.
   `enumerator`/`enumerable`/`enumeratorT`/`enumerableT` (definitionally
   the Undecidability library's), Cantor-pairing enumerators for products,
   sums and lists, `checker_enumerator`/`checker_enumerable`,
-  `enumerable_reduce`, and the main result `rules_enumerator`/
+  `enumerable_reduce`, projections `enumerable_inl`/`_inr`/`_sigT`, and
+  the main result `rules_enumerator`/
   `rules_enumerable`: derivations are postfix programs `list (L * nat)`
   run on a stack.
+- **`RuleEnum/RuleSystem.v`** (Stdlib only): the recommended front end.
+  Labels list `premises`/`conclusion` (plus an optional enumerable axiom
+  set `Ax`), so both obligations are constructor-shaped
+  (`rule_system_enumerable`, `_noax`, `_mutual` for `A + B`-tagged mutual
+  predicates). Tactics `rules_closed`, `by_rule` (backtracks over label
+  constructors 1-16), `by_rule_with`, `by_axiom`.
+- **`RuleEnum/Mutual.v`** (Stdlib only): `le_enumerable` and mutual
+  `even`/`odd` (`Combined Scheme` of `Minimality` schemes), each a few lines.
 - **`RuleEnum/Closures.v`** (Stdlib only): `clos_refl_trans_enumerable`,
   a worked example of turning an inductive predicate into rules.
 - **`RuleEnum/CoRuleEnum.v`** (Stdlib only): the coinductive dual.
@@ -181,7 +190,9 @@ under a standalone `-Q . RuleEnum`.
   the Undecidability library's (`enumerable_iff`, `enumerableT_iff`, ...).
 - **`RuleEnum/HSCEnumerable.v`**: application to the library's Hilbert
   calculus: `hsc_enumerable` (uniform in the axiom list) and
-  `HSC_PRV_enumerable`, the enumerable half complementing `HSC_PRV_undec`.
+  `HSC_PRV_enumerable`, the enumerable half complementing `HSC_PRV_undec`;
+  proved twice, by the raw `rules_enumerable` and by `RuleSystem.v`
+  (`hsc_enumerable'`).
 
 ### `KA/`: the pre-Kleene-algebra framework, groundwork for the MM2-as-KA-terms encoding, binary embedding machinery
 

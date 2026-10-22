@@ -23,6 +23,48 @@ Theorem rules_enumerable (R : X -> Prop) :
 and pushes `rule l` applied to them. The enumerator lists all programs and
 keeps those that leave exactly one element on the empty stack.
 
+## The recommended interface: `RuleSystem.v`
+
+`rules_enumerable` takes a partial rule function, and proving it closed
+means inverting that function's `match`. `RuleSystem.v` hides this. Each
+label lists its premises and its conclusion:
+
+```coq
+Theorem rule_system_enumerable (R : X -> Prop) :
+  enumerableT L -> enumerable Ax ->
+  closed_under premises conclusion Ax R ->          (* constructor-shaped *)
+  (forall S, closed_under premises conclusion Ax S -> forall x, R x -> S x) ->
+  enumerable R.
+```
+
+Both obligations then have the shape of the predicate's own constructors,
+and tactics handle most of them. Here is the whole proof for `le` in
+`Mutual.v`:
+
+```coq
+  apply (rule_system_enumerable_noax nat_pair_eq_dec le_premises le_conclusion).
+  - exact le_label_enumerableT.
+  - rules_closed.                                   (* closed: automatic *)
+  - intros S HS [n m]; cbn; induction 1; by_rule.   (* least: automatic *)
+```
+
+- `rules_closed` gives one goal per label, with the premises as
+  hypotheses, and tries the predicate's constructors on each.
+- `by_rule` tries each constructor of the label type, filling in its
+  arguments by unification with the goal and the premises from the
+  context.
+- `by_rule_with l` names the label when its data has to be computed.
+- `Ax` holds base facts known only through an enumerator. Use
+  `rule_system_enumerable_noax` when there are none.
+- For mutual predicates, `rule_system_enumerable_mutual` works on tagged
+  judgments `A + B`. Its minimality obligation is exactly the conclusion
+  of a `Combined Scheme`.
+
+The interface needs decidable equality on judgments and a total
+`conclusion`. So a label carries data that is always valid: for example
+a split `G1 ++ t :: G2` instead of an index into `G` (see
+`HSCEnumerable.v`, which proves the same theorem both ways).
+
 ## Applying it to an inductive predicate
 
 Any finitary inductive predicate fits, as long as its constructors'
@@ -49,7 +91,9 @@ relation.
 
 | File | Depends on | Contents |
 |---|---|---|
-| `RuleEnum.v` | Rocq Stdlib | Enumerability notions; enumerators for `nat`, products, sums, lists and surjective images; `checker_enumerable`; `enumerable_reduce`; `rules_enumerable` |
+| `RuleEnum.v` | Rocq Stdlib | Enumerability notions; enumerators for `nat`, products, sums, lists and surjective images; projections `enumerable_inl`/`_inr`/`_sigT`; `checker_enumerable`; `enumerable_reduce`; `rules_enumerable` |
+| `RuleSystem.v` | Stdlib | Schematic interface (`rule_system_enumerable`, `_noax`, `_mutual`) and the tactics `rules_closed`, `by_rule`, `by_rule_with`, `by_axiom` |
+| `Mutual.v` | Stdlib | Worked examples: `le_enumerable`, and mutual `even`/`odd` via `Combined Scheme` |
 | `Closures.v` | Stdlib | `clos_refl_trans_enumerable` |
 | `CoRuleEnum.v` | Stdlib | The coinductive dual: the greatest set consistent with a finitely branching backward rule system `back : X -> list (list X)` is co-enumerable (`coinductive_coenumerable`, from `MP` and a pigeonhole/König hypothesis that `LLPO` provides); refutations are enumerable with no axioms (`refutable_enumerable`); worked example `diverges_coenumerable` |
 | `RuleEnumStdpp.v` | stdpp | `Countable X -> enumerableT X`; `EqDecision` as a sumbool decider |
@@ -69,6 +113,8 @@ commutative-kleene-algebra (`-R . kacc`) this resolves to
 ```
 -Q . RuleEnum
 RuleEnum.v
+RuleSystem.v
+Mutual.v
 Closures.v
 CoRuleEnum.v
 RuleEnumStdpp.v

@@ -29,6 +29,8 @@ MM2_Legacy/Simulator.v
 # need stdpp and coq-library-undecidability respectively. Meant to be
 # split out into its own repo; see RuleEnum/README.md.
 RuleEnum/RuleEnum.v
+RuleEnum/RuleSystem.v
+RuleEnum/Mutual.v
 RuleEnum/Closures.v
 RuleEnum/CoRuleEnum.v
 RuleEnum/RuleEnumStdpp.v

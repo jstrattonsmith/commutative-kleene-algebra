@@ -149,3 +149,65 @@ Proof.
   - reflexivity.
   - exact hsc_enumerable.
 Qed.
+
+(** * The same result through RuleSystem.v
+
+    The schematic interface needs a total [conclusion], so the axiom
+    label cannot carry an index into [Gamma] that might be out of range.
+    Instead it carries the context split around the axiom used,
+    [G1 ++ t :: G2], which is always valid. *)
+
+Require Import RuleEnum.RuleSystem.
+
+Inductive hsc_label :=
+  | H_ax (G1 : list formula) (t : formula) (G2 : list formula) (ζs : list formula)
+  | H_mp (G : list formula) (s t : formula).
+
+Definition hsc_premises (l : hsc_label) : list (list formula * formula) :=
+  match l with
+  | H_ax _ _ _ _ => []
+  | H_mp G s t => [(G, arr s t); (G, s)]
+  end.
+
+Definition hsc_conclusion (l : hsc_label) : list formula * formula :=
+  match l with
+  | H_ax G1 t G2 ζs => (G1 ++ t :: G2, substitute (list_subst ζs) t)
+  | H_mp G _ t => (G, t)
+  end.
+
+Lemma hsc_label_enumerableT : enumerableT hsc_label.
+Proof.
+  destruct formula_enumerableT as [eF HeF].
+  pose (eLF := list_enum eF).
+  assert (HeLF : enumeratorT eLF) by exact (list_enumeratorT HeF).
+  exists (fun k => option_map
+            (fun s => match s with
+                      | inl (G1, t, G2, ζs) => H_ax G1 t G2 ζs
+                      | inr (G, s, t) => H_mp G s t
+                      end)
+            (sum_enum (prod_enum (prod_enum (prod_enum eLF eF) eLF) eLF)
+                      (prod_enum (prod_enum eLF eF) eF) k)).
+  apply map_enumeratorT.
+  - exact (sum_enumeratorT
+             (prod_enumeratorT (prod_enumeratorT (prod_enumeratorT HeLF HeF) HeLF) HeLF)
+             (prod_enumeratorT (prod_enumeratorT HeLF HeF) HeF)).
+  - intros [G1 t G2 ζs|G s t];
+      [now exists (inl (G1, t, G2, ζs)) | now exists (inr (G, s, t))].
+Qed.
+
+Definition hsc_judgment_eq_dec :
+  forall x y : list formula * formula, {x = y} + {x <> y}.
+Proof. decide equality; [apply formula_eq_dec | apply (list_eq_dec formula_eq_dec)]. Defined.
+
+Theorem hsc_enumerable' :
+  enumerable (fun p : list formula * formula => hsc (fst p) (snd p)).
+Proof.
+  apply (rule_system_enumerable_noax hsc_judgment_eq_dec hsc_premises hsc_conclusion).
+  - exact hsc_label_enumerableT.
+  - rules_closed. apply hsc_var, in_elt.
+  - intros S HS [G t]; cbn; induction 1 as [ζ t Hin|].
+    + destruct (in_split _ _ Hin) as (G1 & G2 & ->).
+      rewrite <- (list_subst_spec ζ t).
+      by_rule_with (H_ax G1 t G2 (map ζ (seq 0 (fv_bound t)))).
+    + by_rule.
+Qed.
