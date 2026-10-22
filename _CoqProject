@@ -33,6 +33,7 @@ RuleEnum/Closures.v
 RuleEnum/CoRuleEnum.v
 RuleEnum/RuleEnumStdpp.v
 RuleEnum/RuleEnumUndec.v
+RuleEnum/HSCEnumerable.v
 
 # KA/: the paper's own pre-Kleene-algebra framework. Independent of
 # MM2_Legacy/CKAUndec -- touches none of them.

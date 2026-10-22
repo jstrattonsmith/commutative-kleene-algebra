@@ -54,6 +54,7 @@ relation.
 | `CoRuleEnum.v` | Stdlib | The coinductive dual: the greatest set consistent with a finitely branching backward rule system `back : X -> list (list X)` is co-enumerable (`coinductive_coenumerable`, from `MP` and a pigeonhole/König hypothesis that `LLPO` provides); refutations are enumerable with no axioms (`refutable_enumerable`); worked example `diverges_coenumerable` |
 | `RuleEnumStdpp.v` | stdpp | `Countable X -> enumerableT X`; `EqDecision` as a sumbool decider |
 | `RuleEnumUndec.v` | coq-library-undecidability | `enumerator`/`enumerable`/`enumerableT` agree with the library's (by `reflexivity`) |
+| `HSCEnumerable.v` | coq-library-undecidability (`HilbertCalculi/HSC.v` only) | Hilbert-calculus derivability is enumerable, uniformly in the axioms (`hsc_enumerable`, `HSC_PRV_enumerable`); the substitution in `hsc_var` is replaced by its finite prefix in the label; `formula_enumerableT` is the `R := fun _ => True` instance |
 
 `RuleEnum.v`'s definitions are written out to match the [Coq Library of
 Undecidability Proofs][undec] (`Synthetic/Definitions.v`) exactly, so a
@@ -72,6 +73,7 @@ Closures.v
 CoRuleEnum.v
 RuleEnumStdpp.v
 RuleEnumUndec.v
+HSCEnumerable.v
 ```
 
 and drop either adapter if you don't want its dependency.
@@ -79,9 +81,9 @@ and drop either adapter if you don't want its dependency.
 ## Candidate applications
 
 These are inductive relations in coq-library-undecidability with
-undecidability proofs but no enumerability proof:
+undecidability proofs but no enumerability proof (the Hilbert calculus,
+previously on this list, is now done in `HSCEnumerable.v`):
 
-- Hilbert calculus `hsc`
 - ILL/CLL/IMSELL/EILL sequent calculi
 - System F and intersection-type assignment
 - string rewriting and CFG `rewt` (via `Closures.v`)

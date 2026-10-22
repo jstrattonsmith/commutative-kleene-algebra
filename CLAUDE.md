@@ -179,6 +179,9 @@ under a standalone `-Q . RuleEnum`.
   `EqDecision` gives a sumbool decider.
 - **`RuleEnum/RuleEnumUndec.v`**: `RuleEnum`'s notions are convertible to
   the Undecidability library's (`enumerable_iff`, `enumerableT_iff`, ...).
+- **`RuleEnum/HSCEnumerable.v`**: application to the library's Hilbert
+  calculus: `hsc_enumerable` (uniform in the axiom list) and
+  `HSC_PRV_enumerable`, the enumerable half complementing `HSC_PRV_undec`.
 
 ### `KA/`: the pre-Kleene-algebra framework, groundwork for the MM2-as-KA-terms encoding, binary embedding machinery
 
