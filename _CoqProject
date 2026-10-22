@@ -24,6 +24,16 @@ MM2_Legacy/Simulator.v
 # MM2_Legacy/EffectiveInseparability_MM2_Race.v
 # MM2_Legacy/SMN_MM2.v
 
+# RuleEnum/: enumerability of rule-generated (inductive) predicates.
+# RuleEnum.v and Closures.v need only the Rocq Stdlib; the two adapters
+# need stdpp and coq-library-undecidability respectively. Meant to be
+# split out into its own repo; see RuleEnum/README.md.
+RuleEnum/RuleEnum.v
+RuleEnum/Closures.v
+RuleEnum/CoRuleEnum.v
+RuleEnum/RuleEnumStdpp.v
+RuleEnum/RuleEnumUndec.v
+
 # KA/: the paper's own pre-Kleene-algebra framework. Independent of
 # MM2_Legacy/CKAUndec -- touches none of them.
 KA/utils.v
