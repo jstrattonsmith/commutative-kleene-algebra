@@ -309,9 +309,11 @@ admit-free; no axioms appear anywhere except the two hypotheses named above
 26. **`CKAUndec/KMComplete.v`** (~135 lines): the full chain from `K`'s
     bundled effective inseparability (`eff_insep_shape_K_B1_L`, upgrading
     `CKAUndec/K.v`'s unbundled result now that enumerability is in hand)
-    through Myhill's theorem (`K_creative`, `K_m_complete`, instantiating
-    `coq-synthetic-computability`'s `Models.EA_L_Myhill`'s generic machinery
-    at `P := K c`, conditional on `CT_L`/`MP`) to full Sigma^0_1-completeness
+    through Myhill's theorem (`K_creative`, conditional on `CT_L` only,
+    since the separating witness is total (`eff_insep_shape_tot`); then
+    `K_m_complete`, which adds `MP` for `creative_to_m_complete`;
+    instantiating `coq-synthetic-computability`'s `Models.EA_L_Myhill`'s
+    generic machinery at `P := K c`) to full Sigma^0_1-completeness
     of the actual KA-term inequality relation, not just its `K`-slice
     (`KA_ineq_m_complete`). The route is packaged generically over the
     Prop family `Pred` as `eff_insep_shape_K_of_B1_L` and

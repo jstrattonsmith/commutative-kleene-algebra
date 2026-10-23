@@ -139,6 +139,16 @@ exists c, k, bEnc, Hlen, Hk_pos.
 exact (eff_insep_shape_K_of_B1_L Hc (K_bin_enumerable Hlen Hk_pos)).
 Qed.
 
+Theorem eff_insep_shape_tot_K_bin_B1_L :
+  exists (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
+    (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat),
+  eff_insep_shape_tot W_L (K_bin (c := c) Hlen Hk_pos) B1_L.
+Proof.
+destruct R_TL_R_target_connection_bin as [c [k [bEnc [Hlen [Hk_pos Hc]]]]].
+exists c, k, bEnc, Hlen, Hk_pos.
+exact (eff_insep_shape_tot_K_of_B1_L Hc (K_bin_enumerable Hlen Hk_pos)).
+Qed.
+
 (* --- 5. GENERALIZATION of EA_L.v/CKAUndec.KMComplete.v: everything
    from eff_insep_to_creative onward is already generic over an
    arbitrary Prop family with the eff_insep_shape property -- the only
@@ -153,9 +163,10 @@ Theorem K_bin_m_complete :
   m-complete (K_bin (c := c) Hlen Hk_pos).
 Proof.
 intros ct MP_assm.
-destruct eff_insep_shape_K_bin_B1_L as [c [k [bEnc [Hlen [Hk_pos Hshape]]]]].
+destruct eff_insep_shape_tot_K_bin_B1_L
+  as [c [k [bEnc [Hlen [Hk_pos Hshape]]]]].
 exists c, k, bEnc, Hlen, Hk_pos.
-exact (m_complete_of_eff_insep_shape ct MP_assm Hshape).
+exact (m_complete_of_eff_insep_shape_tot ct MP_assm Hshape).
 Qed.
 
 (* --- 6. GENERALIZATION of CKAUndec.KMComplete.v: red_m_transitive is
@@ -201,18 +212,20 @@ exact (m_complete_of_K_of Hc (K_bin_enumerable Hlen Hk_pos)
 Qed.
 
 (* Closes the source paper's Theorem 18 over the canonical binary
-   alphabet: raw undecidability of K_bin, conditional on the same two
-   hypotheses KA_ineq_bin_m_complete already needs (see KMComplete.v's
-   K_undecidable for why this can't be made axiom-free). *)
-Theorem K_bin_undecidable : CT_L -> MP ->
+   alphabet: raw undecidability of K_bin, conditional on CT_L only (see
+   KMComplete.v's K_undecidable): K_bin is creative without MP, and
+   creative sets are undecidable. *)
+Theorem K_bin_undecidable : CT_L ->
   exists (c k : nat) (bEnc : setoid_car (@Encoding.mm_sym_setoid _) → list bool)
     (Hlen : ∀ x, length (bEnc x) = k) (Hk_pos : (0 < k)%nat),
   ~ decidable (K_bin (c := c) Hlen Hk_pos).
 Proof.
-intros ct MP_assm.
-destruct (K_bin_m_complete ct MP_assm) as [c [k [bEnc [Hlen [Hk_pos Hc]]]]].
+intros ct.
+destruct eff_insep_shape_tot_K_bin_B1_L
+  as [c [k [bEnc [Hlen [Hk_pos Hshape]]]]].
 exists c, k, bEnc, Hlen, Hk_pos.
-exact (@m_complete_undecidable (EA_L ct) _ (K_bin_enumerable Hlen Hk_pos) Hc).
+exact (@creative_undecidable (EA_L ct) _
+         (creative_of_eff_insep_shape_tot ct Hshape)).
 Qed.
 
 (* KA_ineq_bin itself is not nat-valued (its domain is a pair of ka_terms
@@ -222,10 +235,10 @@ Qed.
    across the same reduction KA_ineq_bin_m_complete's own proof already
    builds instead, via red_m_transports's contrapositive
    (p ⪯ₘ q -> ~ decidable p -> ~ decidable q). *)
-Theorem KA_ineq_bin_undecidable : CT_L -> MP -> ~ decidable KA_ineq_bin.
+Theorem KA_ineq_bin_undecidable : CT_L -> ~ decidable KA_ineq_bin.
 Proof.
-intros ct MP_assm.
-destruct (K_bin_undecidable ct MP_assm) as [c [k [bEnc [Hlen [Hk_pos Hnd]]]]].
+intros ct.
+destruct (K_bin_undecidable ct) as [c [k [bEnc [Hlen [Hk_pos Hnd]]]]].
 intros Hdec % (red_m_transports (K_bin (c := c) Hlen Hk_pos) KA_ineq_bin).
 - exact (Hnd Hdec).
 - exists (K_to_KA_ineq_bin (bEnc := bEnc) Hlen Hk_pos).

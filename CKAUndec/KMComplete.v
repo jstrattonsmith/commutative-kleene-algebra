@@ -71,22 +71,34 @@ From Undecidability.FRACTRAN Require Import prime_seq.
    and Universality/UnivMComplete.v reuse it: eff_insep_shape_superset
    (EffectiveInseparabilityTransport.v) is already generic over any
    A'/enumerability witness, and the only CKA-specific content is bundling
-   K_of Pred's own enumerability in. *)
+   K_of Pred's own enumerability in. The generic witness is total, so
+   the total-witness form (eff_insep_shape_tot) is proved first: it gives
+   creativity without MP (K_creative). *)
+Theorem eff_insep_shape_tot_K_of_B1_L {Pred : nat -> Prop}
+    (Hc : forall (v : Vector.t nat 2) (m : nat),
+      (m <= 1)%nat -> R_TL v m -> (m = 1 <-> Pred (ps 1 * enc 2 v)))
+    (Henum : enumerable (K_of Pred)) :
+  eff_insep_shape_tot W_L (K_of Pred) B1_L.
+Proof.
+eapply EffectiveInseparabilityTransport.eff_insep_shape_tot_superset.
+- exact eff_insep_A0_B1_L_via_generic_tot.
+- exact Henum.
+- exact (A0_L_subset_K_of Hc).
+- exact (K_of_B1_L_disjoint Hc).
+Qed.
+
 Theorem eff_insep_shape_K_of_B1_L {Pred : nat -> Prop}
     (Hc : forall (v : Vector.t nat 2) (m : nat),
       (m <= 1)%nat -> R_TL v m -> (m = 1 <-> Pred (ps 1 * enc 2 v)))
     (Henum : enumerable (K_of Pred)) :
   eff_insep_shape W_L (K_of Pred) B1_L.
 Proof.
-eapply EffectiveInseparabilityTransport.eff_insep_shape_superset.
-- exact eff_insep_A0_B1_L_via_generic.
-- exact Henum.
-- exact (A0_L_subset_K_of Hc).
-- exact (K_of_B1_L_disjoint Hc).
+apply eff_insep_shape_tot_to_shape, (eff_insep_shape_tot_K_of_B1_L Hc Henum).
 Qed.
 
 (* The whole route at once: a problem P that K_of Pred reduces to (by f)
-   is m-complete under CT_L and MP. *)
+   is m-complete under CT_L and MP. MP is used only by Myhill's theorem
+   (creative_to_m_complete). *)
 Theorem m_complete_of_K_of {Pred : nat -> Prop} {X : Type} {P : X -> Prop}
     {f : nat -> X}
     (Hc : forall (v : Vector.t nat 2) (m : nat),
@@ -97,8 +109,8 @@ Theorem m_complete_of_K_of {Pred : nat -> Prop} {X : Type} {P : X -> Prop}
 Proof.
 intros ct MP_assm q Hq.
 apply (red_m_transitive (K_of Pred) P).
-- exact (m_complete_of_eff_insep_shape ct MP_assm
-           (eff_insep_shape_K_of_B1_L Hc Henum) Hq).
+- exact (m_complete_of_eff_insep_shape_tot ct MP_assm
+           (eff_insep_shape_tot_K_of_B1_L Hc Henum) Hq).
 - by exists f.
 Qed.
 
@@ -124,19 +136,21 @@ Qed.
    argument unresolved even with EA_L ct sitting right there in scope.
    Local Instance forces the registration explicitly; it gets
    substituted away (not re-generalized) when the section closes,
-   giving exactly `CT_L -> MP -> exists c, creative (CKAUndec.K.K c)`, with the EA
-   instance silently EA_L ct throughout. *)
+   giving exactly `CT_L -> exists c, creative (CKAUndec.K.K c)`, with the EA
+   instance silently EA_L ct throughout. No MP: the separating witness
+   is total (eff_insep_shape_tot_K_of_B1_L). *)
 
 Section KCreative.
 
 Variable ct : CT_L.
 Local Instance EA_inst : EA := EA_L ct.
 
-Theorem K_creative (MP_assm : MP) : exists c : nat, creative (CKAUndec.K.K c).
+Theorem K_creative : exists c : nat, creative (CKAUndec.K.K c).
 Proof.
-destruct eff_insep_shape_K_B1_L as [c Hc].
+destruct R_TL_R_target_connection as [c Hc].
 exists c.
-exact (creative_of_eff_insep_shape ct MP_assm Hc).
+exact (creative_of_eff_insep_shape_tot ct
+         (eff_insep_shape_tot_K_of_B1_L Hc (K_enumerable c))).
 Qed.
 
 End KCreative.
@@ -144,7 +158,7 @@ End KCreative.
 Theorem K_m_complete : CT_L -> MP -> exists c : nat, m-complete (CKAUndec.K.K c).
 Proof.
 intros ct MP_assm.
-destruct (K_creative ct MP_assm) as [c Hc].
+destruct (K_creative ct) as [c Hc].
 exists c.
 exact (creative_to_m_complete MP_assm _ Hc).
 Qed.
@@ -157,18 +171,16 @@ exact (m_complete_of_K_of Hc (K_enumerable c) (K_to_KA_ineq_spec c) ct MP_assm).
 Qed.
 
 (* Closes the source paper's Theorem 18 analogue over the machine-specific
-   alphabet: raw undecidability of K, conditional on the same two
-   hypotheses K_m_complete already needs -- via
-   ReducibilityDegrees/simple.v's m_complete_undecidable, not a fresh
-   argument. Genuinely conditional, not axiom-free: getting from K's
-   hypothetical decision procedure to a W_L-index needs CT_L (EA_L is
-   only ever built from it), and the creative-set route
-   m_complete_undecidable goes through needs MP too (via
-   eff_insep_to_creative's own use of MP_to_MP_partial). *)
-Theorem K_undecidable : CT_L -> MP -> exists c : nat, ~ decidable (CKAUndec.K.K c).
+   alphabet: raw undecidability of K, via ReducibilityDegrees/simple.v's
+   creative_undecidable applied to K_creative, not a fresh argument.
+   Conditional on CT_L only: getting from K's hypothetical decision
+   procedure to a W_L-index needs CT_L (EA_L is only ever built from
+   it), but creativity needs no MP, and Myhill's theorem (the only use
+   of MP) is not on this route. *)
+Theorem K_undecidable : CT_L -> exists c : nat, ~ decidable (CKAUndec.K.K c).
 Proof.
-intros ct MP_assm.
-destruct (K_m_complete ct MP_assm) as [c Hc].
+intros ct.
+destruct (K_creative ct) as [c Hc].
 exists c.
-exact (@m_complete_undecidable (EA_L ct) _ (K_enumerable c) Hc).
+exact (@creative_undecidable (EA_L ct) _ Hc).
 Qed.
