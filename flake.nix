@@ -18,7 +18,7 @@
     coq-library-undecidability.flake = false;
     # Same reasoning: arthuraa/coq-synthetic-computability (a real GitHub
     # remote both projects already push to), not a local path: input.
-    coq-synthetic-computability.url = "github:arthuraa/coq-synthetic-computability";
+    coq-synthetic-computability.url = "github:arthuraa/coq-synthetic-computability/eff-insep-tot";
     # Share our pinned coq-library-undecidability instead of building a
     # second, possibly-drifted copy.
     coq-synthetic-computability.inputs.coq-library-undecidability.follows = "coq-library-undecidability";

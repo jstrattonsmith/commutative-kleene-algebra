@@ -28,15 +28,16 @@
         "rocq-mcp": "rocq-mcp"
       },
       "locked": {
-        "lastModified": 1792422120,
-        "narHash": "sha256-Y63fEmSBs8o9A2g5JSMQ9DGDWTGNanY16rzs4/l+gZw=",
+        "lastModified": 1792771727,
+        "narHash": "sha256-ES+ouhj33qWpgGk8DY+KJDpyu3n7hDxOHtxT9BJA+eM=",
         "owner": "arthuraa",
         "repo": "coq-synthetic-computability",
-        "rev": "4c57d316d4ad3962ca18b1af872095037b76df5f",
+        "rev": "394566cb08af590c4ed47172de5da4144800eb19",
         "type": "github"
       },
       "original": {
         "owner": "arthuraa",
+        "ref": "eff-insep-tot",
         "repo": "coq-synthetic-computability",
         "type": "github"
       }
