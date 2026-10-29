@@ -7,9 +7,10 @@
 
    The problem `unif E` is stated for any relation `E` on terms. We use
    two: pre-KA equality `≡` (`preka_eqv`) and KA provability
-   `FKA e1 ≡ FKA e2` (`fka_eqv`, KA/ka.v). Both contain `≡`, are sound
-   for languages (`l_subst` turns a solution into a language-level one)
-   and are enumerable, hence so is `unif E` (`unif_enumerable`). *)
+   `FKA e1 ≡ FKA e2` (`fka_eqv`, KA/ka.v). A solution modulo any theory
+   sound for languages is a language-level one (`unif_lsolves`), and
+   both theories are enumerable, hence so is `unif E`
+   (`unif_enumerable`). *)
 
 Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
@@ -105,28 +106,8 @@ Qed.
 Definition preka_eqv (e1 e2 : ka_term W) : Prop := e1 ≡ e2.
 Definition fka_eqv (e1 e2 : ka_term W) : Prop := FKA e1 ≡ FKA e2.
 
-Definition lang_sound (E : ka_term W → ka_term W → Prop) :=
-  ∀ e1 e2, E e1 e2 → l e1 ≡ l e2.
-
-Definition preka_complete (E : ka_term W → ka_term W → Prop) :=
-  ∀ e1 e2, e1 ≡ e2 → E e1 e2.
-
-Lemma preka_eqv_sound : lang_sound preka_eqv.
-Proof. by move=> e1 e2 ->. Qed.
-
-Lemma preka_eqv_complete : preka_complete preka_eqv.
-Proof. by move=> e1 e2. Qed.
-
-Lemma fka_eqv_sound : lang_sound fka_eqv.
-Proof.
-rewrite /fka_eqv => e1 e2 He x; split; apply: fka_lang; by rewrite He.
-Qed.
-
-Lemma fka_eqv_complete : preka_complete fka_eqv.
-Proof. move=> e1 e2; exact: fka_of_pre. Qed.
-
 Lemma unif_lsolves E eqs :
-  lang_sound E → unif E eqs → ∃ ρ, lsolves ρ eqs.
+  (∀ e1 e2, E e1 e2 → l e1 ≡ l e2) → unif E eqs → ∃ ρ, lsolves ρ eqs.
 Proof.
 move=> HE [σ Hσ]; exists (λ i, l (nth i σ ⊥)) => p /Hσ /HE.
 by rewrite !l_subst.

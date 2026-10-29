@@ -468,17 +468,17 @@ nothing outside the directory depends on it. ssreflect throughout.
     `uterm := ka_term (list (A + nat))` (`inr i` is the variable `X_i`);
     substitutions are lists of terms, so witnesses are countable.
     `unif E eqs` is stated for any relation `E`. Instances are pre-KA `≡`
-    (`preka_eqv`) and KA provability `FKA e1 ≡ FKA e2` (`fka_eqv`). Both
-    are `lang_sound` and `preka_complete`, and enumerable, hence so is
-    `unif E` (`unif_enumerable`, via `checker_enumerable`). `l_subst`
-    turns a solution into a language-level one (`lsolves`).
+    (`preka_eqv`) and KA provability `FKA e1 ≡ FKA e2` (`fka_eqv`), both
+    enumerable, hence so is `unif E` (`unif_enumerable`, via
+    `checker_enumerable`). A solution modulo a theory sound for languages
+    is a language-level one (`unif_lsolves`, via `l_subst`).
 
 38. **`RegexUnif/StarFree.v`** (~135 lines): pre-KA is complete for
     star-free terms (`star_free_l_inj`, from `count_finiteP` and
     `l_inj_finite`). `unif_of_lsolves` turns a language-level solution by
-    star-free terms of star-free equations into a pre-KA solution, under
-    any `preka_complete` theory. This is why no Kozen completeness is
-    needed: only finite unifiers are ever built.
+    star-free terms of star-free equations into a pre-KA solution. This
+    is why no Kozen completeness is needed: only finite unifiers are ever
+    built.
 
 39. **`RegexUnif/Invariant.v`** (~490 lines): the sketch's Theorem 1.4,
     generic over a finite alphabet. `dstep Rs` rewrites `u ++ x ++ u'` to
@@ -488,9 +488,9 @@ nothing outside the directory depends on it. ssreflect throughout.
     derivatives, pinned down by derivative equations `1 ⊔ Y ≡ 1 ⊔ ⨆_c c ⋅
     Y_c` (left) and `1 ⊔ Y ≡ 1 ⊔ ⨆_c Y_c ⋅ c` (right). Each equation shape
     has an `_iff` lemma stating what it means for the languages.
-    `inv_sound`: under a `lang_sound` theory, a solution keeps everything
-    reachable from `w` clear of `bad`. `inv_complete`: a finite invariant
-    gives a solution under a `preka_complete` theory.
+    `inv_sound`: a language-level solution keeps everything reachable
+    from `w` clear of `bad`. `inv_complete`: a finite invariant gives a
+    solution modulo pre-KA.
 
 40. **`RegexUnif/MM2Deque.v`** (~375 lines): MM2 as such a system, with no
     KA content. A configuration `(i, (n, m))` is `cword` = `q_i aⁿ bᵐ #`
@@ -505,10 +505,13 @@ nothing outside the directory depends on it. ssreflect throughout.
     `cword_active_ok`). `run_path` collects a halting run's
     configurations, closed under steps by determinism.
 
-41. **`RegexUnif/MComplete.v`** (~180 lines): for any theory `E` between
-    pre-KA and languages, `RU E P s := unif E (mm2_eqs P s)` satisfies
-    `R_TL_connection_of`'s hypotheses (`RU_complete`, `RU_sound`), so
-    `m_complete_of_K_of` applies. Final results:
+41. **`RegexUnif/MComplete.v`** (~160 lines): for a theory `E` between
+    pre-KA `≡` and language equality, `RU P s := unif E (mm2_eqs P s)`
+    satisfies `R_TL_connection_of`'s hypotheses (`RU_complete`,
+    `RU_sound`), so `m_complete_of_K_of` applies: if `E` is also
+    enumerable, unification modulo `E` is m-complete
+    (`unif_m_complete_of`). A new theory costs its two inclusions and
+    enumerability. Final results:
     `KA_unif_m_complete : CT_L -> MP -> exists c, m-complete (@KA_unif c)`
     (unification modulo KA, `fka_eqv`) and `PreKA_unif_m_complete`
     (modulo pre-KA), over the alphabet of one fixed machine.

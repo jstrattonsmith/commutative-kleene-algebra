@@ -98,14 +98,12 @@ Qed.
 (* A language-level solution by star-free terms is a pre-KA solution, as
    long as the equations themselves are star-free. The substitution is
    given as a function and cut down to the variables that occur. *)
-Lemma unif_of_lsolves (E : ka_term (list_monoid A) → _ → Prop)
-    (f : nat → ka_term (list_monoid A)) eqs :
-  preka_complete E →
+Lemma unif_of_lsolves (f : nat → ka_term (list_monoid A)) eqs :
   (∀ i, star_free (f i)) →
   (∀ p, p ∈ eqs → star_free p.1 ∧ star_free p.2) →
-  lsolves (λ i, l (f i)) eqs → unif E eqs.
+  lsolves (λ i, l (f i)) eqs → unif preka_eqv eqs.
 Proof.
-move=> HE Hf Heqs Hsol.
+move=> Hf Heqs Hsol.
 set vs := eqs ≫= λ p : ueq, uvars p.1 ++ uvars p.2.
 set N := S (list_max vs).
 have HN p i : p ∈ eqs → i ∈ uvars p.1 ++ uvars p.2 → i < N.
@@ -113,7 +111,7 @@ have HN p i : p ∈ eqs → i ∈ uvars p.1 ++ uvars p.2 → i < N.
   have /Forall_forall Hmax := proj1 (list_max_le vs _) (le_n _).
   apply: Hmax.
   by rewrite /vs elem_of_list_bind; exists p. }
-exists (map f (seq 0 N)) => p Hp; apply: HE.
+exists (map f (seq 0 N)) => p Hp.
 have Hσ : Forall star_free (map f (seq 0 N))
   by apply/Forall_map/Forall_forall => i _.
 have [Hp1 Hp2] := Heqs p Hp.

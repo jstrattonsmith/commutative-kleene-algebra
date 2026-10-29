@@ -12,10 +12,10 @@
    the derivative equations `1 ⊔ Y ≡ 1 ⊔ ⨆_c c ⋅ Y_c` (left, along each
    rule's prefix `u`) and `1 ⊔ Y ≡ 1 ⊔ ⨆_c Y_c ⋅ c` (right, along `u'`).
 
-   - `inv_sound`: under any theory sound for languages, a solution keeps
-     every word reachable from `w` clear of `bad`.
-   - `inv_complete`: a finite invariant gives a solution under any theory
-     containing pre-KA, by RegexUnif/StarFree.v.
+   - `inv_sound`: a language-level solution keeps every word reachable
+     from `w` clear of `bad`.
+   - `inv_complete`: a finite invariant gives a solution modulo pre-KA,
+     by RegexUnif/StarFree.v.
 
    Every lemma about the equations goes through an `_iff` lemma stating
    what the equation says about the languages `ρ (var p s)`, so soundness
@@ -405,11 +405,11 @@ Qed.
 
 End Sound.
 
-Theorem inv_sound (E : ka_term W → ka_term W → Prop) :
-  lang_sound E → unif E inv_eqs →
+Theorem inv_sound ρ :
+  lsolves ρ inv_eqs →
   ∀ t, rtc (dstep Rs) w t → ∀ b, b ∈ bad → ¬ b `prefix_of` t.
 Proof.
-move=> HE /(unif_lsolves HE) [ρ Hsol] t Ht b Hb.
+move=> Hsol t Ht b Hb.
 by apply: (inv_avoid Hsol) Hb; apply: (inv_reach Hsol).
 Qed.
 
@@ -474,10 +474,9 @@ move=> q /inv_eqs_cases [->|[->|[[b [Hb ->]]|[[p ->]|[u [s ->]]]]]].
   reflexivity.
 Qed.
 
-Theorem inv_complete (E : ka_term W → ka_term W → Prop) :
-  preka_complete E → unif E inv_eqs.
+Theorem inv_complete : unif preka_eqv inv_eqs.
 Proof.
-move=> HE; apply: (unif_of_lsolves (f := fL)) => //.
+apply: (unif_of_lsolves (f := fL)).
 - exact: fL_star_free.
 - exact: inv_eqs_star_free.
 - exact: inv_lsolves.
