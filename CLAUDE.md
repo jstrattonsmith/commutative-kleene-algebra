@@ -122,7 +122,8 @@ Files are listed in dependency order (`_CoqProject`, which groups them into
 the same sections used below with one-line comments). All files are
 admit-free; no axioms appear anywhere except the two hypotheses named above
 (`CT_L`, `MP`), stated as hypotheses in `CKAUndec/KMComplete.v`,
-`CKAUndec/BinaryAlphabetMComplete.v` and `Universality/UnivMComplete.v`.
+`CKAUndec/BinaryAlphabetMComplete.v`, `Universality/UnivMComplete.v` and
+`RegexUnif/MComplete.v`.
 
 ### `MM2_Legacy/`: not on the critical path, kept for their own interest
 
@@ -450,6 +451,67 @@ no longer `Local` (`Universality/UnivEncoding.v` reuses them). Unlike
     `CKAUndec/KMComplete.v`'s `m_complete_of_K_of`, which
     combines `eff_insep_shape_K_of_B1_L`, `m_complete_of_eff_insep_shape`
     and the reduction out of `K_of`.
+
+### `RegexUnif/`: KA unification, via regular inductive invariants
+
+KA unification: given a system of equations `Rᵢ ≡ Sᵢ` between terms over
+letters and variables, is there a substitution of terms making every
+equation provable? The route follows a collaborator's sketch: solutions of
+an equation system are regular inductive invariants of a machine run. Its
+universal deterministic tag system is replaced by MM2 encoded as a
+two-ended Post normal system (tag systems are the special case reading
+only at the front and writing only at the back), and its effective
+inseparability lemma by the T_L route. Builds on `KA/` and `CKAUndec/`;
+nothing outside the directory depends on it. ssreflect throughout.
+
+37. **`RegexUnif/Syntax.v`** (~200 lines): equations are pairs of
+    `uterm := ka_term (list (A + nat))` (`inr i` is the variable `X_i`);
+    substitutions are lists of terms, so witnesses are countable.
+    `unif E eqs` is stated for any relation `E`. Instances are pre-KA `≡`
+    (`preka_eqv`) and KA provability `FKA e1 ≡ FKA e2` (`fka_eqv`). Both
+    are `lang_sound` and `preka_complete`, and enumerable, hence so is
+    `unif E` (`unif_enumerable`, via `checker_enumerable`). `l_subst`
+    turns a solution into a language-level one (`lsolves`).
+
+38. **`RegexUnif/StarFree.v`** (~135 lines): pre-KA is complete for
+    star-free terms (`star_free_l_inj`, from `count_finiteP` and
+    `l_inj_finite`). `unif_of_lsolves` turns a language-level solution by
+    star-free terms of star-free equations into a pre-KA solution, under
+    any `preka_complete` theory. This is why no Kozen completeness is
+    needed: only finite unifiers are ever built.
+
+39. **`RegexUnif/Invariant.v`** (~490 lines): the sketch's Theorem 1.4,
+    generic over a finite alphabet. `dstep Rs` rewrites `u ++ x ++ u'` to
+    `v ++ x ++ v'` for a rule `((u, u'), (v, v'))`. `inv_eqs Rs bad w` says
+    that `X` contains `w`, is closed under the rules and has no word with a
+    prefix in `bad`. Variables `X_{p,s}` (`var p s`) stand for two-sided
+    derivatives, pinned down by derivative equations `1 ⊔ Y ≡ 1 ⊔ ⨆_c c ⋅
+    Y_c` (left) and `1 ⊔ Y ≡ 1 ⊔ ⨆_c Y_c ⋅ c` (right). Each equation shape
+    has an `_iff` lemma stating what it means for the languages.
+    `inv_sound`: under a `lang_sound` theory, a solution keeps everything
+    reachable from `w` clear of `bad`. `inv_complete`: a finite invariant
+    gives a solution under a `preka_complete` theory.
+
+40. **`RegexUnif/MM2Deque.v`** (~375 lines): MM2 as such a system, with no
+    KA content. A configuration `(i, (n, m))` is `cword` = `q_i aⁿ bᵐ #`
+    over `option (mm_sym Q)` (`None` is `#`), with `q_i` from
+    `CKAUndec/Encoding.v`'s `translate_state` (distinct letters for pc 0,
+    for any pc past the program, and for each pc in between). Each
+    instruction gives at most three rules (`rules_of`); the end marker
+    makes every zero test a positive pattern. Simulation both ways
+    (`cword_step`, `cword_step_inv`). Halting anywhere but `(0, (0, 0))`
+    shows as a prefix in `mm2_bad` (`cword_bad`), unlike the accepting
+    word and running configurations (`cword_accept_ok`,
+    `cword_active_ok`). `run_path` collects a halting run's
+    configurations, closed under steps by determinism.
+
+41. **`RegexUnif/MComplete.v`** (~180 lines): for any theory `E` between
+    pre-KA and languages, `RU E P s := unif E (mm2_eqs P s)` satisfies
+    `R_TL_connection_of`'s hypotheses (`RU_complete`, `RU_sound`), so
+    `m_complete_of_K_of` applies. Final results:
+    `KA_unif_m_complete : CT_L -> MP -> exists c, m-complete (@KA_unif c)`
+    (unification modulo KA, `fka_eqv`) and `PreKA_unif_m_complete`
+    (modulo pre-KA), over the alphabet of one fixed machine.
 
 ## Style Guidelines
 

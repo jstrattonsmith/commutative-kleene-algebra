@@ -73,6 +73,16 @@ Universality/UnivTop.v
 Universality/UnivConnection.v
 Universality/UnivMComplete.v
 
+# RegexUnif/: unification modulo KA (and pre-KA) is Sigma^0_1-complete,
+# via regular inductive invariants of MM2 runs encoded as a two-ended
+# Post normal system. Depends on KA/ and CKAUndec/; nothing outside it
+# depends on it.
+RegexUnif/Syntax.v
+RegexUnif/StarFree.v
+RegexUnif/Invariant.v
+RegexUnif/MM2Deque.v
+RegexUnif/MComplete.v
+
 # SimulatorToRTarget.v: connects MM2_Legacy/Simulator.v's Theta_MM2 to
 # CKAUndec/Encoding.v's R_target (plus an embedded-alphabet analogue) --
 # a proven alternative to the T_L-based route actually used. Kept
