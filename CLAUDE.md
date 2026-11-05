@@ -456,13 +456,15 @@ no longer `Local` (`Universality/UnivEncoding.v` reuses them). Unlike
 
 KA unification: given a system of equations `Rᵢ ≡ Sᵢ` between terms over
 letters and variables, is there a substitution of terms making every
-equation provable? The route follows a collaborator's sketch: solutions of
-an equation system are regular inductive invariants of a machine run. Its
-universal deterministic tag system is replaced by MM2 encoded as a
-two-ended Post normal system (tag systems are the special case reading
-only at the front and writing only at the back), and its effective
-inseparability lemma by the T_L route. Builds on `KA/` and `CKAUndec/`;
-nothing outside the directory depends on it. ssreflect throughout.
+equation provable? Already a single equation is Sigma^0_1-complete;
+variables may occur several times in it. The route follows a
+collaborator's sketch: solutions of an equation system are regular
+inductive invariants of a machine run. Its universal deterministic tag
+system is replaced by MM2 encoded as a two-ended Post normal system (tag
+systems are the special case reading only at the front and writing only
+at the back), and its effective inseparability lemma by the T_L route.
+Builds on `KA/` and `CKAUndec/`; nothing outside the directory depends on
+it. ssreflect throughout.
 
 37. **`RegexUnif/Syntax.v`** (~200 lines): equations are pairs of
     `uterm := ka_term (list (A + nat))` (`inr i` is the variable `X_i`);
@@ -492,7 +494,14 @@ nothing outside the directory depends on it. ssreflect throughout.
     from `w` clear of `bad`. `inv_complete`: a finite invariant gives a
     solution modulo pre-KA.
 
-40. **`RegexUnif/MM2Deque.v`** (~375 lines): MM2 as such a system, with no
+40. **`RegexUnif/OneEq.v`** (~120 lines): a system as one equation. For
+    distinct letters `a`, `b`, the markers `mark n = aⁿ b` form a prefix
+    code, and `one_eq` turns the system `(eᵢ, fᵢ)ᵢ` into `⨆ᵢ aⁱ b ⋅ eᵢ ≡
+    ⨆ᵢ aⁱ b ⋅ fᵢ`. A pre-KA solution of the system solves it
+    (`unif_one_eq`), and a language-level solution of it solves the
+    system (`one_eq_lsolves`, cutting off `aⁱ b`). No fresh letters.
+
+41. **`RegexUnif/MM2Deque.v`** (~375 lines): MM2 as such a system, with no
     KA content. A configuration `(i, (n, m))` is `cword` = `q_i aⁿ bᵐ #`
     over `option (mm_sym Q)` (`None` is `#`), with `q_i` from
     `CKAUndec/Encoding.v`'s `translate_state` (distinct letters for pc 0,
@@ -505,16 +514,19 @@ nothing outside the directory depends on it. ssreflect throughout.
     `cword_active_ok`). `run_path` collects a halting run's
     configurations, closed under steps by determinism.
 
-41. **`RegexUnif/MComplete.v`** (~160 lines): for a theory `E` between
-    pre-KA `≡` and language equality, `RU P s := unif E (mm2_eqs P s)`
-    satisfies `R_TL_connection_of`'s hypotheses (`RU_complete`,
-    `RU_sound`), so `m_complete_of_K_of` applies: if `E` is also
-    enumerable, unification modulo `E` is m-complete
+42. **`RegexUnif/MComplete.v`** (~185 lines): `mm2_eq P s` is the
+    invariant system `mm2_eqs P s` as one equation (`one_eq` with markers
+    over `la`, `lb`). For a theory `E` between pre-KA `≡` and language
+    equality, `RU P s := unif E [mm2_eq P s]` satisfies
+    `R_TL_connection_of`'s hypotheses (`RU_complete`, `RU_sound`), so
+    `m_complete_of_K_of` applies: if `E` is also enumerable, unification
+    modulo `E` is m-complete, for single equations and for systems
     (`unif_m_complete_of`). A new theory costs its two inclusions and
-    enumerability. Final results:
-    `KA_unif_m_complete : CT_L -> MP -> exists c, m-complete (@KA_unif c)`
-    (unification modulo KA, `fka_eqv`) and `PreKA_unif_m_complete`
-    (modulo pre-KA), over the alphabet of one fixed machine.
+    enumerability. Final results: `KA_unif_m_complete : CT_L -> MP ->
+    exists c, m-complete (@KA_unif1 c) /\ m-complete (@KA_unif c)`
+    (unification modulo KA, `fka_eqv`, of one equation and of systems)
+    and `PreKA_unif_m_complete` (modulo pre-KA), over the alphabet of one
+    fixed machine.
 
 ## Style Guidelines
 

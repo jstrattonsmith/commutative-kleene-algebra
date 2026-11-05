@@ -59,6 +59,9 @@ Definition la : sym := Some mm_a.
 Definition lb : sym := Some mm_b.
 Definition lh : sym := None.
 
+Lemma la_lb : la ≠ lb.
+Proof. by []. Qed.
+
 Definition body (na nb : nat) : list sym :=
   repeat la na ++ repeat lb nb ++ [lh].
 

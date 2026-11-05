@@ -80,6 +80,7 @@ Universality/UnivMComplete.v
 RegexUnif/Syntax.v
 RegexUnif/StarFree.v
 RegexUnif/Invariant.v
+RegexUnif/OneEq.v
 RegexUnif/MM2Deque.v
 RegexUnif/MComplete.v
 
