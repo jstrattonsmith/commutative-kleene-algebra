@@ -70,6 +70,14 @@ Fixpoint uvars (e : uterm) : list nat :=
   | ka_term_star e => uvars e
   end.
 
+(* No variable occurs twice on the same side (a variable under a star
+   counts once). Decidable. *)
+Definition side_linear (q : ueq) : Prop :=
+  NoDup (uvars q.1) ∧ NoDup (uvars q.2).
+
+Global Instance side_linear_dec q : Decision (side_linear q).
+Proof. rewrite /side_linear; apply _. Defined.
+
 Lemma mul_list_cons {T : monoid} {X} (f : X → T) x xs :
   mul_list f (x :: xs) = f x ⋅ mul_list f xs.
 Proof. by []. Qed.
