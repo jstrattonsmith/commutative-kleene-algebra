@@ -1,27 +1,31 @@
 (* Regular inductive invariants as KA unification problems: the core of
-   the proof that KA unification is Sigma^0_1-complete.
+   the proof that KA unification is Sigma^0_1-complete, already for ONE
+   equation in which no variable occurs twice on the same side.
 
    A two-ended Post normal system is a list of rules `((u, u'), (v, v'))`,
    each rewriting `u ++ x ++ u'` to `v ++ x ++ v'` (`dstep`). Tag systems
-   are the case `u' = v = []`. Given rules `Rs`, forbidden prefixes `bad`
-   and a start word `w`, `inv_eqs Rs bad w` is a system of star-free
-   equations whose solutions are inductive invariants: a language `X`
-   containing `w`, closed under `dstep`, and with no word starting with
-   a word of `bad`. The variable `X_{p,s}` (`var p s`) stands for the
-   two-sided derivative `{x | p ++ x ++ s ∈ X}`, and is pinned down by
-   the derivative equations `1 ⊔ Y ≡ 1 ⊔ ⨆_c c ⋅ Y_c` (left, along each
-   rule's prefix `u`) and `1 ⊔ Y ≡ 1 ⊔ ⨆_c Y_c ⋅ c` (right, along `u'`).
+   are the case `u' = v = []`.
 
-   - `inv_sound`: a language-level solution keeps every word reachable
-     from `w` clear of `bad`.
-   - `inv_complete`: a finite invariant gives a solution modulo pre-KA,
-     by RegexUnif/StarFree.v.
+   A cell is a pair `(p, s)` of words, standing for the words
+   `p ++ y ++ s`. Given a list of cells, the invariant is not a variable
+   but the term `T = ⨆_{(p,s)} p ⋅ X_{p,s} ⋅ s` (`cterm`), with one
+   variable per cell. If no rule reads more than a cell's `p` at the
+   front or its `s` at the back, a rule `((u, u'), (v, v'))` applied to
+   a word of the cell `(u ++ p', s' ++ u')` gives
+   `v ++ p' ++ y ++ s' ++ v'`, so the image of `T` under one step is
+   again a term, `G = ⨆ (v ++ p') ⋅ X_{p,s} ⋅ (s' ++ v')` (`sterm`). If
+   each cell is matched by at most one rule, `G` takes the first
+   (`first_rule`) and has each variable at most once. The equation
+   `w ⊔ G ⊔ C ≡ T` (`cell_eq`), with a fresh variable `C`, says that `T`
+   contains `w` and `G`, i.e. that `T` is an invariant.
 
-   Every lemma about the equations goes through an `_iff` lemma stating
-   what the equation says about the languages `ρ (var p s)`, so soundness
-   and completeness use the same characterization. *)
+   - `cell_sound`: in a language-level solution, every word reachable
+     from `w` lies in a cell.
+   - `cell_complete`: a finite set of words containing `w`, closed under
+     steps and covered by the cells, gives a solution modulo pre-KA, by
+     RegexUnif/StarFree.v.
+   - `cell_eq_side_linear`: no variable occurs twice on a side. *)
 
-Require Import Stdlib.Classes.Morphisms.
 Require Import Stdlib.Unicode.Utf8.
 Require Import ssreflect.
 Require Import Stdlib.Setoids.Setoid.
@@ -35,6 +39,37 @@ Unset Printing Implicit Defensive.
 From kacc Require Import KA.utils KA.algebra KA.pre_ka KA.lang.
 From kacc Require Import RegexUnif.Syntax RegexUnif.StarFree.
 
+Lemma fmap_as_omap {X Y} (g : X → Y) (xs : list X) :
+  g <$> xs = omap (λ x, Some (g x)) xs.
+Proof. by elim: xs => //= x xs ->. Qed.
+
+(* Cutting a rule's context out of a cell. *)
+Lemma cut_front {X} (u x p y : list X) :
+  length u ≤ length p → u ++ x = p ++ y → ∃ p', p = u ++ p' ∧ x = p' ++ y.
+Proof.
+move=> Hl /app_eq_app [k [[Hu Hy]|[Hp Hx]]]; last by exists k.
+have Hk : k = [] by apply: nil_length_inv; move: Hl; rewrite Hu length_app; lia.
+by exists []; rewrite Hu Hy Hk !app_nil_r.
+Qed.
+
+Lemma cut_back {X} (x u' y s : list X) :
+  length u' ≤ length s → x ++ u' = y ++ s → ∃ s', s = s' ++ u' ∧ x = y ++ s'.
+Proof.
+move=> Hl /app_eq_app [k [[Hx Hs]|[Hy Hu]]]; first by exists k.
+have Hk : k = [] by apply: nil_length_inv; move: Hl; rewrite Hu length_app; lia.
+by exists []; rewrite Hu Hy Hk !app_nil_r.
+Qed.
+
+Lemma rule_cell {X} (u x u' p y s : list X) :
+  length u ≤ length p → length u' ≤ length s →
+  u ++ x ++ u' = p ++ y ++ s →
+  ∃ p' s', p = u ++ p' ∧ s = s' ++ u' ∧ x = p' ++ y ++ s'.
+Proof.
+move=> Hu Hu' /(cut_front Hu) [p' [-> Hx]].
+move: Hx; rewrite app_assoc => /(cut_back Hu') [s' [-> ->]].
+by exists p', s'; rewrite -app_assoc.
+Qed.
+
 Section Invariant.
 
 Context {A : setoid} `{!LeibnizEquiv A, !EqDecision A, !Finite A}.
@@ -45,7 +80,9 @@ Notation W := (list_monoid A).
 Notation UT := (@uterm A).
 Notation UE := (@ueq A).
 
-Implicit Types (p s u x y t : list A) (ρ : nat → lang W).
+Definition cell : Type := (list A * list A)%type.
+
+Implicit Types (u x y t : list A) (ρ : nat → lang W).
 
 (** * Two-ended Post normal systems *)
 
@@ -54,6 +91,8 @@ Definition drule : Type := ((list A * list A) * (list A * list A))%type.
 Definition dstep (Rs : list drule) t t' : Prop :=
   ∃ u u' v v' x, ((u, u'), (v, v')) ∈ Rs ∧
     t = u ++ x ++ u' ∧ t' = v ++ x ++ v'.
+
+Implicit Types (c : cell) (r : drule).
 
 (** * Languages over words *)
 
@@ -74,15 +113,8 @@ Proof. by split => [/leibniz_equiv_iff|-> /=] //; reflexivity. Qed.
 Lemma in_join (L1 L2 : lang W) x : (L1 ⊔ L2) x ↔ L1 x ∨ L2 x.
 Proof. reflexivity. Qed.
 
-Lemma in_bot x : (⊥ : lang W) x ↔ False.
-Proof. reflexivity. Qed.
+(** * Building blocks of the terms *)
 
-(** * Building blocks of the equations *)
-
-Definition var p s : nat := encode_nat (p, s).
-
-Definition tone : UT := Unit [].
-Definition tv p s : UT := Unit [inr (var p s)].
 Definition tw (w : list A) : UT := Unit (inl <$> w).
 Definition tjoin (es : list UT) : UT := foldr (λ e acc, e ⊔ acc) ⊥ es.
 
@@ -99,20 +131,6 @@ Proof. by []. Qed.
 Lemma lsubst_mul ρ (e1 e2 : UT) :
   lsubst ρ (e1 ⋅ e2) = lsubst ρ e1 ⋅ lsubst ρ e2.
 Proof. by []. Qed.
-
-Lemma lsubst_bot ρ : lsubst ρ (⊥ : UT) = ⊥.
-Proof. by []. Qed.
-
-Lemma in_tone ρ x : lsubst ρ tone x ↔ x = [].
-Proof. exact: in_one. Qed.
-
-Lemma in_tv ρ p s x : lsubst ρ (tv p s) x ↔ ρ (var p s) x.
-Proof.
-rewrite /tv lsubst_unit mul_list_cons in_mul; split.
-- by case=> x1 [x2 [-> [H /in_one ->]]]; rewrite app_nil_r.
-- move=> H; exists x, []; rewrite app_nil_r; do !split => //.
-  exact/in_one.
-Qed.
 
 Lemma in_tw ρ w x : lsubst ρ (tw w) x ↔ x = w.
 Proof.
@@ -133,284 +151,244 @@ elim: es => [|e es IH].
   + by case=> e' [/elem_of_cons [->|He'] H]; [left|right; exists e'].
 Qed.
 
-Lemma star_free_tjoin {X} (f : X → UT) (zs : list X) :
-  (∀ z, star_free (f z)) → star_free (tjoin (f <$> zs)).
-Proof. by move=> Hf; elim: zs => //= z zs IH; split. Qed.
+Definition in_cell c t : Prop := ∃ y, t = c.1 ++ y ++ c.2.
 
-(** * Derivative equations *)
+Definition matches c r : Prop := r.1.1 `prefix_of` c.1 ∧ r.1.2 `suffix_of` c.2.
 
-Definition left_lhs p : UT := tone ⊔ tv p [].
-Definition left_rhs p : UT :=
-  tone ⊔ tjoin ((λ c, tw [c] ⋅ tv (p ++ [c]) []) <$> enum A).
-Definition left_eq p : UE := (left_lhs p, left_rhs p).
+Local Instance matches_dec c r : Decision (matches c r).
+Proof. rewrite /matches; apply _. Defined.
 
-Lemma left_eq_iff ρ p :
-  lsubst ρ (left_lhs p) ≡ lsubst ρ (left_rhs p) ↔
-  ∀ c y, ρ (var p []) (c :: y) ↔ ρ (var (p ++ [c]) []) y.
+(** * Terms *)
+
+Definition cvar c : nat := encode_nat (Some c).
+Definition slack : nat := encode_nat (None : option cell).
+
+Lemma cvar_inj c c' : cvar c = cvar c' → c = c'.
+Proof. by move=> /(inj (encode_nat (A := option cell))) [->]. Qed.
+
+Lemma slack_cvar c : slack ≠ cvar c.
+Proof. by move=> /(inj (encode_nat (A := option cell))). Qed.
+
+Definition tx (i : nat) : UT := Unit [inr i].
+
+Definition cell_term c : UT := tw c.1 ⋅ tx (cvar c) ⋅ tw c.2.
+
+(* A matching rule `r` applied to the cell `c`. *)
+Definition step_term c r : UT :=
+  tw (r.2.1 ++ drop (length r.1.1) c.1) ⋅ tx (cvar c) ⋅
+  tw (take (length c.2 - length r.1.2) c.2 ++ r.2.2).
+
+Lemma in_tx ρ i x : lsubst ρ (tx i) x ↔ ρ i x.
 Proof.
-have HL x : lsubst ρ (left_lhs p) x ↔ x = [] ∨ ρ (var p []) x
-  by rewrite /left_lhs lsubst_join in_join in_tone in_tv.
-have HR x : lsubst ρ (left_rhs p) x ↔
-    x = [] ∨ ∃ c y, x = c :: y ∧ ρ (var (p ++ [c]) []) y.
-{ rewrite /left_rhs lsubst_join in_join in_tone in_tjoin; split.
-  - case=> [->|[_ [/elem_of_list_fmap [c [-> _]]]]]; first by left.
-    rewrite lsubst_mul in_mul => - [x1 [x2 [-> [/in_tw -> /in_tv H]]]].
-    by right; exists c, x2.
-  - case=> [->|[c [y [-> H]]]]; first by left.
-    right; exists (tw [c] ⋅ tv (p ++ [c]) []); split.
-    + by apply/elem_of_list_fmap; exists c; split => //; apply: elem_of_enum.
-    + rewrite lsubst_mul in_mul; exists [c], y; do !split => //.
-      * exact/in_tw.
-      * exact/in_tv. }
-split.
-- move=> H c y; have := H (c :: y); rewrite HL HR => Hiff; split.
-  + move=> Hc; case: (proj1 Hiff (or_intror Hc)) => [//|].
-    by case=> c' [y' [[<- <-] Hy]].
-  + move=> Hy; case: (proj2 Hiff (or_intror (ex_intro _ c
-      (ex_intro _ y (conj eq_refl Hy))))) => //.
-- move=> H x; rewrite HL HR; split.
-  + case=> [->|]; first by left.
-    case: x => [|c y]; first by left.
-    by move=> /H Hy; right; exists c, y.
-  + by case=> [->|[c [y [-> /H Hy]]]]; [left|right].
+rewrite /tx lsubst_unit mul_list_cons in_mul; split.
+- by case=> x1 [x2 [-> [H /in_one ->]]]; rewrite app_nil_r.
+- move=> H; exists x, []; rewrite app_nil_r; do !split => //.
+  exact/in_one.
 Qed.
 
-Definition right_lhs u s : UT := tone ⊔ tv u s.
-Definition right_rhs u s : UT :=
-  tone ⊔ tjoin ((λ c, tv u (c :: s) ⋅ tw [c]) <$> enum A).
-Definition right_eq u s : UE := (right_lhs u s, right_rhs u s).
-
-Lemma right_eq_iff ρ u s :
-  lsubst ρ (right_lhs u s) ≡ lsubst ρ (right_rhs u s) ↔
-  ∀ c y, ρ (var u s) (y ++ [c]) ↔ ρ (var u (c :: s)) y.
+Lemma in_wxw ρ u i v t :
+  lsubst ρ (tw u ⋅ tx i ⋅ tw v) t ↔ ∃ y, t = u ++ y ++ v ∧ ρ i y.
 Proof.
-have HL x : lsubst ρ (right_lhs u s) x ↔ x = [] ∨ ρ (var u s) x
-  by rewrite /right_lhs lsubst_join in_join in_tone in_tv.
-have HR x : lsubst ρ (right_rhs u s) x ↔
-    x = [] ∨ ∃ c y, x = y ++ [c] ∧ ρ (var u (c :: s)) y.
-{ rewrite /right_rhs lsubst_join in_join in_tone in_tjoin; split.
-  - case=> [->|[_ [/elem_of_list_fmap [c [-> _]]]]]; first by left.
-    rewrite lsubst_mul in_mul => - [x1 [x2 [-> [/in_tv H /in_tw ->]]]].
-    by right; exists c, x1.
-  - case=> [->|[c [y [-> H]]]]; first by left.
-    right; exists (tv u (c :: s) ⋅ tw [c]); split.
-    + by apply/elem_of_list_fmap; exists c; split => //; apply: elem_of_enum.
-    + rewrite lsubst_mul in_mul; exists y, [c]; do !split => //.
-      * exact/in_tv.
-      * exact/in_tw. }
-split.
-- move=> H c y; have := H (y ++ [c]); rewrite HL HR => Hiff; split.
-  + move=> Hc; case: (proj1 Hiff (or_intror Hc)).
-    * by move=> /app_nil [_].
-    * case=> c' [y' [Heq Hy]].
-      by case: (app_inj_tail y y' c c' Heq) => -> ->.
-  + move=> Hy; case: (proj2 Hiff (or_intror (ex_intro _ c
-      (ex_intro _ y (conj eq_refl Hy))))) => //.
-    by move=> /app_nil [_].
-- move=> H x; rewrite HL HR; split.
-  + case=> [->|]; first by left.
-    case: (decide (x = [])) => [->|Hne]; first by left.
-    case: (exists_last Hne) => y [c ->].
-    by move=> /H Hy; right; exists c, y.
-  + by case=> [->|[c [y [-> /H Hy]]]]; [left|right].
+rewrite !lsubst_mul in_mul; split.
+- case=> t12 [t3 [-> [/in_mul [t1 [t2 [-> [/in_tw -> /in_tx Hy]]]]
+                     /in_tw ->]]].
+  by exists t2; rewrite -app_assoc.
+- case=> y [-> Hy]; exists (u ++ y), v; rewrite -app_assoc; do !split.
+  + apply/in_mul; exists u, y; do !split; [exact/in_tw | exact/in_tx].
+  + exact/in_tw.
 Qed.
 
-(* Chains of derivative equations from `X_{p,[]}` down to `X_{p ++ u,[]}`
-   (left), and from `X_{u,[]}` down to `X_{u,s}` (right). *)
-Fixpoint lchain p u : list UE :=
-  match u with [] => [] | c :: u => left_eq p :: lchain (p ++ [c]) u end.
-
-Fixpoint rchain u s : list UE :=
-  match s with [] => [] | c :: s => right_eq u s :: rchain u s end.
-
-Lemma lchain_sound ρ p u :
-  (∀ q, q ∈ lchain p u → lsubst ρ q.1 ≡ lsubst ρ q.2) →
-  ∀ y, ρ (var p []) (u ++ y) → ρ (var (p ++ u) []) y.
+Lemma matches_split c r :
+  matches c r →
+  c.1 = r.1.1 ++ drop (length r.1.1) c.1 ∧
+  c.2 = take (length c.2 - length r.1.2) c.2 ++ r.1.2.
 Proof.
-elim: u p => [|c u IH] p H y; first by rewrite app_nil_r.
-move=> Hy; have /left_eq_iff Hl := H _ (elem_of_list_here _ _).
-have -> : p ++ c :: u = (p ++ [c]) ++ u by rewrite -app_assoc.
-apply: IH; last exact: (proj1 (Hl c (u ++ y)) Hy).
-by move=> q Hq; apply: H; apply: elem_of_list_further.
+move: c r => [p s] [[u u'] [v v']] [/= [p' ->] [s' ->]].
+by rewrite drop_app_length length_app Nat.add_sub take_app_length.
 Qed.
 
-Lemma rchain_sound ρ u s :
-  (∀ q, q ∈ rchain u s → lsubst ρ q.1 ≡ lsubst ρ q.2) →
-  ∀ x, ρ (var u []) (x ++ s) → ρ (var u s) x.
+Lemma uvars_tw u : uvars (tw u) = [].
+Proof. by rewrite /tw /=; elim: u. Qed.
+
+Lemma uvars_mul (e1 e2 : UT) : uvars (e1 ⋅ e2) = uvars e1 ++ uvars e2.
+Proof. by []. Qed.
+
+Lemma uvars_join (e1 e2 : UT) : uvars (e1 ⊔ e2) = uvars e1 ++ uvars e2.
+Proof. by []. Qed.
+
+Lemma uvars_cell_term c : uvars (cell_term c) = [cvar c].
+Proof. by rewrite /cell_term !uvars_mul !uvars_tw. Qed.
+
+Lemma uvars_step_term c r : uvars (step_term c r) = [cvar c].
+Proof. by rewrite /step_term !uvars_mul !uvars_tw. Qed.
+
+(* A join of terms, at most one per cell, each with its cell's variable
+   only. *)
+Lemma uvars_omap (f : cell → option UT) cs :
+  (∀ c e, f c = Some e → uvars e = [cvar c]) → NoDup cs →
+  NoDup (uvars (tjoin (omap f cs))) ∧
+  ∀ i, i ∈ uvars (tjoin (omap f cs)) → ∃ c, c ∈ cs ∧ i = cvar c.
 Proof.
-elim: s => [|c s IH] H x; first by rewrite app_nil_r.
-move=> Hx; have /right_eq_iff Hr := H _ (elem_of_list_here _ _).
-apply/(Hr c x); apply: IH.
-- by move=> q Hq; apply: H; apply: elem_of_list_further.
-- by rewrite -app_assoc.
+move=> Hf; elim: cs / => [|c cs Hc _ [IH1 IH2]].
+  by split => [|i /elem_of_nil]; first constructor.
+have -> : omap f (c :: cs) =
+          match f c with Some e => e :: omap f cs | None => omap f cs end
+  by [].
+case Hfc: (f c) => [e|].
+- rewrite tjoin_cons uvars_join (Hf _ _ Hfc) /=; split.
+  + constructor => // /IH2 [c' [Hc' /cvar_inj Hcc']].
+    by apply: Hc; rewrite Hcc'.
+  + move=> i /elem_of_cons [->|/IH2 [c' [Hc' ->]]].
+    * by exists c; split => //; apply: elem_of_list_here.
+    * by exists c'; split => //; apply: elem_of_list_further.
+- split => // i /IH2 [c' [Hc' ->]].
+  by exists c'; split => //; apply: elem_of_list_further.
 Qed.
 
-Lemma lchain_cases p u q : q ∈ lchain p u → ∃ p', q = left_eq p'.
+Lemma star_free_tjoin_all (es : list UT) :
+  (∀ e, e ∈ es → star_free e) → star_free (tjoin es).
 Proof.
-elim: u p => [|c u IH] p /=; first by move/elem_of_nil.
-by case/elem_of_cons => [->|/IH //]; exists p.
+elim: es => //= e es IH H; split.
+- exact: H (elem_of_list_here _ _).
+- by apply: IH => e' He'; apply: H; apply: elem_of_list_further.
 Qed.
 
-Lemma rchain_cases u s q : q ∈ rchain u s → ∃ s', q = right_eq u s'.
+(** * The equation *)
+
+Section Eq.
+
+Variables (Rs : list drule) (cells : list cell) (w : list A).
+
+Definition first_rule c : option drule := head (filter (matches c) Rs).
+
+Lemma first_rule_Some c r : first_rule c = Some r → r ∈ Rs ∧ matches c r.
 Proof.
-elim: s => [|c s IH] /=; first by move/elem_of_nil.
-by case/elem_of_cons => [->|/IH //]; exists s.
+rewrite /first_rule => Hr; have := head_Some_elem_of _ _ Hr.
+by rewrite elem_of_list_filter => - [].
 Qed.
 
-(** * The invariant equations *)
+Definition cterm : UT := tjoin (cell_term <$> cells).
+Definition sterm : UT := tjoin (omap (λ c, step_term c <$> first_rule c) cells).
 
-Section Eqs.
+Definition cell_lhs : UT := tw w ⊔ sterm ⊔ tx slack.
+Definition cell_eq : UE := (cell_lhs, cterm).
 
-Variables (Rs : list drule) (bad : list (list A)) (w : list A).
-
-(* X is closed under every rule. *)
-Definition close_lhs : UT :=
-  tv [] [] ⊔ tjoin ((λ r : drule, tw r.2.1 ⋅ tv r.1.1 r.1.2 ⋅ tw r.2.2) <$> Rs).
-Definition close_eq : UE := (close_lhs, tv [] []).
-
-(* X contains w. *)
-Definition start_lhs : UT := tw w ⊔ tv [] [].
-Definition start_eq : UE := (start_lhs, tv [] []).
-
-(* No word of X starts with b. *)
-Definition excl_eq b : UE := (tv b [], ⊥).
-
-Definition inv_eqs : list UE :=
-  close_eq :: start_eq :: (excl_eq <$> bad) ++
-  (Rs ≫= λ r, lchain [] r.1.1 ++ rchain r.1.1 r.1.2) ++
-  (bad ≫= λ b, lchain [] b).
-
-Lemma close_eq_iff ρ :
-  lsubst ρ close_lhs ≡ lsubst ρ (tv [] []) ↔
-  ∀ r x, r ∈ Rs → ρ (var r.1.1 r.1.2) x →
-    ρ (var [] []) (r.2.1 ++ x ++ r.2.2).
+Lemma in_cterm ρ t :
+  lsubst ρ cterm t ↔ ∃ c y, c ∈ cells ∧ t = c.1 ++ y ++ c.2 ∧ ρ (cvar c) y.
 Proof.
-have HL t : lsubst ρ close_lhs t ↔ ρ (var [] []) t ∨
-    ∃ r x, r ∈ Rs ∧ t = r.2.1 ++ x ++ r.2.2 ∧ ρ (var r.1.1 r.1.2) x.
-{ rewrite /close_lhs lsubst_join in_join in_tv in_tjoin; split.
-  - case=> [H|[_ [/elem_of_list_fmap [r [-> Hr]]]]]; first by left.
-    rewrite !lsubst_mul in_mul.
-    case=> t12 [t3 [Ht [/in_mul [t1 [t2 [Ht12 [/in_tw Ht1 /in_tv H]]]]
-                        /in_tw Ht3]]].
-    right; exists r, t2; do !split => //.
-    by rewrite Ht Ht12 Ht1 Ht3 -app_assoc.
-  - case=> [H|[r [x [Hr [-> H]]]]]; first by left.
-    right; exists (tw r.2.1 ⋅ tv r.1.1 r.1.2 ⋅ tw r.2.2); split.
-    + by apply/elem_of_list_fmap; exists r.
-    + rewrite !lsubst_mul in_mul; exists (r.2.1 ++ x), r.2.2.
-      rewrite -app_assoc; do !split => //; last exact/in_tw.
-      apply/in_mul; exists r.2.1, x; do !split => //.
-      * exact/in_tw.
-      * exact/in_tv. }
-split.
-- move=> H r x Hr Hx; apply/in_tv/H/HL; right; by exists r, x.
-- move=> H t; rewrite HL in_tv; split; last by left.
-  by case=> // - [r [x [Hr [-> /(H r x Hr)]]]].
+rewrite /cterm in_tjoin; split.
+- case=> e [/elem_of_list_fmap [c [-> Hc]] /in_wxw [y [-> Hy]]].
+  by exists c, y.
+- case=> c [y [Hc [-> Hy]]]; exists (cell_term c); split.
+  + by apply/elem_of_list_fmap; exists c.
+  + by apply/in_wxw; exists y.
 Qed.
 
-Lemma start_eq_iff ρ :
-  lsubst ρ start_lhs ≡ lsubst ρ (tv [] []) ↔ ρ (var [] []) w.
+Lemma in_sterm ρ t :
+  lsubst ρ sterm t ↔ ∃ c r y, c ∈ cells ∧ first_rule c = Some r ∧
+    ρ (cvar c) y ∧
+    t = (r.2.1 ++ drop (length r.1.1) c.1) ++ y ++
+        (take (length c.2 - length r.1.2) c.2 ++ r.2.2).
 Proof.
-have HL t : lsubst ρ start_lhs t ↔ t = w ∨ ρ (var [] []) t
-  by rewrite /start_lhs lsubst_join in_join in_tw in_tv.
-split.
-- by move=> /(_ w); rewrite HL in_tv => - [+ _]; apply; left.
-- move=> Hw t; rewrite HL in_tv; split; last by right.
-  by case=> // ->.
+rewrite /sterm in_tjoin; split.
+- case=> e [/elem_of_list_omap [c [Hc /fmap_Some [r [Hr ->]]]]].
+  by case/in_wxw => y [-> Hy]; exists c, r, y.
+- case=> c [r [y [Hc [Hr [Hy ->]]]]]; exists (step_term c r); split.
+  + by apply/elem_of_list_omap; exists c; rewrite Hr.
+  + by apply/in_wxw; exists y.
 Qed.
 
-Lemma excl_eq_iff ρ b :
-  lsubst ρ (tv b []) ≡ lsubst ρ ⊥ ↔ ∀ y, ¬ ρ (var b []) y.
+Lemma cell_eq_iff ρ :
+  lsubst ρ cell_lhs ≡ lsubst ρ cterm ↔
+  ∀ t, (t = w ∨ lsubst ρ sterm t) ∨ ρ slack t ↔ lsubst ρ cterm t.
 Proof.
-split.
-- by move=> H y; move: (H y); rewrite in_tv lsubst_bot in_bot => - [+ _].
-- by move=> H y; rewrite in_tv lsubst_bot in_bot; split => // /H.
+have HL t : lsubst ρ cell_lhs t ↔ (t = w ∨ lsubst ρ sterm t) ∨ ρ slack t
+  by rewrite /cell_lhs !lsubst_join !in_join in_tw in_tx.
+by split => H t; [rewrite -HL | rewrite HL]; apply: H.
 Qed.
 
-Lemma inv_eqs_cases q :
-  q ∈ inv_eqs →
-  q = close_eq ∨ q = start_eq ∨ (∃ b, b ∈ bad ∧ q = excl_eq b) ∨
-  (∃ p, q = left_eq p) ∨ (∃ u s, q = right_eq u s).
+Lemma step_of_cell c r y :
+  r ∈ Rs → matches c r →
+  dstep Rs (c.1 ++ y ++ c.2)
+    ((r.2.1 ++ drop (length r.1.1) c.1) ++ y ++
+     (take (length c.2 - length r.1.2) c.2 ++ r.2.2)).
 Proof.
-rewrite /inv_eqs !elem_of_cons !elem_of_app; case=> [->|[->|[|[]]]].
-- by left.
-- by right; left.
-- by case/elem_of_list_fmap => b [-> Hb]; right; right; left; exists b.
-- case/elem_of_list_bind => r [/elem_of_app [] Hq _].
-  + by do 3 right; left; apply: lchain_cases Hq.
-  + by case: (rchain_cases Hq) => s ->; do 4 right; exists r.1.1, s.
-- case/elem_of_list_bind => b [Hq _].
-  by do 3 right; left; apply: lchain_cases Hq.
+move: c r => [p s] [[u u'] [v v']] Hr [/= [p' ->] [s' ->]].
+rewrite drop_app_length length_app Nat.add_sub take_app_length.
+exists u, u', v, v', (p' ++ y ++ s'); rewrite -!app_assoc; by split.
 Qed.
 
-Lemma inv_eqs_star_free q :
-  q ∈ inv_eqs → star_free q.1 ∧ star_free q.2.
+Lemma cell_eq_star_free : star_free cell_lhs ∧ star_free cterm.
 Proof.
-case/inv_eqs_cases => [->|[->|[[b [_ ->]]|[[p ->]|[u [s ->]]]]]] /=;
-  do !split => //; apply: star_free_tjoin => //.
+split; last first.
+  rewrite /cterm; apply: star_free_tjoin_all => e.
+  by case/elem_of_list_fmap => c [-> _].
+split => //; split => //; rewrite /sterm.
+apply: star_free_tjoin_all => e /elem_of_list_omap [c [_]].
+by case/fmap_Some => r [_ ->].
 Qed.
 
 (** * Soundness *)
 
 Section Sound.
 
+(* No rule reads beyond a cell, and each cell is matched by at most one
+   rule. *)
+Hypothesis Hlen : ∀ r c, r ∈ Rs → c ∈ cells →
+  length r.1.1 ≤ length c.1 ∧ length r.1.2 ≤ length c.2.
+Hypothesis Hdet : ∀ c r1 r2, c ∈ cells → r1 ∈ Rs → r2 ∈ Rs →
+  matches c r1 → matches c r2 → r1 = r2.
+
+Lemma first_rule_det c r :
+  c ∈ cells → r ∈ Rs → matches c r → first_rule c = Some r.
+Proof.
+move=> Hc Hr Hm; rewrite /first_rule.
+case Hf: (filter (matches c) Rs) => [|r0 rs].
+- have : r ∈ filter (matches c) Rs by apply/elem_of_list_filter.
+  by rewrite Hf => /elem_of_nil.
+- have /first_rule_Some [Hr0 Hm0] : first_rule c = Some r0
+    by rewrite /first_rule Hf.
+  by rewrite (Hdet Hc Hr0 Hr Hm0 Hm).
+Qed.
+
 Variable ρ : nat → lang W.
-Hypothesis Hsol : lsolves ρ inv_eqs.
+Hypothesis Hsol : lsolves ρ [cell_eq].
 
-Lemma in_inv_rule r q :
-  r ∈ Rs → q ∈ lchain [] r.1.1 ++ rchain r.1.1 r.1.2 → q ∈ inv_eqs.
+Lemma cell_sol t : (t = w ∨ lsubst ρ sterm t) ∨ ρ slack t ↔ lsubst ρ cterm t.
+Proof. by have /cell_eq_iff := Hsol (elem_of_list_here _ _); apply. Qed.
+
+Lemma cell_step t t' : dstep Rs t t' → lsubst ρ cterm t → lsubst ρ cterm t'.
 Proof.
-move=> Hr Hq; rewrite /inv_eqs !elem_of_cons !elem_of_app.
-by right; right; right; left; apply/elem_of_list_bind; exists r.
+case=> u [u' [v [v' [x [Hr [-> ->]]]]]] /in_cterm [c [y [Hc [Ht Hy]]]].
+have [Hu Hu'] := Hlen Hr Hc.
+have [p' [s' [Hp [Hs ->]]]] := rule_cell Hu Hu' Ht.
+have Hm : matches c ((u, u'), (v, v')) by split; [exists p' | exists s'].
+apply/cell_sol; left; right; apply/in_sterm.
+exists c, ((u, u'), (v, v')), y; do !split => //.
+- exact: first_rule_det Hc Hr Hm.
+- rewrite /= Hp Hs drop_app_length length_app Nat.add_sub take_app_length.
+  by rewrite -!app_assoc.
 Qed.
 
-Lemma in_inv_bad b q : b ∈ bad → q ∈ lchain [] b → q ∈ inv_eqs.
+Lemma cell_reach t : rtc (dstep Rs) w t → lsubst ρ cterm t.
 Proof.
-move=> Hb Hq; rewrite /inv_eqs !elem_of_cons !elem_of_app.
-by right; right; right; right; apply/elem_of_list_bind; exists b.
-Qed.
-
-Lemma inv_step t t' :
-  dstep Rs t t' → ρ (var [] []) t → ρ (var [] []) t'.
-Proof.
-case=> u [u' [v [v' [x [Hr [-> ->]]]]]] Ht.
-have Hx : ρ (var u u') x.
-{ apply: rchain_sound.
-  - move=> q Hq; apply: Hsol; apply: (in_inv_rule Hr).
-    by apply/elem_of_app; right.
-  - apply: (lchain_sound (p := [])) Ht => q Hq; apply: Hsol.
-    by apply: (in_inv_rule Hr); apply/elem_of_app; left. }
-have /close_eq_iff Hc := Hsol (elem_of_list_here _ _).
-exact: (Hc _ x Hr Hx).
-Qed.
-
-Lemma inv_reach t : rtc (dstep Rs) w t → ρ (var [] []) t.
-Proof.
-have /start_eq_iff Hw := Hsol (elem_of_list_further _ _ _
-                                 (elem_of_list_here _ _)).
+have Hw : lsubst ρ cterm w by apply/cell_sol; left; left.
 move=> Ht; elim: Ht Hw => // t1 t2 t3 H12 _ IH Ht1.
-by apply: IH; apply: inv_step H12 Ht1.
-Qed.
-
-Lemma inv_avoid t b : ρ (var [] []) t → b ∈ bad → ¬ b `prefix_of` t.
-Proof.
-move=> Ht Hb [y Hy]; move: Ht; rewrite Hy => Ht.
-have Hy' := lchain_sound (p := []) (fun q Hq => Hsol (in_inv_bad Hb Hq)) Ht.
-have Hin : excl_eq b ∈ inv_eqs.
-{ rewrite /inv_eqs !elem_of_cons !elem_of_app.
-  by right; right; left; apply/elem_of_list_fmap; exists b. }
-have /excl_eq_iff Hex := Hsol Hin.
-exact: Hex Hy'.
+by apply: IH; apply: cell_step H12 Ht1.
 Qed.
 
 End Sound.
 
-Theorem inv_sound ρ :
-  lsolves ρ inv_eqs →
-  ∀ t, rtc (dstep Rs) w t → ∀ b, b ∈ bad → ¬ b `prefix_of` t.
+Theorem cell_sound ρ :
+  (∀ r c, r ∈ Rs → c ∈ cells →
+     length r.1.1 ≤ length c.1 ∧ length r.1.2 ≤ length c.2) →
+  (∀ c r1 r2, c ∈ cells → r1 ∈ Rs → r2 ∈ Rs →
+     matches c r1 → matches c r2 → r1 = r2) →
+  lsolves ρ [cell_eq] →
+  ∀ t, rtc (dstep Rs) w t → ∃ c, c ∈ cells ∧ in_cell c t.
 Proof.
-move=> Hsol t Ht b Hb.
-by apply: (inv_avoid Hsol) Hb; apply: (inv_reach Hsol).
+move=> Hlen Hdet Hsol t /(cell_reach Hlen Hdet Hsol).
+by case/in_cterm => c [y [Hc [-> _]]]; exists c; split => //; exists y.
 Qed.
 
 (** * Completeness *)
@@ -420,7 +398,7 @@ Section Complete.
 Variable L : list (list A).
 Hypothesis Hw : w ∈ L.
 Hypothesis Hclosed : ∀ t t', t ∈ L → dstep Rs t t' → t' ∈ L.
-Hypothesis Havoid : ∀ t b, t ∈ L → b ∈ bad → ¬ b `prefix_of` t.
+Hypothesis Hcover : ∀ t, t ∈ L → ∃ c, c ∈ cells ∧ in_cell c t.
 
 Definition maxlen : nat := list_max (length <$> L).
 
@@ -438,52 +416,84 @@ have := Hmax (length (p ++ x ++ s)) (elem_of_list_fmap_1 _ _ _ Ht).
 rewrite /maxlen !length_app; lia.
 Qed.
 
-Definition fL (i : nat) : ka_term W :=
-  match decode_nat i : option (list A * list A) with
-  | Some (p, s) => ⨆ x ∈ deriv p s, Unit x
+Definition fC (i : nat) : ka_term W :=
+  match decode_nat i : option (option cell) with
+  | Some (Some c) => ⨆ y ∈ deriv c.1 c.2, Unit y
+  | Some None => ⨆ t ∈ L, Unit t
   | None => ⊥
   end.
 
-Lemma fL_star_free i : star_free (fL i).
+Lemma fC_star_free i : star_free (fC i).
 Proof.
-rewrite /fL; case: (decode_nat i) => [[p s]|] //.
-exact: star_free_join_list.
+rewrite /fC; case: (decode_nat i) => [[c|]|] //; exact: star_free_join_list.
 Qed.
 
-Lemma l_fL p s x : l (fL (var p s)) x ↔ p ++ x ++ s ∈ L.
+Lemma l_fC_cell c y : l (fC (cvar c)) y ↔ c.1 ++ y ++ c.2 ∈ L.
 Proof.
-rewrite /fL /var decode_encode_nat.
+rewrite /fC /cvar decode_encode_nat.
 rewrite (semi_lattice_morphism_join_list (f := @l W)) elem_of_lang_join_list.
 split.
-- by case=> y [/elem_of_deriv Hy /in_sing ->].
-- by move=> Hx; exists x; split; [exact/elem_of_deriv | exact/in_sing].
+- by case=> y' [/elem_of_deriv Hy /in_sing ->].
+- by move=> Hy; exists y; split; [exact/elem_of_deriv | exact/in_sing].
 Qed.
 
-Lemma inv_lsolves : lsolves (λ i, l (fL i)) inv_eqs.
+Lemma l_fC_slack t : l (fC slack) t ↔ t ∈ L.
 Proof.
-move=> q /inv_eqs_cases [->|[->|[[b [Hb ->]]|[[p ->]|[u [s ->]]]]]].
-- apply/close_eq_iff => - [[u u'] [v v']] x Hr /=.
-  rewrite !l_fL /= app_nil_r => Hx.
-  by apply: Hclosed Hx _; exists u, u', v, v', x.
-- by apply/start_eq_iff; rewrite l_fL /= app_nil_r.
-- apply/excl_eq_iff => y; rewrite l_fL app_nil_r => Hy.
-  by apply: (Havoid Hy Hb); exists y.
-- apply/left_eq_iff => c y; rewrite !l_fL !app_nil_r -app_assoc.
-  reflexivity.
-- apply/right_eq_iff => c y; rewrite !l_fL -app_assoc.
-  reflexivity.
+rewrite /fC /slack decode_encode_nat.
+rewrite (semi_lattice_morphism_join_list (f := @l W)) elem_of_lang_join_list.
+split.
+- by case=> t' [Ht /in_sing ->].
+- by move=> Ht; exists t; split => //; exact/in_sing.
 Qed.
 
-Theorem inv_complete : unif preka_eqv inv_eqs.
+Lemma cell_lsolves : lsolves (λ i, l (fC i)) [cell_eq].
 Proof.
-apply: (unif_of_lsolves (f := fL)).
-- exact: fL_star_free.
-- exact: inv_eqs_star_free.
-- exact: inv_lsolves.
+move=> q /elem_of_list_singleton ->; apply/cell_eq_iff => t.
+have -> : lsubst (λ i, l (fC i)) cterm t ↔ t ∈ L.
+{ rewrite in_cterm; split.
+  - by case=> c [y [_ [-> /l_fC_cell]]].
+  - move=> Ht; have [c [Hc [y Hy]]] := Hcover Ht.
+    by exists c, y; do !split => //; apply/l_fC_cell; rewrite -Hy. }
+split.
+- case=> [[->|]|/l_fC_slack] //.
+  case/in_sterm => c [r [y [_ [/first_rule_Some [Hr Hm] [/l_fC_cell Hy ->]]]]].
+  by apply: Hclosed Hy _; apply: step_of_cell.
+- by move=> Ht; right; apply/l_fC_slack.
 Qed.
 
 End Complete.
 
-End Eqs.
+Theorem cell_complete (L : list (list A)) :
+  w ∈ L → (∀ t t', t ∈ L → dstep Rs t t' → t' ∈ L) →
+  (∀ t, t ∈ L → ∃ c, c ∈ cells ∧ in_cell c t) →
+  unif preka_eqv [cell_eq].
+Proof.
+move=> Hw Hclosed Hcover.
+apply: (unif_of_lsolves (f := fC L)).
+- exact: fC_star_free.
+- by move=> q /elem_of_list_singleton ->; exact: cell_eq_star_free.
+- exact: cell_lsolves.
+Qed.
+
+(** * Linearity *)
+
+Theorem cell_eq_side_linear : NoDup cells → side_linear cell_eq.
+Proof.
+move=> Hnd.
+have Hstep c e : step_term c <$> first_rule c = Some e → uvars e = [cvar c]
+  by case/fmap_Some => r [_ ->]; exact: uvars_step_term.
+have Hcell c e : Some (cell_term c) = Some e → uvars e = [cvar c]
+  by case=> <-; exact: uvars_cell_term.
+have [HS1 HS2] := uvars_omap Hstep Hnd.
+have [HT _] := uvars_omap Hcell Hnd.
+split; [change (NoDup (uvars cell_lhs)) | change (NoDup (uvars cterm))].
+- rewrite /cell_lhs !uvars_join uvars_tw app_nil_l.
+  apply/NoDup_app; do !split => //; last exact: NoDup_singleton.
+  move=> i /HS2 [c [_ ->]] /elem_of_list_singleton Hc.
+  exact: slack_cvar c (eq_sym Hc).
+- by rewrite /cterm fmap_as_omap.
+Qed.
+
+End Eq.
 
 End Invariant.

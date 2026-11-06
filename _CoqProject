@@ -80,12 +80,8 @@ Universality/UnivMComplete.v
 RegexUnif/Syntax.v
 RegexUnif/StarFree.v
 RegexUnif/Invariant.v
-RegexUnif/OneEq.v
 RegexUnif/MM2Deque.v
 RegexUnif/MComplete.v
-RegexUnif/Cells.v
-RegexUnif/MM2Cells.v
-RegexUnif/LinMComplete.v
 
 # SimulatorToRTarget.v: connects MM2_Legacy/Simulator.v's Theta_MM2 to
 # CKAUndec/Encoding.v's R_target (plus an embedded-alphabet analogue) --

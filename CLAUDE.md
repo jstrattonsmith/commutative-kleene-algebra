@@ -122,8 +122,8 @@ Files are listed in dependency order (`_CoqProject`, which groups them into
 the same sections used below with one-line comments). All files are
 admit-free; no axioms appear anywhere except the two hypotheses named above
 (`CT_L`, `MP`), stated as hypotheses in `CKAUndec/KMComplete.v`,
-`CKAUndec/BinaryAlphabetMComplete.v`, `Universality/UnivMComplete.v`,
-`RegexUnif/MComplete.v` and `RegexUnif/LinMComplete.v`.
+`CKAUndec/BinaryAlphabetMComplete.v`, `Universality/UnivMComplete.v` and
+`RegexUnif/MComplete.v`.
 
 ### `MM2_Legacy/`: not on the critical path, kept for their own interest
 
@@ -457,9 +457,7 @@ no longer `Local` (`Universality/UnivEncoding.v` reuses them). Unlike
 KA unification: given a system of equations `Rᵢ ≡ Sᵢ` between terms over
 letters and variables, is there a substitution of terms making every
 equation provable? Already a single equation is Sigma^0_1-complete, even
-when no variable occurs twice on the same side (items 43-45; items 39-42
-are an earlier construction with repeated variables, whose results 45
-reproduces). The route follows a
+when no variable occurs twice on the same side. The route follows a
 collaborator's sketch: solutions of an equation system are regular
 inductive invariants of a machine run. Its universal deterministic tag
 system is replaced by MM2 encoded as a two-ended Post normal system (tag
@@ -486,81 +484,47 @@ it. ssreflect throughout.
     is why no Kozen completeness is needed: only finite unifiers are ever
     built.
 
-39. **`RegexUnif/Invariant.v`** (~490 lines): the sketch's Theorem 1.4,
-    generic over a finite alphabet. `dstep Rs` rewrites `u ++ x ++ u'` to
-    `v ++ x ++ v'` for a rule `((u, u'), (v, v'))`. `inv_eqs Rs bad w` says
-    that `X` contains `w`, is closed under the rules and has no word with a
-    prefix in `bad`. Variables `X_{p,s}` (`var p s`) stand for two-sided
-    derivatives, pinned down by derivative equations `1 ⊔ Y ≡ 1 ⊔ ⨆_c c ⋅
-    Y_c` (left) and `1 ⊔ Y ≡ 1 ⊔ ⨆_c Y_c ⋅ c` (right). Each equation shape
-    has an `_iff` lemma stating what it means for the languages.
-    `inv_sound`: a language-level solution keeps everything reachable
-    from `w` clear of `bad`. `inv_complete`: a finite invariant gives a
-    solution modulo pre-KA.
-
-40. **`RegexUnif/OneEq.v`** (~120 lines): a system as one equation. For
-    distinct letters `a`, `b`, the markers `mark n = aⁿ b` form a prefix
-    code, and `one_eq` turns the system `(eᵢ, fᵢ)ᵢ` into `⨆ᵢ aⁱ b ⋅ eᵢ ≡
-    ⨆ᵢ aⁱ b ⋅ fᵢ`. A pre-KA solution of the system solves it
-    (`unif_one_eq`), and a language-level solution of it solves the
-    system (`one_eq_lsolves`, cutting off `aⁱ b`). No fresh letters.
-
-41. **`RegexUnif/MM2Deque.v`** (~375 lines): MM2 as such a system, with no
-    KA content. A configuration `(i, (n, m))` is `cword` = `q_i aⁿ bᵐ #`
-    over `option (mm_sym Q)` (`None` is `#`), with `q_i` from
-    `CKAUndec/Encoding.v`'s `translate_state` (distinct letters for pc 0,
-    for any pc past the program, and for each pc in between). Each
-    instruction gives at most three rules (`rules_of`); the end marker
-    makes every zero test a positive pattern. Simulation both ways
-    (`cword_step`, `cword_step_inv`). Halting anywhere but `(0, (0, 0))`
-    shows as a prefix in `mm2_bad` (`cword_bad`), unlike the accepting
-    word and running configurations (`cword_accept_ok`,
-    `cword_active_ok`). `run_path` collects a halting run's
-    configurations, closed under steps by determinism.
-
-42. **`RegexUnif/MComplete.v`** (~185 lines): `mm2_eq P s` is the
-    invariant system `mm2_eqs P s` as one equation (`one_eq` with markers
-    over `la`, `lb`). For a theory `E` between pre-KA `≡` and language
-    equality, `RU P s := unif E [mm2_eq P s]` satisfies
-    `R_TL_connection_of`'s hypotheses (`RU_complete`, `RU_sound`), so
-    `m_complete_of_K_of` applies: if `E` is also enumerable, unification
-    modulo `E` is m-complete, for single equations and for systems
-    (`unif_m_complete_of`). A new theory costs its two inclusions and
-    enumerability. Final results: `KA_unif_m_complete : CT_L -> MP ->
-    exists c, m-complete (@KA_unif1 c) /\ m-complete (@KA_unif c)`
-    (unification modulo KA, `fka_eqv`, of one equation and of systems)
-    and `PreKA_unif_m_complete` (modulo pre-KA), over the alphabet of one
-    fixed machine.
-
-43. **`RegexUnif/Cells.v`** (~415 lines): invariants as ONE side-linear
-    equation, no derivative gadgets. A cell `(p, s)` stands for the words
+39. **`RegexUnif/Invariant.v`** (~500 lines): the sketch's Theorem 1.4,
+    generic over a finite alphabet, as ONE side-linear equation.
+    `dstep Rs` rewrites `u ++ x ++ u'` to `v ++ x ++ v'` for a rule
+    `((u, u'), (v, v'))`. A cell `(p, s)` stands for the words
     `p ++ y ++ s`; the invariant is the term `T = ⨆ p ⋅ X_{p,s} ⋅ s`
     (`cterm`), one variable per cell. If no rule reads beyond a cell, one
     step of `T` is again a term `G` (`sterm`, each cell with its first
     matching rule, `first_rule`), and `cell_eq` is `w ⊔ G ⊔ C ≡ T` with a
     slack variable `C`. `cell_sound` (given that each cell is matched by
     at most one rule): in a language-level solution every word reachable
-    from `w` lies in a cell. `cell_complete`: a finite covered invariant
-    gives a pre-KA solution. `cell_eq_side_linear` (cells `NoDup`).
+    from `w` lies in a cell. `cell_complete`: a finite invariant covered
+    by cells gives a pre-KA solution, by `StarFree.v`.
+    `cell_eq_side_linear` (cells `NoDup`).
 
-44. **`RegexUnif/MM2Cells.v`** (~365 lines): MM2 for `Cells.v`, as
-    `cfg` = `q_i aⁿ # # bᵐ #` (length at least four), with at most two
-    rules per instruction (`crules_of`), reading at most two letters at
-    each end. Simulation both ways (`cfg_step`, `cfg_step_inv`). Cells
-    are pairs of two-letter words minus those of wrong halts
-    (`mm2_cells`); each is matched by at most one rule (`crules_det`).
-    Run configurations are covered (`cfg_cover_active`,
-    `cfg_cover_accept`), wrong halts are not (`cfg_halt_uncovered`).
-    Reuses `MM2Deque.v`'s letters and MM2 facts, not its rules.
+40. **`RegexUnif/MM2Deque.v`** (~470 lines): MM2 as such a system, with
+    no KA content. A configuration `(i, (n, m))` is `cword` =
+    `q_i aⁿ # # bᵐ #` over `option (mm_sym Q)` (`None` is `#`, length at
+    least four), with `q_i` from `CKAUndec/Encoding.v`'s
+    `translate_state`. At most two rules per instruction (`rules_of`),
+    reading at most two letters at each end; the separator `# #` makes
+    both zero tests positive patterns. Simulation both ways (`cword_step`,
+    `cword_step_inv`). Cells are pairs of two-letter words minus those of
+    halts other than `(0, (0, 0))` (`mm2_cells`); each is matched by at
+    most one rule (`rules_det`). Run configurations are covered
+    (`cword_cover_active`, `cword_cover_accept`; `run_path` collects a
+    halting run, closed under steps by determinism), wrong halts are not
+    (`cword_halt_uncovered`).
 
-45. **`RegexUnif/LinMComplete.v`** (~170 lines): `MComplete.v` for
-    `mm2_lin_eq P s := cell_eq ...`, which is side-linear
-    (`mm2_lin_eq_side_linear`). `lin_unif_m_complete_of` gives, for one
-    machine `c`, m-completeness of side-linear single equations, of all
-    single equations and of systems. Final results:
-    `KA_lin_unif_m_complete` and `PreKA_lin_unif_m_complete`; their last
-    two conjuncts are `MComplete.v`'s `KA_unif1`/`KA_unif` (resp. pre-KA)
-    statements.
+41. **`RegexUnif/MComplete.v`** (~185 lines): `mm2_eq P s := cell_eq
+    ...`, side-linear (`mm2_eq_side_linear`). For a theory `E` between
+    pre-KA `≡` and language equality, `RU P s := unif E [mm2_eq P s]`
+    satisfies `R_TL_connection_of`'s hypotheses (`RU_complete`,
+    `RU_sound`), so `m_complete_of_K_of` applies: if `E` is also
+    enumerable, unification modulo `E` is m-complete for side-linear
+    single equations, all single equations and systems
+    (`unif_m_complete_of`). A new theory costs its two inclusions and
+    enumerability. Final results: `KA_unif_m_complete : CT_L -> MP ->
+    exists c, m-complete (fun q => side_linear q /\ KA_unif1 c q) /\
+    m-complete (@KA_unif1 c) /\ m-complete (@KA_unif c)` (modulo KA,
+    `fka_eqv`) and `PreKA_unif_m_complete` (modulo pre-KA), over the
+    alphabet of one fixed machine.
 
 ## Style Guidelines
 

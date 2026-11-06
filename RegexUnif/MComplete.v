@@ -1,20 +1,20 @@
 (* KA unification is Sigma^0_1-complete (conditional on CT_L and MP, as
-   everywhere else in this project).
+   everywhere else in this project), already for one equation in which no
+   variable occurs twice on the same side (`side_linear`).
 
-   For a machine `P` and a start configuration `s`, `mm2_eqs P s` is
-   RegexUnif/Invariant.v's invariant system for RegexUnif/MM2Deque.v's
-   rules, forbidden prefixes and start word, and `mm2_eq P s` is the
-   same system as one equation (RegexUnif/OneEq.v's `one_eq`). Under any
-   theory `E` between pre-KA and language equality (`RU`), that equation
-   is solvable whenever `P` runs
-   from `s` to `(0, (0, 0))` (`RU_complete`, the configurations of the
-   run form a finite invariant) and only if no halting run from `s` ends
-   elsewhere (`RU_sound`). These are exactly the hypotheses of
-   CKAUndec/Glue/TLToRTarget.v's `R_TL_connection_of`, and the rest is
-   CKAUndec/KMComplete.v's `m_complete_of_K_of`, with enumerability from
-   RegexUnif/Syntax.v's `unif_enumerable`: if `E` is enumerable,
-   unification modulo `E` is m-complete, both for single equations and
-   for systems (`unif_m_complete_of`).
+   For a machine `P` and a start configuration `s`, `mm2_eq P s` is
+   RegexUnif/Invariant.v's equation `cell_eq` for RegexUnif/MM2Deque.v's
+   rules, cells and start word. It is side-linear (`mm2_eq_side_linear`).
+   Under any theory `E` between pre-KA and language equality (`RU`), it
+   is solvable whenever `P` runs from `s` to `(0, (0, 0))`
+   (`RU_complete`, the configurations of the run form a finite invariant)
+   and only if no halting run from `s` ends elsewhere (`RU_sound`). These
+   are exactly the hypotheses of CKAUndec/Glue/TLToRTarget.v's
+   `R_TL_connection_of`, and the rest is CKAUndec/KMComplete.v's
+   `m_complete_of_K_of`, with enumerability from RegexUnif/Syntax.v's
+   `unif_enumerable`: if `E` is enumerable, unification modulo `E` is
+   m-complete, for side-linear single equations, for all single equations
+   and for systems (`unif_m_complete_of`).
 
    Final results: unification modulo KA (`KA_unif_m_complete`) and
    modulo pre-KA (`PreKA_unif_m_complete`), over the alphabet of one
@@ -29,7 +29,7 @@ From kacc Require Import KA.algebra KA.pre_ka KA.lang KA.ka.
 From kacc Require Import KA.rules_enumerable.
 From kacc Require Import CKAUndec.Encoding CKAUndec.Glue.TLToRTarget.
 From kacc Require CKAUndec.KMComplete.
-From kacc Require Import RegexUnif.Syntax RegexUnif.Invariant RegexUnif.OneEq.
+From kacc Require Import RegexUnif.Syntax RegexUnif.Invariant.
 From kacc Require Import RegexUnif.MM2Deque.
 From Undecidability.MinskyMachines Require Import MM2.
 From Undecidability.MinskyMachines.Util Require Import MM2_facts MM2_simulator.
@@ -61,13 +61,12 @@ Local Instance alph_countable (P : list mm2_instr) :
   countable.Countable (alph P) :=
   _ : countable.Countable (option (mm_sym (Fin.t (S (S (length P)))))).
 
-Definition mm2_eqs (P : list mm2_instr) (s : nat * (nat * nat)) :
-    list (@ueq (alph P)) :=
-  inv_eqs (mm2_rules P) (mm2_bad P) (cword P s).
-
 Definition mm2_eq (P : list mm2_instr) (s : nat * (nat * nat)) :
     @ueq (alph P) :=
-  one_eq (la P) (lb P) (mm2_eqs P s).
+  cell_eq (mm2_rules P) (mm2_cells P) (cword P s).
+
+Lemma mm2_eq_side_linear P s : side_linear (mm2_eq P s).
+Proof. exact: cell_eq_side_linear (mm2_cells_nodup P). Qed.
 
 Section Generic.
 
@@ -89,34 +88,30 @@ Proof.
 move=> Hrun.
 have Hstop : mm2_stop P (0, (0, 0)) by apply/mm2_stop_index_iff; left.
 have [ls [Hs [Hreach Hcl]]] := run_path Hrun Hstop.
-have Hw : cword P s ∈ cword P <$> ls by apply: elem_of_list_fmap_1.
-have Hclosed t t' : t ∈ cword P <$> ls → dstep (mm2_rules P) t t' →
-    t' ∈ cword P <$> ls.
-{ move=> /elem_of_list_fmap [z [-> Hz]] /cword_step_inv [z' [-> Hzz']].
-  exact/elem_of_list_fmap_1/(Hcl z z'). }
-have Havoid t b : t ∈ cword P <$> ls → b ∈ mm2_bad P → ¬ b `prefix_of` t.
-{ move=> /elem_of_list_fmap [z [-> Hz]] Hb.
+apply: unif_mono (@E_pre (alph P)) _.
+apply: (cell_complete (L := cword P <$> ls)).
+- exact: elem_of_list_fmap_1.
+- move=> t t' /elem_of_list_fmap [z [-> Hz]] /cword_step_inv [z' [-> Hzz']].
+  exact/elem_of_list_fmap_1/(Hcl z z').
+- move=> t /elem_of_list_fmap [z [-> Hz]].
   case: (stop_or_active P z) => [Hzs|Hza].
-  - rewrite -(rtc_stop_eq (Hreach z Hz) Hzs); exact: cword_accept_ok.
-  - exact: cword_active_ok. }
-apply: unif_mono (@E_pre (alph P)) _; apply: unif_one_eq.
-exact (inv_complete (Rs := mm2_rules P) (bad := mm2_bad P) Hw Hclosed
-         Havoid).
+  + rewrite -(rtc_stop_eq (Hreach z Hz) Hzs); exact: cword_cover_accept.
+  + exact: cword_cover_active.
 Qed.
 
 Lemma RU_sound P s1 s2 :
   relations.rtc (mm2_step P) s1 s2 → mm2_stop P s2 → RU P s1 →
   s2 = (0, (0, 0)).
 Proof.
-move=> Hrun Hstop /(unif_lsolves (@E_lang (alph P))) [ρ].
-move=> /(one_eq_lsolves (la_lb (P := P))) Hsol.
+move=> Hrun Hstop /(unif_lsolves (@E_lang (alph P))) [ρ Hsol].
 have Hlift : relations.rtc (dstep (mm2_rules P)) (cword P s1) (cword P s2).
 { elim: Hrun {Hstop Hsol} => [x|x y z Hxy _ IH].
   - exact: relations.rtc_refl.
   - exact: relations.rtc_l (cword_step Hxy) IH. }
 case: (decide (s2 = (0, (0, 0)))) => // Hne.
-have [b [Hb Hpre]] := cword_bad Hstop Hne.
-by case: (inv_sound Hsol Hlift Hb).
+have [c [Hc Hin]] :=
+  cell_sound (@rules_cells_len P) (@rules_det P) Hsol Hlift.
+by case: (cword_halt_uncovered Hstop Hne Hc Hin).
 Qed.
 
 Definition K_unif (c : nat) : nat → Prop :=
@@ -132,14 +127,18 @@ apply: (enumerable_reduce (f := λ z, [K_to_unif c z]) (Q := unif (@E _))).
 - exact: unif_enumerable (E_enum (progOf c)).
 Qed.
 
-(* Single equations, and systems. *)
+(* Side-linear single equations, all single equations, and systems. *)
 Theorem unif_m_complete_of :
   CT_L → MP → ∃ c,
+    m-complete (λ q, side_linear q ∧ unif (@E (alph (progOf c))) [q]) ∧
     m-complete (λ q, unif (@E (alph (progOf c))) [q]) ∧
     m-complete (unif (@E (alph (progOf c)))).
 Proof.
 move=> ct mp; have [c Hc] := R_TL_connection_of RU_complete RU_sound.
-exists c; split.
+exists c; split; [|split].
+- apply: (KMComplete.m_complete_of_K_of (f := K_to_unif c) Hc
+            (K_unif_enumerable c) _ ct mp) => z.
+  by split => [H|[]] //; split => //; exact: mm2_eq_side_linear.
 - exact: (KMComplete.m_complete_of_K_of (f := K_to_unif c) Hc
             (K_unif_enumerable c) (λ z, iff_refl _) ct mp).
 - exact: (KMComplete.m_complete_of_K_of (f := λ z, [K_to_unif c z]) Hc
@@ -150,7 +149,8 @@ End Generic.
 
 (** Unification modulo KA, i.e. of a system of equations `Rᵢ ≡ Sᵢ`
     with KA proofs of every instance, is Sigma^0_1-complete, already for
-    a single equation `R ≡ S`. *)
+    a single equation `R ≡ S` in which no variable occurs twice on the
+    same side. *)
 
 Definition KA_unif (c : nat) : list (@ueq (alph (progOf c))) → Prop :=
   unif fka_eqv.
@@ -159,7 +159,9 @@ Definition KA_unif1 (c : nat) (q : @ueq (alph (progOf c))) : Prop :=
   unif fka_eqv [q].
 
 Theorem KA_unif_m_complete :
-  CT_L → MP → ∃ c, m-complete (@KA_unif1 c) ∧ m-complete (@KA_unif c).
+  CT_L → MP → ∃ c,
+    m-complete (λ q, side_linear q ∧ @KA_unif1 c q) ∧
+    m-complete (@KA_unif1 c) ∧ m-complete (@KA_unif c).
 Proof.
 apply: (unif_m_complete_of (E := @fka_eqv)) => [A e1 e2|A e1 e2|P].
 - exact: fka_of_pre.
@@ -176,7 +178,9 @@ Definition PreKA_unif1 (c : nat) (q : @ueq (alph (progOf c))) : Prop :=
   unif preka_eqv [q].
 
 Theorem PreKA_unif_m_complete :
-  CT_L → MP → ∃ c, m-complete (@PreKA_unif1 c) ∧ m-complete (@PreKA_unif c).
+  CT_L → MP → ∃ c,
+    m-complete (λ q, side_linear q ∧ @PreKA_unif1 c q) ∧
+    m-complete (@PreKA_unif1 c) ∧ m-complete (@PreKA_unif c).
 Proof.
 apply: (unif_m_complete_of (E := @preka_eqv)) => [A e1 e2|A e1 e2 ->|P] //.
 exact: preka_eqv_enumerable.
