@@ -12,13 +12,14 @@
    are exactly the hypotheses of CKAUndec/Glue/TLToRTarget.v's
    `R_TL_connection_of`, and the rest is CKAUndec/KMComplete.v's
    `m_complete_of_K_of`, with enumerability from RegexUnif/Syntax.v's
-   `unif_enumerable`: if `E` is enumerable, unification modulo `E` is
-   m-complete, for side-linear single equations, for all single equations
-   and for systems (`unif_m_complete_of`).
+   `unif_enumerable`: if `E` is enumerable, unification of side-linear
+   single equations modulo `E` is m-complete (`unif_m_complete_of`).
 
    Final results: unification modulo KA (`KA_unif_m_complete`) and
    modulo pre-KA (`PreKA_unif_m_complete`), over the alphabet of one
-   fixed machine. *)
+   fixed machine. Dropping the restriction to side-linear equations, or
+   allowing systems, keeps the problem hard (`m_complete_red` with
+   `side_linear_red` and `single_red`). *)
 
 From Stdlib Require Import Unicode.Utf8 ssreflect Arith Lia.
 From Undecidability Require Import FRACTRAN.
@@ -127,22 +128,14 @@ apply: (enumerable_reduce (f := λ z, [K_to_unif c z]) (Q := unif (@E _))).
 - exact: unif_enumerable (E_enum (progOf c)).
 Qed.
 
-(* Side-linear single equations, all single equations, and systems. *)
 Theorem unif_m_complete_of :
   CT_L → MP → ∃ c,
-    m-complete (λ q, side_linear q ∧ unif (@E (alph (progOf c))) [q]) ∧
-    m-complete (λ q, unif (@E (alph (progOf c))) [q]) ∧
-    m-complete (unif (@E (alph (progOf c)))).
+    m-complete (λ q, side_linear q ∧ unif (@E (alph (progOf c))) [q]).
 Proof.
 move=> ct mp; have [c Hc] := R_TL_connection_of RU_complete RU_sound.
-exists c; split; [|split].
-- apply: (KMComplete.m_complete_of_K_of (f := K_to_unif c) Hc
-            (K_unif_enumerable c) _ ct mp) => z.
-  by split => [H|[]] //; split => //; exact: mm2_eq_side_linear.
-- exact: (KMComplete.m_complete_of_K_of (f := K_to_unif c) Hc
-            (K_unif_enumerable c) (λ z, iff_refl _) ct mp).
-- exact: (KMComplete.m_complete_of_K_of (f := λ z, [K_to_unif c z]) Hc
-            (K_unif_enumerable c) (λ z, iff_refl _) ct mp).
+exists c; apply: (KMComplete.m_complete_of_K_of (f := K_to_unif c) Hc
+                    (K_unif_enumerable c) _ ct mp) => z.
+by split => [H|[]] //; split => //; exact: mm2_eq_side_linear.
 Qed.
 
 End Generic.
@@ -152,16 +145,10 @@ End Generic.
     a single equation `R ≡ S` in which no variable occurs twice on the
     same side. *)
 
-Definition KA_unif (c : nat) : list (@ueq (alph (progOf c))) → Prop :=
-  unif fka_eqv.
-
-Definition KA_unif1 (c : nat) (q : @ueq (alph (progOf c))) : Prop :=
-  unif fka_eqv [q].
-
 Theorem KA_unif_m_complete :
   CT_L → MP → ∃ c,
-    m-complete (λ q, side_linear q ∧ @KA_unif1 c q) ∧
-    m-complete (@KA_unif1 c) ∧ m-complete (@KA_unif c).
+    m-complete (λ q : @ueq (alph (progOf c)),
+                  side_linear q ∧ unif fka_eqv [q]).
 Proof.
 apply: (unif_m_complete_of (E := @fka_eqv)) => [A e1 e2|A e1 e2|P].
 - exact: fka_of_pre.
@@ -171,17 +158,44 @@ Qed.
 
 (** The same modulo pre-KA. *)
 
-Definition PreKA_unif (c : nat) : list (@ueq (alph (progOf c))) → Prop :=
-  unif preka_eqv.
-
-Definition PreKA_unif1 (c : nat) (q : @ueq (alph (progOf c))) : Prop :=
-  unif preka_eqv [q].
-
 Theorem PreKA_unif_m_complete :
   CT_L → MP → ∃ c,
-    m-complete (λ q, side_linear q ∧ @PreKA_unif1 c q) ∧
-    m-complete (@PreKA_unif1 c) ∧ m-complete (@PreKA_unif c).
+    m-complete (λ q : @ueq (alph (progOf c)),
+                  side_linear q ∧ unif preka_eqv [q]).
 Proof.
 apply: (unif_m_complete_of (E := @preka_eqv)) => [A e1 e2|A e1 e2 ->|P] //.
 exact: preka_eqv_enumerable.
 Qed.
+
+(** * Dropping the restrictions *)
+
+(* For any theory sound for languages, hardness passes from side-linear
+   single equations to all single equations (a non-side-linear equation
+   goes to the unsolvable `1 ≡ ⊥`), and from single equations to
+   systems. So each theorem above also gives m-completeness of
+   `λ q, unif E [q]` and of `unif E`, by `m_complete_red` twice. *)
+
+Lemma m_complete_red {X Y} (p : X → Prop) (q : Y → Prop) :
+  p ⪯ₘ q → m-complete p → m-complete q.
+Proof. by move=> Hpq Hp r Hr; apply: red_m_transitive (Hp r Hr) Hpq. Qed.
+
+Section Restrictions.
+
+Context {A : setoid}.
+
+Variable E : ka_term (list_monoid A) → ka_term (list_monoid A) → Prop.
+Hypothesis E_lang : ∀ e1 e2, E e1 e2 → l e1 ≡ l e2.
+
+Lemma side_linear_red :
+  (λ q, side_linear q ∧ unif E [q]) ⪯ₘ (λ q, unif E [q]).
+Proof.
+exists (λ q, if bool_decide (side_linear q) then q else (Unit [], ⊥)) => q /=.
+case_bool_decide as Hq; first by split => [[]|].
+split => [[]//|/(unif_lsolves E_lang) [ρ /(_ _ (elem_of_list_here _ _) [])]].
+by case=> /(_ ltac:(simpl; reflexivity)) [].
+Qed.
+
+Lemma single_red : (λ q, unif E [q]) ⪯ₘ unif E.
+Proof. by exists (λ q, [q]). Qed.
+
+End Restrictions.

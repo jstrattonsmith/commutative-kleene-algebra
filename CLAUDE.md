@@ -512,19 +512,20 @@ it. ssreflect throughout.
     halting run, closed under steps by determinism), wrong halts are not
     (`cword_halt_uncovered`).
 
-41. **`RegexUnif/MComplete.v`** (~185 lines): `mm2_eq P s := cell_eq
+41. **`RegexUnif/MComplete.v`** (~205 lines): `mm2_eq P s := cell_eq
     ...`, side-linear (`mm2_eq_side_linear`). For a theory `E` between
     pre-KA `≡` and language equality, `RU P s := unif E [mm2_eq P s]`
     satisfies `R_TL_connection_of`'s hypotheses (`RU_complete`,
     `RU_sound`), so `m_complete_of_K_of` applies: if `E` is also
-    enumerable, unification modulo `E` is m-complete for side-linear
-    single equations, all single equations and systems
-    (`unif_m_complete_of`). A new theory costs its two inclusions and
-    enumerability. Final results: `KA_unif_m_complete : CT_L -> MP ->
-    exists c, m-complete (fun q => side_linear q /\ KA_unif1 c q) /\
-    m-complete (@KA_unif1 c) /\ m-complete (@KA_unif c)` (modulo KA,
-    `fka_eqv`) and `PreKA_unif_m_complete` (modulo pre-KA), over the
-    alphabet of one fixed machine.
+    enumerable, unification of side-linear single equations modulo `E`
+    is m-complete (`unif_m_complete_of`). A new theory costs its two
+    inclusions and enumerability. Final results: `KA_unif_m_complete :
+    CT_L -> MP -> exists c, m-complete (fun q => side_linear q /\ unif
+    fka_eqv [q])` (modulo KA) and `PreKA_unif_m_complete` (modulo
+    pre-KA), over the alphabet of one fixed machine. Hardness carries
+    over to all single equations and to systems, for any theory sound
+    for languages (`m_complete_red` with `side_linear_red`,
+    `single_red`).
 
 ## Style Guidelines
 
