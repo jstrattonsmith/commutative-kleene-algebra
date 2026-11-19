@@ -14,6 +14,10 @@ effective-inseparability route.
   library's sense. Both are axiom-free (`Print Assumptions`: closed under
   the global context), and no coq-synthetic-computability module is loaded.
   First version: about 33 minutes and about 950 lines.
+- **The second encoding (pre-KA balanced universality, `Universality/`)
+  also has a direct proof.** `UNIV_undec` is axiom-free, and
+  `UNIV_MP_reduction` holds under `MP`. It needs a second model,
+  `TailModel.v`, about 1h20 of work.
 - **The free KA (FKA): the same route provably cannot work** with this
   encoding. KA proves `red_lb ⊑ red_ub` for a non-halting machine
   (`DirectUndec/FKALoop.v`). This is where an inseparability argument is
@@ -35,6 +39,13 @@ effective-inseparability route.
   a genuine many-one reduction under Markov's principle alone (no `CT_L`).
 - `Binary.v`: `PreKA_EQ_bin_undec : undecidable PreKA_EQ_bin` over `Tm_bin`,
   and `PreKA_EQ_bin_MP_reduction`.
+- `TailModel.v`: `tlang_pre_ka`, a second model whose tokens carry finite
+  tails, so infinite products do not absorb what follows; `pre_mul`,
+  `pre_star`: how a run token can arise in a product or a star.
+- `UnivDirect.v`: `univ_not_le_of_not_terminates`, a divergent run refutes
+  `bal_star ⊑ univ_ub_mm2 P s1`; `univ_leq_complete`/`univ_leq_sound`;
+  `UNIV_undec : undecidable UNIV` (balanced universality, the machine's
+  alphabet part of the instance) and `UNIV_MP_reduction`.
 - `FKALoop.v`: `fka_red_leq_closed`, a finite closed reachable set gives
   `FKA red_lb ⊑ FKA red_ub`; `fka_red_leq_not_terminates_fails`, the KA
   analogue of `red_lb_not_le_red_ub` is false.
@@ -122,7 +133,8 @@ difficulty grounds. The direct proof is short, and parts of it are reusable
    stronger statement.
 
 So a fair "justification" reads: *in pre-KA a direct reduction exists and
-is easy, because the absence of star induction makes divergence refutable.
+is easy, for both encodings in this repository, because the absence of star
+induction makes divergence refutable.
 In the presence of star induction the natural encoding only yields a
 sandwich, and inseparability is the tool that handles sandwiches.*
 
@@ -131,12 +143,12 @@ sandwich, and inseparability is the tool that handles sandwiches.*
 - Is there an encoding for FKA where divergence is refutable (in some
   non-*-continuous KA)? `fka_red_leq_closed` shows the encoding must at
   least defeat finite invariants, and likely all regular ones.
-- Does the omega-token argument extend to the pre-KA universality problem
-  `Univ` (`bal_star ⊑ e`)? There `bal_star` itself appears on the left and
-  as a prefix of the detectors on the right, so the run token would be
-  absorbed by `bal_star ⋅ detector`. A model with "tokens with finite tails"
-  (`t ⋅ Ω ⋅ u`, so infinite products no longer absorb what follows) looks
-  like it would separate them.
+- The same question for KA universality (`Univ_top`, `Σ* ⊑ e`). I expect
+  the `FKALoop.v` phenomenon there too (a looping machine's run words have a
+  regular invariant), but did not formalize it.
+- Binary-carrier versions of the universality result (`univ_ub_bin`).
+  These should follow the same pattern as `Binary.v`, through
+  `Universality/BalancedBinary.v`'s transport.
 
 ## Log
 
@@ -180,3 +192,20 @@ sandwich, and inseparability is the tool that handles sandwiches.*
   left-hand side `bal_star` also prefixes the detectors, so the run token is
   absorbed and the model needs tails). Added the `MP`-only many-one
   reductions (`run_reach`/`reach_run`, `HALTS_ON_ZERO_search`).
+- **02:05-02:15** `DirectUndec/TailModel.v` (~440 lines). In
+  `Universality/` the left-hand side `bal_star` also prefixes the
+  detectors on the right, so the omega model's absorbing tokens cannot
+  separate the two sides. The new model is plain `lang` over a monoid of
+  finite elements, tokens `(t, k, u)` with a finite tail, and junk. Only the
+  star changes: `star' A = A* ⋅ (1 ⊔ Z A ⋅ A*)`. Everything except star
+  unfolding is inherited from `KA/lang.v`, which made it simpler than
+  `OmegaModel.v`.
+- **02:15-02:36** `DirectUndec/UnivDirect.v` (~430 lines): the run as an
+  infinite word `W`, token-freeness of all detectors (by a small tactic),
+  and the refutation. It reuses `UnivEncoding.v`'s language-level soundness
+  lemmas (`win_sound`, `nobad_run`, `run_parse`) on finite prefixes of `W`.
+  Most time went into unification noise: section-variable arguments of
+  `UnivEncoding.v` lemmas (`l_w_*` take `q0`), `/=` unfolding definitions
+  that `lia` then treats as different atoms, and `1` elaborated as
+  `monoid_one` vs `prod_one`. Axiom-free; `nix build` passes.
+

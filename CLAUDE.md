@@ -497,6 +497,20 @@ directory depends on it. ssreflect throughout.
     red_ub` by star induction. The non-halting loop `loop_prog` is an
     instance (`fka_red_leq_loop`), so `fka_red_leq_not_terminates_fails`.
 
+42. **`DirectUndec/TailModel.v`** (~440 lines): a second model, for upper
+    bounds in which the refuted star also occurs as a prefix: languages
+    over a monoid of finite elements, tokens `(t, k, u)` with a finite tail
+    `u`, and junk, with `star' A := A* ⋅ (1 ⊔ Z A ⋅ A*)`. Only star unfolding
+    needs a proof; the rest is `KA/lang.v`'s. `pre_mul`/`pre_star` say how a
+    token with empty tail continuing a given prefix can arise.
+
+43. **`DirectUndec/UnivDirect.v`** (~430 lines): the same for
+    `Universality/UnivEncoding.v`'s balanced universality:
+    `univ_not_le_of_not_terminates`, so `bal_star ⊑ univ_ub_mm2 P s1` iff
+    the run reaches `(0,(0,0))`, and `UNIV_undec`/`UNIV_MP_reduction` (the
+    machine's alphabet is part of the instance, as in `Univ c`). Reuses
+    `win_sound`/`nobad_run`/`run_parse` on prefixes of the infinite run.
+
 ## Style Guidelines
 
 Several of these guidelines are guiding principles that are not necessarily
