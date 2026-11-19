@@ -32,3 +32,11 @@ effective inseparability (explicitly, or implicitly via the `T_L` route).
 
 **Pre-KA goal reached in about 33 minutes of wall-clock time** (01:12-01:45),
 in about 950 lines.
+- **01:45-01:51** `DirectUndec/FKALoop.v` (~190 lines): why this does not
+  carry over to the free KA. `fka_red_leq_closed`: if the configurations
+  reachable from `s1` form a finite, step-closed set with no halting
+  configuration other than `(0,(0,0))`, KA proves `red_lb ⊑ red_ub` (star
+  induction with a finite invariant). `fka_red_leq_loop`: this holds for the
+  two-instruction machine `[inc_a; dec_a 1]`, which never halts
+  (`loop_not_terminates`). Hence `fka_red_leq_not_terminates_fails`. Admit-
+  and axiom-free.
