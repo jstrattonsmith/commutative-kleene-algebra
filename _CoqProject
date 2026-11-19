@@ -87,3 +87,4 @@ DirectUndec/NonHalting.v
 DirectUndec/Undec.v
 DirectUndec/Binary.v
 DirectUndec/FKALoop.v
+DirectUndec/TailModel.v
