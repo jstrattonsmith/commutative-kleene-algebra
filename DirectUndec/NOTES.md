@@ -97,8 +97,10 @@ difficulty grounds. The direct proof is short, and parts of it are reusable
    with that set as invariant (`fka_red_leq_closed`). The two-instruction
    loop `[inc_a; dec_a 1]` is an instance. So over FKA,
    `{M | KA ⊢ red_lb_M ⊑ red_ub_M}` lies *strictly* between "halts at
-   `(0,(0,0))`" and "does not halt elsewhere": it contains some, but by
-   undecidability not all, divergent machines. No model can refute an
+   `(0,(0,0))`" and "does not halt elsewhere": it contains some divergent
+   machines, and presumably not all of them. If it contained all, "never
+   halts elsewhere" would be r.e. like KA provability, so "halts elsewhere"
+   would be decidable. No model can refute an
    inequality KA proves, so no argument of the `NonHalting.v` kind exists.
    A reduction from halting would need a different encoding, one that
    defeats every regular inductive invariant of every divergent machine. It
@@ -109,13 +111,14 @@ difficulty grounds. The direct proof is short, and parts of it are reusable
    undecidable (creative, m-complete). That is exactly the situation FKA
    is in.
 
-2. **The synthetic setting needs `CT` for the sandwich.** Plain recursive
-   inseparability would suffice for undecidability of a sandwiched set
-   classically. But proving that two halting sets are inseparable needs a
-   diagonal machine that runs the (hypothetical) separator on its own
-   code. In axiom-free synthetic Coq, a decider is an arbitrary Coq
-   function, not a machine, so it cannot be internalized. That needs
-   `CT_L`, which the `T_L` route assumes anyway. So for FKA, "some form of
+2. **The synthetic setting needs `CT` for the sandwich** (an informal
+   argument, not formalized here). Plain recursive inseparability would
+   suffice classically for undecidability of a sandwiched set. But the
+   usual proof that two halting sets are inseparable builds a diagonal
+   machine that runs the hypothetical separator on its own code. In
+   axiom-free synthetic Coq a decider is an arbitrary Coq function, not a
+   machine, so it cannot be internalized. As far as I can see this needs
+   something like `CT_L`, which the `T_L` route assumes anyway. So for FKA, "some form of
    inseparability plus `CT_L`" is not a stylistic choice. It is the natural
    route once the middle set is uncharacterizable. The pre-KA route needs
    neither because there the middle set is empty.
@@ -128,9 +131,9 @@ difficulty grounds. The direct proof is short, and parts of it are reusable
    synthetic setting, "every enumerable predicate reduces to `p`"
    (m-completeness) needs `CT` whatever the route, because it quantifies
    over arbitrary Coq enumerators. Given `CT`, halting is m-complete and
-   composing with `PreKA_EQ_MP_reduction` makes `PreKA_EQ` m-complete too.
-   So in pre-KA, effective inseparability is not needed even for the
-   stronger statement.
+   composing with `PreKA_EQ_MP_reduction` makes `PreKA_EQ` m-complete too
+   (not formalized here). So in pre-KA, effective inseparability is not
+   needed even for the stronger statement.
 
 So a fair "justification" reads: *in pre-KA a direct reduction exists and
 is easy, for both encodings in this repository, because the absence of star
