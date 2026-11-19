@@ -118,9 +118,10 @@ difficulty grounds. The direct proof is short, and parts of it are reusable
    machine that runs the hypothetical separator on its own code. In
    axiom-free synthetic Coq a decider is an arbitrary Coq function, not a
    machine, so it cannot be internalized. As far as I can see this needs
-   something like `CT_L`, which the `T_L` route assumes anyway. So for FKA, "some form of
-   inseparability plus `CT_L`" is not a stylistic choice. It is the natural
-   route once the middle set is uncharacterizable. The pre-KA route needs
+   something like `CT_L`, which the `T_L` route assumes anyway. So for
+   FKA, "some form of inseparability plus `CT_L`" is not a stylistic
+   choice. It is the natural route once the middle set is
+   uncharacterizable. The pre-KA route needs
    neither because there the middle set is empty.
 
 3. **Strength of the conclusion.** The effective-inseparability route gives
