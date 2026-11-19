@@ -17,7 +17,9 @@ effective-inseparability route.
 - **The second encoding (pre-KA balanced universality, `Universality/`)
   also has a direct proof.** `UNIV_undec` is axiom-free, and
   `UNIV_MP_reduction` holds under `MP`. It needs a second model,
-  `TailModel.v`, about 1h20 of work.
+  `TailModel.v`; about 30 minutes of work.
+- **Total time:** 01:12-02:40 (about 1.5 hours) for everything here, about
+  2,500 lines of Rocq, all admit-free.
 - **The free KA (FKA): the same route provably cannot work** with this
   encoding. KA proves `red_lb ⊑ red_ub` for a non-halting machine
   (`DirectUndec/FKALoop.v`). This is where an inseparability argument is
@@ -212,4 +214,7 @@ sandwich, and inseparability is the tool that handles sandwiches.*
   `UnivEncoding.v` lemmas (`l_w_*` take `q0`), `/=` unfolding definitions
   that `lia` then treats as different atoms, and `1` elaborated as
   `monoid_one` vs `prod_one`. Axiom-free; `nix build` passes.
-
+- **02:36-02:40** Final write-up. Stopped well inside the 7-hour budget:
+  the goal (and the pre-KA universality variant) is done, and the
+  remaining open questions (above) are research questions, not
+  formalization chores.
