@@ -12,8 +12,10 @@ effective-inseparability route.
   `list nat * list nat`) and `PreKA_EQ_bin_undec` (the canonical binary
   carrier `Tm_bin`) both state `undecidable _` in the undecidability
   library's sense. Both are axiom-free (`Print Assumptions`: closed under
-  the global context), and no coq-synthetic-computability module is loaded.
-  First version: about 33 minutes and about 950 lines.
+  the global context). Originally no coq-synthetic-computability module was
+  loaded; since session 4, `CRM/principles.v` is `Require`d for the name
+  `MP` of the superseded `*_MP_reduction` theorems. First version: about
+  33 minutes and about 950 lines.
 - **The second encoding (pre-KA balanced universality, `Universality/`)
   also has a direct proof.** `UNIV_undec` is axiom-free, and
   `UNIV_MP_reduction` holds under `MP`. It needs a second model,
@@ -348,4 +350,20 @@ justification question: in pre-KA the direct route now gives *more* than
 the inseparability route: an axiom-free many-one reduction from halting,
 and m-completeness from `CT_L` alone, where `KA_ineq_m_complete` needs
 `CT_L` and `MP`.
+
+---
+
+## Session 4: library `MP`, and the generic chain
+
+**Start 15:01.**
+
+- **15:01-15:02** Launched a separate agent in coq-synthetic-computability
+  (branch `mp-free-myhill`, notes in its `MP_FREE_NOTES.md`) to explore
+  whether `MP` can be removed from the generic chain effective
+  inseparability → creative → m-complete. Results are recorded there.
+- **15:02-15:04** Replaced the local `Undec.MP` by the `MP` of
+  coq-synthetic-computability (`CRM/principles.v`, identical definition),
+  `Require`d but not imported, in `Undec.v`, `Binary.v` and `UnivDirect.v`. It only appears in
+  the superseded `*_MP_reduction` theorems; `principles.v` loads no
+  inseparability file.
 

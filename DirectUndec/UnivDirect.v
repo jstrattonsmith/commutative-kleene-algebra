@@ -37,6 +37,7 @@ From Undecidability.Synthetic Require Import Definitions ReducibilityFacts.
 Require Undecidability.Synthetic.Undecidability.
 Require Undecidability.TM.SBTM_undec.
 From kacc Require DirectUndec.Undec.
+Require SyntheticComputability.CRM.principles.
 Import MM2Notations.
 
 Section UnivDirect.
@@ -470,7 +471,7 @@ rewrite /reflects /complement; split.
   by move: e; have /hd -> := reduction_univ_yes h.
 Qed.
 
-Theorem UNIV_MP_reduction : Undec.MP → MM2_HALTS_ON_ZERO ⪯ UNIV.
+Theorem UNIV_MP_reduction : principles.MP → MM2_HALTS_ON_ZERO ⪯ UNIV.
 Proof.
 move=> mp; exists mm2_to_univ => x; split; first exact: reduction_univ_yes.
 case: x => [[P a] b] u.

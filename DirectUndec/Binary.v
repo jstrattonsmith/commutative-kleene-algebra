@@ -39,6 +39,7 @@ From Undecidability.Synthetic Require Import Definitions ReducibilityFacts.
 Require Undecidability.Synthetic.Undecidability.
 Require Undecidability.TM.SBTM_undec.
 From kacc Require DirectUndec.Undec.
+Require SyntheticComputability.CRM.principles.
 Import MM2Notations.
 
 (** * The binary terms of a machine *)
@@ -325,7 +326,7 @@ rewrite /reflects /complement; split.
 Qed.
 
 Theorem PreKA_EQ_bin_MP_reduction :
-  Undec.MP → MM2_HALTS_ON_ZERO ⪯ PreKA_EQ_bin.
+  principles.MP → MM2_HALTS_ON_ZERO ⪯ PreKA_EQ_bin.
 Proof.
 move=> mp; exists mm2_to_eq_bin => x; split; first exact: reduction_bin_yes.
 case: x => [[P a] b] eq.

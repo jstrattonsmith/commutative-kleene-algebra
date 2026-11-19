@@ -456,8 +456,9 @@ no longer `Local` (`Universality/UnivEncoding.v` reuses them). Unlike
 ### `DirectUndec/`: undecidability without effective inseparability
 
 A direct reduction from MM2 halting to pre-KA term equality, axiom-free (no
-`CT_L`, no `MP`) and loading nothing from `coq-synthetic-computability`
-(except `SigmaComplete.v`, which loads only `Models/CT.v` and `T_L_*`);
+`CT_L`, no `MP`) and loading from `coq-synthetic-computability` only
+`CRM/principles.v` (for the name `MP` of the superseded `*_MP_reduction`
+theorems) and, in `SigmaComplete.v`, `Models/CT.v` and `T_L_*`;
 see [`DirectUndec/NOTES.md`](DirectUndec/NOTES.md) for the analysis and
 the time log. Builds on `KA/` and `CKAUndec/Encoding.v`; nothing outside the
 directory depends on it. ssreflect throughout, except `SigmaComplete.v`.

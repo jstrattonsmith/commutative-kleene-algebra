@@ -46,6 +46,7 @@ Require Undecidability.MinskyMachines.Reductions.BSM_MM.
 Require Undecidability.FRACTRAN.Reductions.MM_FRACTRAN.
 Require Undecidability.MinskyMachines.Reductions.FRACTRAN_to_MMA2.
 Require Undecidability.MinskyMachines.Reductions.MMA2_to_MM2.
+Require SyntheticComputability.CRM.principles.
 
 (** * The problem *)
 
@@ -201,9 +202,8 @@ Qed.
     x) → ¬¬ MM2_HALTS_ON_ZERO x, and reaching (0,(0,0)) is a decidable
     search over the run, so Markov's principle turns them into a many-one
     reduction. Superseded by the axiom-free PreKA_EQ_red below; kept since
-    HALTS_ON_ZERO_search is reused. *)
-
-Definition MP := ∀ f : nat → bool, ¬¬ (∃ n, f n = true) → ∃ n, f n = true.
+    HALTS_ON_ZERO_search is reused. MP is coq-synthetic-computability's
+    (CRM/principles.v), loaded with Require only, for its name. *)
 
 Lemma HALTS_ON_ZERO_search P a b :
   MM2_HALTS_ON_ZERO (P, a, b) ↔
@@ -218,7 +218,7 @@ split.
 - case=> n /bool_decide_eq_true e; rewrite /= -e; exact: run_reach.
 Qed.
 
-Theorem PreKA_EQ_MP_reduction : MP → MM2_HALTS_ON_ZERO ⪯ PreKA_EQ.
+Theorem PreKA_EQ_MP_reduction : principles.MP → MM2_HALTS_ON_ZERO ⪯ PreKA_EQ.
 Proof.
 move=> mp; exists mm2_to_eq => x; split; first exact: reduction_yes.
 case: x => [[P a] b] eq.
