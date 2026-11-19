@@ -176,7 +176,7 @@ sandwich, and inseparability is the tool that handles sandwiches.*
   Axiom-free; `nix build` passes.
 - **01:58-02:02** This write-up, plus the `DirectUndec/` section in the
   project `CLAUDE.md`.
-- **02:02-02:09** Looked at `Universality/` (see open questions: its
+- **02:02-02:05** Looked at `Universality/` (see open questions: its
   left-hand side `bal_star` also prefixes the detectors, so the run token is
   absorbed and the model needs tails). Added the `MP`-only many-one
   reductions (`run_reach`/`reach_run`, `HALTS_ON_ZERO_search`).

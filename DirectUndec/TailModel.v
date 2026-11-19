@@ -280,7 +280,8 @@ Proof.
 move=> hL; elim: n x => [|n IH] x /=; first by [].
 split.
 - case=> p1 [p2 [e [La Lb]]].
-  have [a [b [ea [eb {}e]]]] := tk_mul_TFin_inv (symmetry (e : TFin x ≡ p1 ⋅ p2)).
+  have [a [b [ea [eb {}e]]]] :=
+    tk_mul_TFin_inv (symmetry (e : TFin x ≡ p1 ⋅ p2)).
   subst p1 p2.
   by exists a, b; split => //; split; [apply/hL|apply/IH].
 - case=> a [b [e [La Lb]]]; exists (TFin a), (TFin b); split.
@@ -359,10 +360,12 @@ Proof. by move=> ??? []. Qed.
 Lemma tokfree_tden_bottom : tokfree (D ⊥).
 Proof. by move=> ??? []. Qed.
 
-Lemma tokfree_tden_join e f : tokfree (D e) → tokfree (D f) → tokfree (D (e ⊔ f)).
+Lemma tokfree_tden_join e f :
+  tokfree (D e) → tokfree (D f) → tokfree (D (e ⊔ f)).
 Proof. by move=> h h' t k u [/h|/h']. Qed.
 
-Lemma tokfree_tden_mul e f : tokfree (D e) → tokfree (D f) → tokfree (D (e ⋅ f)).
+Lemma tokfree_tden_mul e f :
+  tokfree (D e) → tokfree (D f) → tokfree (D (e ⋅ f)).
 Proof. exact: tokfree_mul. Qed.
 
 Lemma tokfree_tden_star e :
@@ -419,7 +422,8 @@ move=> hL Sp Pp.
 case: (pre_mul Sp Pp) => [[a [p' [La [Hp' Pp']]]]|[p' [Lp' [Pp' _]]]].
 - case: Hp' => [e1|Hz].
   + by case: Pp' => t [k [ep _]]; move: e1; rewrite ep.
-  + case: (pre_mul Hz Pp') => [[z [p'' [[k [ez _]] _]]]|[z [[k [ez run]] [Pz _]]]].
+  + case: (pre_mul Hz Pp')
+      => [[z [p'' [[k [ez _]] _]]]|[z [[k [ez run]] [Pz _]]]].
     * by move: ez.
     * exists a, k; split => //; split => //.
       case: Pz => t [k' [ez' ht]]; move: ez'; rewrite ez /=.
