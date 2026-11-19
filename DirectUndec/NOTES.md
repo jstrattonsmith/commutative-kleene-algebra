@@ -40,3 +40,16 @@ in about 950 lines.
   two-instruction machine `[inc_a; dec_a 1]`, which never halts
   (`loop_not_terminates`). Hence `fka_red_leq_not_terminates_fails`. Admit-
   and axiom-free.
+- **01:51-01:58** Generalized the refutation in `NonHalting.v` to any
+  padded representable relation plus an infinite chain of non-empty words
+  (`chain_lb_not_le_chain_ub`). New `DirectUndec/Binary.v` (~300 lines):
+  the same result over the canonical binary carrier
+  `Tm_bin = list (option bool) * list (option bool)`
+  (`PreKA_EQ_bin_undec`), using the concrete one-hot letter encoding. The
+  completeness and halting-soundness proofs are adapted from
+  `CKAUndec/BinaryAlphabet.v`; that file can't be imported because it pulls
+  in `CKAUndec/K.v` and coq-synthetic-computability. This also settles the
+  "GENUINE OPEN GAP" recorded in `BinaryAlphabet.v`'s comment: in pre-KA a
+  divergent run *refutes* `red_leq'` (the comment expected it to hold "in
+  spirit"), so `red_leq'` holds exactly when the run reaches `(0,(0,0))`.
+  Axiom-free; `nix build` passes.

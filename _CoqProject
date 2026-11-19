@@ -85,4 +85,5 @@ MM2_Legacy/SimulatorToRTarget.v
 DirectUndec/OmegaModel.v
 DirectUndec/NonHalting.v
 DirectUndec/Undec.v
+DirectUndec/Binary.v
 DirectUndec/FKALoop.v
