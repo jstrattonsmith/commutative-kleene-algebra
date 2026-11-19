@@ -83,3 +83,4 @@ MM2_Legacy/SimulatorToRTarget.v
 # reduction from MM2 halting, without effective inseparability and
 # without CT_L/MP. See DirectUndec/NOTES.md.
 DirectUndec/OmegaModel.v
+DirectUndec/NonHalting.v

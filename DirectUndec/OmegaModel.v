@@ -405,6 +405,15 @@ Definition den : ka_term M → omega_pre_ka := ka_term_elim omega_sing.
 Global Instance den_morphism : PreKAMorphism den.
 Proof. rewrite /den; apply _. Qed.
 
+Lemma den_mul e f : den (e ⋅ f) = den e ⋅ den f.
+Proof. by []. Qed.
+
+Lemma den_join e f : den (e ⊔ f) = den e ⊔ den f.
+Proof. by []. Qed.
+
+Lemma den_star e : den (star e) = star (den e).
+Proof. by []. Qed.
+
 Lemma den_fin e : om_fin (den e) ≡ l e.
 Proof.
 elim: e => /=.
@@ -468,10 +477,28 @@ move=> hA hr t k [f [_ [[t' [k' [/hA //]]]|[k' [run _]]]]].
 by apply: (hr k'); apply: run.
 Qed.
 
+Lemma tokfree_proper e e' : e ≡ e' → tokfree (den e) → tokfree (den e').
+Proof.
+move=> /(pre_ka_morphism_proper (f := den)) [_ ee'] h t k.
+by rewrite -ee'; apply: h.
+Qed.
+
+Lemma tokfree_join_list {X : Type} (f : X → ka_term M) (xs : list X) :
+  (∀ y, tokfree (den (f y))) → tokfree (den (join_list f xs)).
+Proof.
+move=> hf; elim: xs => [|y xs IH] /=; first exact: tokfree_bottom.
+exact: tokfree_join.
+Qed.
+
 Section TokfreeMap.
 
 Variables (S : monoid) (g : S → M).
 Context `{!MonoidMorphism g}.
+
+Lemma tokfree_map_star (e : ka_term S) :
+  tokfree (star (den (ka_term_map g e))) →
+  tokfree (den (ka_term_map g (star e))).
+Proof. by []. Qed.
 
 Lemma tokfree_map (e : ka_term S) :
   (∀ s j, ¬ g s ≡ r j) → tokfree (den (ka_term_map g e)).
