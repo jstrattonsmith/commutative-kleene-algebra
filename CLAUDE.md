@@ -122,7 +122,8 @@ Files are listed in dependency order (`_CoqProject`, which groups them into
 the same sections used below with one-line comments). All files are
 admit-free; no axioms appear anywhere except the two hypotheses named above
 (`CT_L`, `MP`), stated as hypotheses in `CKAUndec/KMComplete.v`,
-`CKAUndec/BinaryAlphabetMComplete.v` and `Universality/UnivMComplete.v`.
+`CKAUndec/BinaryAlphabetMComplete.v` and `Universality/UnivMComplete.v`
+(`DirectUndec/` uses neither).
 
 ### `MM2_Legacy/`: not on the critical path, kept for their own interest
 
@@ -450,6 +451,51 @@ no longer `Local` (`Universality/UnivEncoding.v` reuses them). Unlike
     `CKAUndec/KMComplete.v`'s `m_complete_of_K_of`, which
     combines `eff_insep_shape_K_of_B1_L`, `m_complete_of_eff_insep_shape`
     and the reduction out of `K_of`.
+
+### `DirectUndec/`: undecidability without effective inseparability
+
+A direct reduction from MM2 halting to pre-KA term equality, axiom-free (no
+`CT_L`, no `MP`) and loading nothing from `coq-synthetic-computability`;
+see [`DirectUndec/NOTES.md`](DirectUndec/NOTES.md) for the analysis and
+the time log. Builds on `KA/` and `CKAUndec/Encoding.v`; nothing outside the
+directory depends on it. ssreflect throughout.
+
+37. **`DirectUndec/OmegaModel.v`** (~560 lines): a pre-KA model, generic over
+    a monoid `M` and a sequence `r : nat -> M`, whose elements are a
+    language plus "omega tokens" `(t, k)` standing for `t ⋅ r k ⋅ r (k+1) ⋅
+    ...` (identified up to `tsim`). `star A` contains `(1, k)` when all
+    `r j`, `j >= k`, lie in `A`; star unfolding holds, star induction does
+    not. `den` interprets terms (`den_fin`: its finite part is `l`);
+    `den_tok_le`: tokens are preserved by `⊑`. Helpers for token-free
+    terms and for "bad" tokens (`tbad`, after a right-stable property).
+
+38. **`DirectUndec/NonHalting.v`** (~270 lines): `chain_lb_not_le_chain_ub`:
+    for any `repr_rel (pad_rel e) (pad_lang L)` and infinite `e`-chain of
+    non-empty words, `Unit (1, c 0 #) ⋅ (pad_rel e)*` is not below
+    `dpseudo_top ⋅ inj2 (pad_lang PA) ⊔ repr_rel_rtc_error R`. Instance:
+    `red_lb_not_le_red_ub` (a divergent run refutes `red_lb ⊑ red_ub`), so
+    `red_leq` holds iff the run reaches `(0,(0,0))` (`red_leq_complete`,
+    `red_leq_sound`).
+
+39. **`DirectUndec/Undec.v`** (~200 lines): `PreKA_EQ_undec : undecidable
+    PreKA_EQ`, term equality over the fixed carrier `list nat * list nat`
+    (letters moved there along an injective encoding, `enc_term_reflect`),
+    via the library's `SBTM_HALT ⪯ ... ⪯ MM2_HALTS_ON_ZERO` chain
+    (`SBTM_HALT_to_MM2_HALTS_ON_ZERO`). The reduction's two halves
+    (`PreKA_EQ_reduction`) suffice for the library's notion without `MP`.
+
+40. **`DirectUndec/Binary.v`** (~310 lines): the same over the canonical
+    binary carrier `Tm_bin` (`PreKA_EQ_bin_undec`), with the one-hot letter
+    encoding. Adapts `CKAUndec/BinaryAlphabet.v`'s completeness/soundness
+    proofs (that file imports `CKAUndec/K.v`), and closes the gap recorded
+    in its comment: a divergent run refutes the binary inequality too
+    (`bin_not_le_of_not_terminates`).
+
+41. **`DirectUndec/FKALoop.v`** (~200 lines): why none of this carries over
+    to the free KA. `fka_red_leq_closed`: if the reachable configurations
+    form a finite step-closed set without wrong halts, KA proves `red_lb ⊑
+    red_ub` by star induction. The non-halting loop `loop_prog` is an
+    instance (`fka_red_leq_loop`), so `fka_red_leq_not_terminates_fails`.
 
 ## Style Guidelines
 

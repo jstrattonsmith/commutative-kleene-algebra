@@ -116,7 +116,9 @@ by rewrite ka_star_mul_star.
 Qed.
 
 Lemma star_mul_self (x : fka Mon) : star x ⋅ x ⊑ star x.
-Proof. by rewrite (ka_star_comm (x := x) (y := x)) //; exact: pre_ka_mul_star. Qed.
+Proof.
+by rewrite (ka_star_comm (x := x) (y := x)) //; exact: pre_ka_mul_star.
+Qed.
 
 Lemma lb_start : Unit (1, wS s1) ⊑ dpseudo_top ⋅ strings_r SW.
 Proof.
@@ -156,7 +158,8 @@ apply: ka_star_ind_r; apply/join_sqsubseteq; split.
     * by apply: pre_ka_mul_mono; [exact: D_mul_D|].
     * rewrite -[X in X ⊑ _](right_id 1 (⋅)).
       apply: pre_ka_mul_mono; last exact: pre_ka_one_star.
-      by apply: pre_ka_mul_mono => //; apply: pre_ka_mul_mono; [exact: D_mul_D|].
+      apply: pre_ka_mul_mono => //.
+      by apply: pre_ka_mul_mono; [exact: D_mul_D|].
   + etransitivity; last exact: sqsubseteq_join_right.
     rewrite -[X in X ⊑ _]assoc.
     by apply: pre_ka_mul_mono; [|exact: star_mul_self].

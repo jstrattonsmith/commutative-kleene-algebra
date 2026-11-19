@@ -335,7 +335,8 @@ constructor.
     * by right; left.
     * by left; right; exists a, t', k'.
     * by right; right; exists a, t', k'.
-  + case=> [[[At ?]|[a [t' [k' [Aa [? h]]]]]]|[[At ?]|[a [t' [k' [Aa [? h]]]]]]].
+  + case=> [[[At ?]|[a [t' [k' [Aa [? h]]]]]]
+           |[[At ?]|[a [t' [k' [Aa [? h]]]]]]].
     * by left; split; [|left].
     * by right; exists a, t', k'; do !split => //; left.
     * by left; split; [|right].

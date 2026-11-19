@@ -12,7 +12,7 @@
    pair (red_lb ⊔ red_ub, red_ub), so that the instance holds iff
    red_lb ⊑ red_ub. By DirectUndec/NonHalting.v:
 
-     MM2_HALTS_ON_ZERO x  ->  PreKA_EQ (mm2_to_eq x)              (reduction_yes)
+     MM2_HALTS_ON_ZERO x  ->  PreKA_EQ (mm2_to_eq x)             (reduction_yes)
      ~ MM2_HALTS_ON_ZERO x  ->  ~ PreKA_EQ (mm2_to_eq x)          (reduction_no)
 
    Classically this is a many-one reduction. Constructively the converse of
@@ -93,7 +93,9 @@ Lemma omap_decode_encode (l : list A) :
 Proof. by elim: l => //= x l IH; rewrite decode_encode_nat; f_equal. Qed.
 
 Lemma dec_enc_pair p : dec_pair (enc_pair p) = p.
-Proof. by case: p => u v; rewrite /dec_pair /enc_pair /= !omap_decode_encode. Qed.
+Proof.
+by case: p => u v; rewrite /dec_pair /enc_pair /= !omap_decode_encode.
+Qed.
 
 Lemma ka_term_map_id_ext {T : monoid} (f : T → T) `{!MonoidMorphism f} :
   (∀ x, f x ≡ x) → ∀ e, ka_term_map f e ≡ e.
@@ -121,14 +123,16 @@ End Transport.
 Global Instance mm_sym_countable n : Countable (mm_sym (fin n)) :=
   finite_countable.
 
-Global Instance mmA_eq_dec n : EqDecision (option_setoid (@mm_sym_setoid (fin n))) :=
+Global Instance mmA_eq_dec n :
+  EqDecision (option_setoid (@mm_sym_setoid (fin n))) :=
   _ : EqDecision (option (mm_sym (fin n))).
 
 Global Instance mmA_countable n :
   Countable (option_setoid (@mm_sym_setoid (fin n))) :=
   _ : Countable (option (mm_sym (fin n))).
 
-Global Instance mmA_leibniz n : LeibnizEquiv (option_setoid (@mm_sym_setoid (fin n))) :=
+Global Instance mmA_leibniz n :
+  LeibnizEquiv (option_setoid (@mm_sym_setoid (fin n))) :=
   _ : LeibnizEquiv (option (mm_sym (fin n))).
 
 Definition mm2_to_eq (x : MM2_PROBLEM) : ka_term Mnat * ka_term Mnat :=

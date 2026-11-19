@@ -90,7 +90,8 @@ Proof.
 apply: bounded_output_repr_rel'.
 - apply: finite_stateP.
   + done.
-  + rewrite -(finite_stateb_transport TAlph bool_setoid benc bk benc_len bk_pos).
+  + rewrite -(finite_stateb_transport TAlph bool_setoid benc bk benc_len
+                                       bk_pos).
     apply/Is_true_true. exact: finite_stateb_mm2_R.
 - exact: (bounded_output_transport TAlph bool_setoid benc bk benc_len bk_pos
            _ bounded_output_mm2_R).
@@ -107,7 +108,8 @@ Definition bin_lb (s1 : mm2_state) :=
   Unit (1, map Some (bconf s1) ⋅ [None]) ⋅ star (pad_rel bin_R).
 
 Definition bin_ub :=
-  dpseudo_top ⋅ ka_term_inj2 (pad_lang (Embed_word benc (Encoding.partially_accepted P)))
+  dpseudo_top ⋅
+    ka_term_inj2 (pad_lang (Embed_word benc (Encoding.partially_accepted P)))
     ⊔ repr_rel_rtc_error repr_rel_bin.
 
 Lemma step_embed (x y : list TAlph) :
@@ -159,7 +161,8 @@ apply: repr_rel_iter_final xs_ys.
     by rewrite -Ex1 -Ex2. }
   subst x2.
   have Hpx1 : Unit x1
-      ⊑ @ka_term_proj1 (list_monoid TAlph) (list_monoid TAlph) (Encoding.mm2_R P)
+      ⊑ @ka_term_proj1 (list_monoid TAlph) (list_monoid TAlph)
+          (Encoding.mm2_R P)
     by rewrite -Hin1.
   rewrite (Encoding.mm2_R_ub1 P) (Encoding.C_T P) in Hpx1.
   case/Encoding.elem_of_T_inv: Hpx1 => s x1_s.
@@ -273,13 +276,15 @@ Definition mm2_to_eq_bin (x : MM2_PROBLEM) : ka_term Tm_bin * ka_term Tm_bin :=
   | (P, a, b) => (bin_lb P (1%nat, (a, b)) ⊔ bin_ub P, bin_ub P)
   end.
 
-Lemma reduction_bin_yes x : MM2_HALTS_ON_ZERO x → PreKA_EQ_bin (mm2_to_eq_bin x).
+Lemma reduction_bin_yes x :
+  MM2_HALTS_ON_ZERO x → PreKA_EQ_bin (mm2_to_eq_bin x).
 Proof.
 case: x => [[P a] b] /= /bin_le_iff_complete /sqsubseteq_iff e.
 exact: e.
 Qed.
 
-Lemma reduction_bin_no x : ¬ MM2_HALTS_ON_ZERO x → ¬ PreKA_EQ_bin (mm2_to_eq_bin x).
+Lemma reduction_bin_no x :
+  ¬ MM2_HALTS_ON_ZERO x → ¬ PreKA_EQ_bin (mm2_to_eq_bin x).
 Proof.
 case: x => [[P a] b] /= /bin_le_iff_sound nle e.
 by apply: nle; apply/sqsubseteq_iff.

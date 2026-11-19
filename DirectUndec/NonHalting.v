@@ -207,7 +207,8 @@ Proof.
 rewrite /chain_ub den_join; case.
 - move=> h; exfalso; move: h.
   apply: tokfree_mul; first exact: tokfree_dpseudo_top.
-  apply: (tokfree_map (r := rr) (g := @prod_inj2 (list_monoid A) (list_monoid A))
+  apply: (tokfree_map (r := rr)
+            (g := @prod_inj2 (list_monoid A) (list_monoid A))
             (e := pad_lang PA)).
   move=> s j /leibniz_equiv_iff [e' _].
   by have := length_w j; rewrite -e' /=; lia.
@@ -215,7 +216,8 @@ rewrite /chain_ub den_join; case.
   apply: (tbad_mul_tok (Bad := Bad) Bad_mul).
   + move=> t' k'; apply: (tbad_mul_tok (Bad := Bad) Bad_mul).
     * move=> t'' k'' h; exfalso; move: h.
-      by apply: tokfree_mul; [exact: tokfree_dpseudo_top|exact: tokfree_mismatch].
+      apply: tokfree_mul; first exact: tokfree_dpseudo_top.
+      exact: tokfree_mismatch.
     * exact: Bad_dpseudo_top_mismatch.
   + move=> x; apply: (bad_mul_fin (Bad := Bad) Bad_mul).
     exact: Bad_dpseudo_top_mismatch.
