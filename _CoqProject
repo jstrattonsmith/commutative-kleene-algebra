@@ -84,3 +84,4 @@ MM2_Legacy/SimulatorToRTarget.v
 # without CT_L/MP. See DirectUndec/NOTES.md.
 DirectUndec/OmegaModel.v
 DirectUndec/NonHalting.v
+DirectUndec/Undec.v

@@ -22,3 +22,13 @@ effective inseparability (explicitly, or implicitly via the `T_L` route).
   steps have at least two letters per side), `inj2(pad_lang _)` has empty
   left components, and every token of the error term comes after an
   explicit mismatch.
+- **01:39-01:45** `DirectUndec/Undec.v` (~190 lines): the reduction to term
+  equality over the fixed carrier `list nat * list nat`, and
+  `PreKA_EQ_undec : undecidable PreKA_EQ` (the library's notion). Also
+  `PreKA_EQ_reduction`, the two halves of the reduction.
+  `Print Assumptions PreKA_EQ_undec`: *Closed under the global context*
+  (no axioms, no `CT_L`, no `MP`). No `coq-synthetic-computability` module is
+  even loaded. `nix build` passes.
+
+**Pre-KA goal reached in about 33 minutes of wall-clock time** (01:12-01:45),
+in about 950 lines.
