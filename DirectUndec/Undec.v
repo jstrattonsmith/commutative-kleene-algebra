@@ -194,3 +194,34 @@ Theorem PreKA_EQ_reduction :
 Proof.
 exists mm2_to_eq => x; split; [exact: reduction_yes|exact: reduction_no].
 Qed.
+
+(** * A many-one reduction under Markov's principle alone
+
+    The converse of reduction_yes is the only non-constructive step:
+    PreKA_EQ (mm2_to_eq x) gives ¬¬ MM2_HALTS_ON_ZERO x, and reaching
+    (0,(0,0)) is a decidable search over the run. So Markov's principle
+    (stated as in coq-synthetic-computability, without CT_L) turns the two
+    halves into a genuine many-one reduction from a Σ⁰₁-complete problem. *)
+
+Definition MP := ∀ f : nat → bool, ¬¬ (∃ n, f n = true) → ∃ n, f n = true.
+
+Lemma HALTS_ON_ZERO_search P a b :
+  MM2_HALTS_ON_ZERO (P, a, b) ↔
+  ∃ n, bool_decide (run P (1%nat, (a, b)) n = (0%nat, (0%nat, 0%nat))) = true.
+Proof.
+split.
+- move=> reach.
+  have stop : mm2_stop P (0%nat, (0%nat, 0%nat)).
+  { by apply/MM2_facts.mm2_stop_index_iff; left. }
+  case: (reach_run reach stop) => n e; exists n.
+  exact: bool_decide_eq_true_2.
+- case=> n /bool_decide_eq_true e; rewrite /= -e; exact: run_reach.
+Qed.
+
+Theorem PreKA_EQ_MP_reduction : MP → MM2_HALTS_ON_ZERO ⪯ PreKA_EQ.
+Proof.
+move=> mp; exists mm2_to_eq => x; split; first exact: reduction_yes.
+case: x => [[P a] b] eq.
+apply/HALTS_ON_ZERO_search; apply: mp => nex.
+by apply: (reduction_no _ eq) => hoz; apply: nex; apply/HALTS_ON_ZERO_search.
+Qed.

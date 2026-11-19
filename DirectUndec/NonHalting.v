@@ -71,6 +71,28 @@ move=> nt; elim=> [|j [reach step]].
     by move=> s' /mm2_step_fun_spec; rewrite e.
 Qed.
 
+(** Reaching a stopped state is witnessed by a decidable search over the
+    run, which is what Markov's principle needs. *)
+
+Lemma run_reach s j : clos_refl_trans _ (mm2_step P) s (run s j).
+Proof.
+elim: j => [|j IH]; first exact: rt_refl.
+apply: rt_trans IH _; rewrite [run s (S j)]/run /= -/(run s j) /next_or_self.
+case e: (mm2_step_fun P (run s j)) => [s'|]; last exact: rt_refl.
+by apply: rt_step; apply/mm2_step_fun_spec.
+Qed.
+
+Lemma reach_run s s' :
+  clos_refl_trans _ (mm2_step P) s s' → mm2_stop P s' → ∃ j, run s j = s'.
+Proof.
+move=> /clos_rt_rt1n_iff reach stop; elim: reach stop => [x|x y z xy _ IH] stop.
+- by exists 0.
+- case: (IH stop) => j e; exists (S j).
+  have nxy : next_or_self x = y.
+  { by rewrite /next_or_self; move/mm2_step_fun_spec: xy => ->. }
+  by rewrite /run Nat.iter_succ_r nxy.
+Qed.
+
 End Run.
 
 (** * The generic refutation

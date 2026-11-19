@@ -31,7 +31,10 @@ effective-inseparability route.
 - `Undec.v`: `PreKA_EQ_undec : undecidable PreKA_EQ` over
   `list nat * list nat`; `PreKA_EQ_reduction`, both halves of the reduction
   from `MM2_HALTS_ON_ZERO`.
-- `Binary.v`: `PreKA_EQ_bin_undec : undecidable PreKA_EQ_bin` over `Tm_bin`.
+- `Undec.v`: `PreKA_EQ_MP_reduction : MP → MM2_HALTS_ON_ZERO ⪯ PreKA_EQ`,
+  a genuine many-one reduction under Markov's principle alone (no `CT_L`).
+- `Binary.v`: `PreKA_EQ_bin_undec : undecidable PreKA_EQ_bin` over `Tm_bin`,
+  and `PreKA_EQ_bin_MP_reduction`.
 - `FKALoop.v`: `fka_red_leq_closed`, a finite closed reachable set gives
   `FKA red_lb ⊑ FKA red_ub`; `fka_red_leq_not_terminates_fails`, the KA
   analogue of `red_lb_not_le_red_ub` is false.
@@ -109,10 +112,14 @@ difficulty grounds. The direct proof is short, and parts of it are reusable
 3. **Strength of the conclusion.** The effective-inseparability route gives
    m-completeness (`Σ⁰₁`-completeness) of the inequality relation, and
    creativity, under `CT_L`/`MP`. The direct route gives `undecidable`
-   axiom-free. Classically it is also a many-one reduction from halting,
-   and with enumerability (`KA/preka_enumerable.v`) that gives
-   m-completeness too. Constructively, turning the two halves into a
-   reduction needs `MP`.
+   axiom-free, and under `MP` alone a many-one reduction from the
+   halting problem `MM2_HALTS_ON_ZERO` (`PreKA_EQ_MP_reduction`). In the
+   synthetic setting, "every enumerable predicate reduces to `p`"
+   (m-completeness) needs `CT` whatever the route, because it quantifies
+   over arbitrary Coq enumerators. Given `CT`, halting is m-complete and
+   composing with `PreKA_EQ_MP_reduction` makes `PreKA_EQ` m-complete too.
+   So in pre-KA, effective inseparability is not needed even for the
+   stronger statement.
 
 So a fair "justification" reads: *in pre-KA a direct reduction exists and
 is easy, because the absence of star induction makes divergence refutable.
@@ -167,4 +174,9 @@ sandwich, and inseparability is the tool that handles sandwiches.*
   divergent run *refutes* `red_leq'` (the comment expected it to hold "in
   spirit"), so `red_leq'` holds exactly when the run reaches `(0,(0,0))`.
   Axiom-free; `nix build` passes.
-- **01:58-02:05** This write-up.
+- **01:58-02:02** This write-up, plus the `DirectUndec/` section in the
+  project `CLAUDE.md`.
+- **02:02-02:09** Looked at `Universality/` (see open questions: its
+  left-hand side `bal_star` also prefixes the detectors, so the run token is
+  absorbed and the model needs tails). Added the `MP`-only many-one
+  reductions (`run_reach`/`reach_run`, `HALTS_ON_ZERO_search`).

@@ -302,3 +302,13 @@ rewrite /reflects /complement; split.
 - case e: (d (mm2_to_eq_bin x)) => //= _ h.
   by move: e; have /hd -> := reduction_bin_yes h.
 Qed.
+
+Theorem PreKA_EQ_bin_MP_reduction :
+  Undec.MP → MM2_HALTS_ON_ZERO ⪯ PreKA_EQ_bin.
+Proof.
+move=> mp; exists mm2_to_eq_bin => x; split; first exact: reduction_bin_yes.
+case: x => [[P a] b] eq.
+apply/Undec.HALTS_ON_ZERO_search; apply: mp => nex.
+apply: (reduction_bin_no _ eq) => hoz; apply: nex.
+by apply/Undec.HALTS_ON_ZERO_search.
+Qed.
