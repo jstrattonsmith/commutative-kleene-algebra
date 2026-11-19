@@ -363,7 +363,8 @@ and m-completeness from `CT_L` alone, where `KA_ineq_m_complete` needs
   inseparability → creative → m-complete. Results are recorded there.
 - **15:02-15:04** Replaced the local `Undec.MP` by the `MP` of
   coq-synthetic-computability (`CRM/principles.v`, identical definition),
-  `Require`d but not imported, in `Undec.v`, `Binary.v` and `UnivDirect.v`. It only appears in
-  the superseded `*_MP_reduction` theorems; `principles.v` loads no
-  inseparability file.
+  `Require`d but not imported, in `Undec.v`, `Binary.v` and
+  `UnivDirect.v`. It only appears in the superseded `*_MP_reduction`
+  theorems; `principles.v` loads no inseparability file. `nix build`
+  passes.
 
