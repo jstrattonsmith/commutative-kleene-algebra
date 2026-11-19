@@ -24,7 +24,7 @@ effective-inseparability route.
   `CT_L → m-complete MM2_HALTS_ON_ZERO` by the textbook argument (no SMN,
   no inseparability, no Myhill), and composes it with the `MP` reductions:
   `CT_L → MP → m-complete p` for `PreKA_EQ`, `PreKA_EQ_bin` and `UNIV`.
-  The same hypotheses as `KA_ineq_m_complete`. About 10 minutes, about 230
+  The same hypotheses as `KA_ineq_m_complete`. About 11 minutes, about 230
   lines; see the session-2 log.
 - **The free KA (FKA): the same route provably cannot work** with this
   encoding. KA proves `red_lb ⊑ red_ub` for a non-halting machine
@@ -251,7 +251,7 @@ Question (2026-11-19, afternoon): can m-completeness (`Σ⁰₁`-completeness)
 be obtained in the same direct manner? Answer: yes, under the same `CT_L`
 and `MP` as `CKAUndec/KMComplete.v`, and the work was small.
 
-**Start 14:35, end 14:47 (about 12 minutes, about 230 lines).**
+**Start 14:35, end 14:46 (about 11 minutes, about 230 lines).**
 
 - **14:35-14:38** Surveyed `Axioms/EA.v` (`m-complete p := ∀ q : nat →
   Prop, enumerable q → q ⪯ₘ p`), `Models/CT.v` (`CT_L_to_EPF_L`),
@@ -274,7 +274,8 @@ and `MP` as `CKAUndec/KMComplete.v`, and the work was small.
   theorems. `Print Libraries`: nothing from `ReducibilityDegrees/`,
   `EA_L*`, `T_L_Bridge.v`, `simple*.v` or `Basic/Myhill.v`. Checked that
   the statements are the library's `m-complete` notation.
-- **14:43-14:47** `nix build` passes; this write-up and `CLAUDE.md`.
+- **14:43-14:46** `nix build` passes; this write-up and `CLAUDE.md`;
+  committed (`cc1146f`). Push still fails (SSH access rights).
 
 Conclusion for the justification question: in pre-KA effective
 inseparability is not needed for undecidability *or* for
