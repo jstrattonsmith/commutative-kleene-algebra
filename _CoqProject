@@ -78,3 +78,8 @@ Universality/UnivMComplete.v
 # a proven alternative to the T_L-based route actually used. Kept
 # separate from Simulator.v so that file can stay ssreflect-free.
 MM2_Legacy/SimulatorToRTarget.v
+
+# DirectUndec/: undecidability of pre-KA term equality by a direct
+# reduction from MM2 halting, without effective inseparability and
+# without CT_L/MP. See DirectUndec/NOTES.md.
+DirectUndec/OmegaModel.v
