@@ -73,33 +73,39 @@ Qed.
 
 End Run.
 
-(** * Refuting red_lb ⊑ red_ub for non-terminating runs *)
+(** * The generic refutation
 
-Section NonHalting.
+    For any padded relation [pad_rel e] with a representation [R], and any
+    infinite e-chain of non-empty words c 0, c 1, ..., the term
+    Unit (1, c 0 #) ⋅ (pad_rel e)* is not below
+    dpseudo_top ⋅ inj2 (pad_lang PA) ⊔ (the error term of R), whatever PA
+    is. Both CKAUndec/Encoding.v's red_lb/red_ub and the binary-alphabet
+    red_lb'/red_ub' of CKAUndec/BinaryAlphabet.v have this shape. *)
 
-Variable P : list mm2_instr.
-Variable s1 : mm2_state.
-Hypothesis nt : ¬ mm2_terminates P s1.
+Section Generic.
 
-Let Q := fin (S (S (length P))).
-Let A := option_setoid (@mm_sym_setoid Q).
+Variable T : setoid.
+Context `{!LeibnizEquiv T, !EqDecision T, !Finite T}.
+
+Variables (e : ka_term (list T * list T)) (L PA : ka_term (list T)).
+Variable R : repr_rel (pad_rel e) (pad_lang L).
+
+Variable c : nat → list T.
+Hypothesis c_step : ∀ j, Unit (c j, c (S j)) ⊑ e.
+Hypothesis c_ne : ∀ j, c j ≠ [].
+
+Let A := option_setoid T.
 Let Mon := prod_monoid (list_monoid A) (list_monoid A).
 
-(** The padded configuration words of the run, and the run steps as
-    elements of the carrier monoid. *)
+(** The padded words of the chain, and its steps as elements of the
+    carrier monoid. *)
 
-Definition w j : list A := map Some (mm2_config P (run P s1 j)) ⋅ [None].
+Definition w j : list A := map Some (c j) ⋅ [None].
 
 Definition rr j : Mon := (w j, w (S j)).
 
-Lemma w_nil j : w j ≠ [].
-Proof. by rewrite /w; case: (map _ _). Qed.
-
-Lemma rr_le j : Unit (rr j) ⊑ pad_rel (mm2_R P).
-Proof.
-have [_ step] := run_step nt j.
-exact: (sqsubseteq_pad_rel_1 (encoding_complete step)).
-Qed.
+Lemma rr_le j : Unit (rr j) ⊑ pad_rel e.
+Proof. exact: (sqsubseteq_pad_rel_1 (c_step j)). Qed.
 
 (** Two components that disagree at some position. *)
 
@@ -128,17 +134,23 @@ Lemma rseg_prefix (u : list A) k n :
 Proof.
 elim: n u k => [|n IH] u k /=.
 - by exists u; rewrite right_id Nat.add_0_r.
-- case: (IH (u ⋅ w k) (S k)) => W e.
+- case: (IH (u ⋅ w k) (S k)) => W e'.
   exists W; rewrite assoc.
   have -> : k + S n = S k + n by lia.
-  exact: e.
+  exact: e'.
 Qed.
 
-(** The token of the infinite run lies in red_lb and is not bad. *)
+(** The token of the infinite chain lies in the lower bound and is not
+    bad. *)
+
+Definition chain_lb := Unit ((1, w 0) : Mon) ⋅ star (pad_rel e).
+
+Definition chain_ub :=
+  dpseudo_top ⋅ ka_term_inj2 (pad_lang PA) ⊔ repr_rel_rtc_error R.
 
 Definition t0 : Mon := ((1, w 0) : Mon) ⋅ 1.
 
-Lemma red_lb_tok : om_tok (den rr (red_lb P s1)) t0 0.
+Lemma chain_lb_tok : om_tok (den rr chain_lb) t0 0.
 Proof.
 apply: den_tok_unit_mul; apply: den_tok_star => j _.
 exact: rr_le.
@@ -146,18 +158,18 @@ Qed.
 
 Lemma t0_good : ¬ tbad rr Bad t0 0.
 Proof.
-case=> n; case: (rseg_prefix [] 0 n) => W e.
+case=> n; case: (rseg_prefix [] 0 n) => W e'.
 have -> : t0 ⋅ rseg rr 0 n ≡ (W, W ⋅ w (0 + n)).
-{ rewrite -e /t0 right_id; reflexivity. }
+{ rewrite -e' /t0 right_id; reflexivity. }
 exact: not_Bad_prefix.
 Qed.
 
-(** Every token of red_ub is bad. *)
+(** Every token of the upper bound is bad. *)
 
 Lemma length_w j : 2 ≤ length (w j).
 Proof.
-rewrite /w /mul /= length_app length_map /= /mm2_config /config_word.
-rewrite !length_app /=; lia.
+rewrite /w /mul /= length_app length_map /=.
+by have := @c_ne j; case: (c j) => //= *; lia.
 Qed.
 
 Lemma tokfree_dpseudo_top : tokfree (den rr (@dpseudo_top A _ _)).
@@ -169,8 +181,8 @@ apply: tokfree_map_star; apply: tokfree_star.
   by apply: tokfree_join_list => g ?? [].
 - move=> j /den_fin_unit /ka_term_diag_spec [_].
   rewrite -l_alt semi_lattice_morphism_join_list elem_of_lang_join_list.
-  case=> g [_ /= /leibniz_equiv_iff e].
-  by have := length_w j; rewrite e /=; lia.
+  case=> g [_ /= /leibniz_equiv_iff e'].
+  by have := length_w j; rewrite e' /=; lia.
 Qed.
 
 Lemma tokfree_mismatch : tokfree (den rr (@mismatch A _ _)).
@@ -190,15 +202,15 @@ exists (length s), a, b; split; last split => //.
 - by rewrite /mul /= list_lookup_middle.
 Qed.
 
-Lemma red_ub_tok_bad t k : om_tok (den rr (red_ub P)) t k → tbad rr Bad t k.
+Lemma chain_ub_tok_bad t k : om_tok (den rr chain_ub) t k → tbad rr Bad t k.
 Proof.
-rewrite /red_ub den_join; case.
+rewrite /chain_ub den_join; case.
 - move=> h; exfalso; move: h.
   apply: tokfree_mul; first exact: tokfree_dpseudo_top.
   apply: (tokfree_map (r := rr) (g := @prod_inj2 (list_monoid A) (list_monoid A))
-            (e := pad_lang (partially_accepted P))).
-  move=> s j /leibniz_equiv_iff [e _].
-  by have := length_w j; rewrite -e /=; lia.
+            (e := pad_lang PA)).
+  move=> s j /leibniz_equiv_iff [e' _].
+  by have := length_w j; rewrite -e' /=; lia.
 - rewrite /repr_rel_rtc_error !den_mul.
   apply: (tbad_mul_tok (Bad := Bad) Bad_mul).
   + move=> t' k'; apply: (tbad_mul_tok (Bad := Bad) Bad_mul).
@@ -209,13 +221,31 @@ rewrite /red_ub den_join; case.
     exact: Bad_dpseudo_top_mismatch.
 Qed.
 
-Theorem red_lb_not_le_red_ub : ¬ red_lb P s1 ⊑ red_ub P.
+Theorem chain_lb_not_le_chain_ub : ¬ chain_lb ⊑ chain_ub.
 Proof.
-move=> le; apply: t0_good; apply: red_ub_tok_bad.
-exact: den_tok_le le red_lb_tok.
+move=> le; apply: t0_good; apply: chain_ub_tok_bad.
+exact: den_tok_le le chain_lb_tok.
 Qed.
 
-End NonHalting.
+End Generic.
+
+(** * Refuting red_lb ⊑ red_ub for non-terminating runs *)
+
+Lemma mm2_config_ne P s : mm2_config P s ≠ [].
+Proof.
+rewrite /mm2_config /config_word => /(f_equal length).
+by rewrite !length_app /=; lia.
+Qed.
+
+Theorem red_lb_not_le_red_ub P s1 :
+  ¬ mm2_terminates P s1 → ¬ red_lb P s1 ⊑ red_ub P.
+Proof.
+move=> nt.
+apply: (chain_lb_not_le_chain_ub (R := repr_rel_mm2_R P)
+          (c := λ j, mm2_config P (run P s1 j))).
+- by move=> j; have [_ step] := run_step nt j; exact: encoding_complete step.
+- move=> j; exact: mm2_config_ne.
+Qed.
 
 (** * The characterization *)
 
