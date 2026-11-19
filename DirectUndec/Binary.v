@@ -260,6 +260,27 @@ Theorem bin_le_iff_complete s1 :
   clos_refl_trans _ (mm2_step P) s1 (0,(0,0)) → bin_lb s1 ⊑ bin_ub.
 Proof. move=> reach; exact: bin_complete (crt_to_rtc _ _ _ reach). Qed.
 
+(** Constructively, as red_lb_le_terminates in NonHalting.v. *)
+
+Theorem bin_le_terminates s1 : bin_lb s1 ⊑ bin_ub → mm2_terminates P s1.
+Proof.
+move=> le.
+case ok0: (step_ok P s1); last first.
+{ exists s1; split; [exact: rt_refl|exact: step_ok_stop]. }
+have [j stuck] := chain_le_stuck (R := repr_rel_bin)
+  (c := λ j, bconf (run P s1 j)) (ok := λ j, step_ok P (run P s1 j))
+  (λ j h, step_embed (encoding_complete (step_ok_step h))) ok0
+  (λ j, @bconf_ne (run P s1 j)) le.
+exists (run P s1 j); split; [exact: run_reach|exact: step_ok_stop].
+Qed.
+
+Theorem bin_le_reach s1 :
+  bin_lb s1 ⊑ bin_ub → clos_refl_trans _ (mm2_step P) s1 (0,(0,0)).
+Proof.
+move=> le; case: (bin_le_terminates le) => s2 [reach stop].
+by rewrite -(bin_sound (crt_to_rtc _ _ _ reach) stop le).
+Qed.
+
 End Bin.
 
 (** * Undecidability over the fixed binary carrier *)
@@ -312,3 +333,11 @@ apply/Undec.HALTS_ON_ZERO_search; apply: mp => nex.
 apply: (reduction_bin_no _ eq) => hoz; apply: nex.
 by apply/Undec.HALTS_ON_ZERO_search.
 Qed.
+
+Theorem PreKA_EQ_bin_red : MM2_HALTS_ON_ZERO ⪯ PreKA_EQ_bin.
+Proof.
+exists mm2_to_eq_bin => x; split; first exact: reduction_bin_yes.
+case: x => [[P a] b] /= e.
+by apply: bin_le_reach; apply/sqsubseteq_iff.
+Qed.
+

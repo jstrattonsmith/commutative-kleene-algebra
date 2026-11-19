@@ -122,8 +122,9 @@ Files are listed in dependency order (`_CoqProject`, which groups them into
 the same sections used below with one-line comments). All files are
 admit-free; no axioms appear anywhere except the two hypotheses named above
 (`CT_L`, `MP`), stated as hypotheses in `CKAUndec/KMComplete.v`,
-`CKAUndec/BinaryAlphabetMComplete.v`, `Universality/UnivMComplete.v` and
-`DirectUndec/SigmaComplete.v` (the rest of `DirectUndec/` uses neither).
+`CKAUndec/BinaryAlphabetMComplete.v` and `Universality/UnivMComplete.v`,
+and `CT_L` alone in `DirectUndec/SigmaComplete.v` (the rest of
+`DirectUndec/` uses neither, apart from the superseded `*_MP_reduction`).
 
 ### `MM2_Legacy/`: not on the critical path, kept for their own interest
 
@@ -476,21 +477,24 @@ directory depends on it. ssreflect throughout, except `SigmaComplete.v`.
     `dpseudo_top ⋅ inj2 (pad_lang PA) ⊔ repr_rel_rtc_error R`. Instance:
     `red_lb_not_le_red_ub` (a divergent run refutes `red_lb ⊑ red_ub`), so
     `red_leq` holds iff the run reaches `(0,(0,0))` (`red_leq_complete`,
-    `red_leq_sound`).
+    `red_leq_sound`). Constructively (no `MP`): `chain_le_stuck` (the chain
+    may get stuck, and an inequality finds where), `red_leq_reach`.
 
 39. **`DirectUndec/Undec.v`** (~200 lines): `PreKA_EQ_undec : undecidable
     PreKA_EQ`, term equality over the fixed carrier `list nat * list nat`
     (letters moved there along an injective encoding, `enc_term_reflect`),
     via the library's `SBTM_HALT ⪯ ... ⪯ MM2_HALTS_ON_ZERO` chain
     (`SBTM_HALT_to_MM2_HALTS_ON_ZERO`). The reduction's two halves
-    (`PreKA_EQ_reduction`) suffice for the library's notion without `MP`.
+    (`PreKA_EQ_reduction`) suffice for the library's notion; `PreKA_EQ_red`
+    is the full many-one reduction, axiom-free (the older
+    `PreKA_EQ_MP_reduction` needs `MP` and is superseded).
 
 40. **`DirectUndec/Binary.v`** (~310 lines): the same over the canonical
     binary carrier `Tm_bin` (`PreKA_EQ_bin_undec`), with the one-hot letter
     encoding. Adapts `CKAUndec/BinaryAlphabet.v`'s completeness/soundness
     proofs (that file imports `CKAUndec/K.v`), and closes the gap recorded
     in its comment: a divergent run refutes the binary inequality too
-    (`bin_not_le_of_not_terminates`).
+    (`bin_not_le_of_not_terminates`); `PreKA_EQ_bin_red`, axiom-free.
 
 41. **`DirectUndec/FKALoop.v`** (~200 lines): why none of this carries over
     to the free KA. `fka_red_leq_closed`: if the reachable configurations
@@ -508,8 +512,9 @@ directory depends on it. ssreflect throughout, except `SigmaComplete.v`.
 43. **`DirectUndec/UnivDirect.v`** (~430 lines): the same for
     `Universality/UnivEncoding.v`'s balanced universality:
     `univ_not_le_of_not_terminates`, so `bal_star ⊑ univ_ub_mm2 P s1` iff
-    the run reaches `(0,(0,0))`, and `UNIV_undec`/`UNIV_MP_reduction` (the
-    machine's alphabet is part of the instance, as in `Univ c`). Reuses
+    the run reaches `(0,(0,0))`, and `UNIV_undec`/`UNIV_red` (axiom-free,
+    via `univ_le_stuck`; the machine's alphabet is part of the instance, as
+    in `Univ c`). Reuses
     `win_sound`/`nobad_run`/`run_parse` on prefixes of the infinite run.
 
 44. **`DirectUndec/SigmaComplete.v`** (~230 lines): `Σ⁰₁`-completeness
@@ -517,9 +522,10 @@ directory depends on it. ssreflect throughout, except `SigmaComplete.v`.
     CT_L -> m-complete MM2_HALTS_ON_ZERO` by the textbook argument (an
     `EPF_L` code for the search, fed to `CKAUndec/Glue/TLToRTarget.v`'s
     machine; no SMN), using the new converse `halt_sound` (the spliced
-    program halts only if `R_TL` is defined). Composed with the `MP`
+    program halts only if `R_TL` is defined). Composed with the direct
     reductions: `PreKA_EQ_m_complete`, `PreKA_EQ_bin_m_complete`,
-    `UNIV_m_complete : CT_L -> MP -> m-complete _`. Plain Ltac, not
+    `UNIV_m_complete : CT_L -> m-complete _` (no `MP`, via the axiom-free
+    `PreKA_EQ_red`, `PreKA_EQ_bin_red`, `UNIV_red`). Plain Ltac, not
     ssreflect; imports no `ReducibilityDegrees/`, `EA_L*` or
     `T_L_Bridge.v`.
 

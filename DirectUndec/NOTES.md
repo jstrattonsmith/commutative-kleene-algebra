@@ -22,10 +22,14 @@ effective-inseparability route.
   2,500 lines of Rocq, all admit-free.
 - **Σ⁰₁-completeness (session 2): also direct.** `SigmaComplete.v` proves
   `CT_L → m-complete MM2_HALTS_ON_ZERO` by the textbook argument (no SMN,
-  no inseparability, no Myhill), and composes it with the `MP` reductions:
-  `CT_L → MP → m-complete p` for `PreKA_EQ`, `PreKA_EQ_bin` and `UNIV`.
-  The same hypotheses as `KA_ineq_m_complete`. About 11 minutes, about 230
-  lines; see the session-2 log.
+  no inseparability, no Myhill), and composes it with the direct
+  reductions. About 11 minutes, about 230 lines; see the session-2 log.
+- **No `MP` (session 3).** The reductions `MM2_HALTS_ON_ZERO ⪯ PreKA_EQ`,
+  `⪯ PreKA_EQ_bin` and `⪯ UNIV` are now genuine many-one reductions with
+  no axiom at all (`PreKA_EQ_red`, `PreKA_EQ_bin_red`, `UNIV_red`), so
+  `CT_L → m-complete p` for all three, *without* `MP`. This is strictly
+  weaker than the `CT_L`/`MP` of the inseparability route
+  (`KA_ineq_m_complete`). About 10 minutes; see the session-3 log.
 - **The free KA (FKA): the same route provably cannot work** with this
   encoding. KA proves `red_lb ⊑ red_ub` for a non-halting machine
   (`DirectUndec/FKALoop.v`). This is where an inseparability argument is
@@ -54,11 +58,20 @@ effective-inseparability route.
   `bal_star ⊑ univ_ub_mm2 P s1`; `univ_leq_complete`/`univ_leq_sound`;
   `UNIV_undec : undecidable UNIV` (balanced universality, the machine's
   alphabet part of the instance) and `UNIV_MP_reduction`.
+- `NonHalting.v` (session 3): `chain_le_stuck`, an inequality forces the
+  chain to get stuck at some decidable position; `red_lb_le_terminates`,
+  `red_leq_reach : red_leq P s1 → reaches (0,(0,0))`, constructively.
+  Same in `Binary.v` (`bin_le_terminates`, `bin_le_reach`) and
+  `UnivDirect.v` (`univ_le_stuck`, `univ_le_terminates`,
+  `univ_leq_reach`).
+- `Undec.v`/`Binary.v`/`UnivDirect.v` (session 3): `PreKA_EQ_red`,
+  `PreKA_EQ_bin_red`, `UNIV_red : MM2_HALTS_ON_ZERO ⪯ _`, axiom-free. (The
+  older `*_MP_reduction` theorems are kept but superseded.)
 - `SigmaComplete.v`: `MM2_HALTS_ON_ZERO_m_complete : CT_L → m-complete
   MM2_HALTS_ON_ZERO`; `PreKA_EQ_m_complete`, `PreKA_EQ_bin_m_complete`,
-  `UNIV_m_complete : CT_L → MP → m-complete _`. The statements are the
-  library's `m-complete` notation verbatim (checked against
-  `Axioms/EA.v`). `Print Assumptions`: closed. Loaded
+  `UNIV_m_complete : CT_L → m-complete _` (no `MP` since session 3). The
+  statements are the library's `m-complete` notation verbatim (checked
+  against `Axioms/EA.v`). `Print Assumptions`: closed. Loaded
   coq-synthetic-computability modules: `Models/CT.v`, `T_L_Extract.v`,
   `T_L_Uniform.v` and their dependencies, no `ReducibilityDegrees/`,
   `EA_L*`, `T_L_Bridge.v` or `Basic/Myhill.v`.
@@ -145,7 +158,9 @@ difficulty grounds. The direct proof is short, and parts of it are reusable
    creativity, under `CT_L`/`MP`. The direct route gives `undecidable`
    axiom-free, a many-one reduction from `MM2_HALTS_ON_ZERO` under `MP`
    alone, and (`SigmaComplete.v`, session 2) m-completeness under the same
-   `CT_L`/`MP` as the inseparability route. In the synthetic setting
+   `CT_L`/`MP` as the inseparability route, and (session 3) under `CT_L`
+   alone, with the many-one reductions now axiom-free. In the synthetic
+   setting
    m-completeness needs `CT` whatever the route, because it quantifies
    over arbitrary Coq enumerators; given `CT`, halting is m-complete by
    the textbook argument and m-completeness transfers along any many-one
@@ -162,13 +177,8 @@ sandwich, and inseparability is the tool that handles sandwiches.*
 
 ## Open questions
 
-- Can `MP` be dropped from the m-completeness theorems? The direct proof
-  gets `PreKA_EQ (f x) → ¬¬ q x`. A constructive version would extract a
-  halting bound from a pre-KA derivation of `red_lb ⊑ red_ub` (a finite
-  object, so the omega-token refutation should be "finitizable": a
-  derivation only unfolds finitely many stars). The inseparability route
-  needs `MP` too, so this would be a strict improvement, not a parity
-  point.
+- ~~Can `MP` be dropped from the m-completeness theorems?~~ Yes, done in
+  session 3, without any proof-theoretic extraction (see its log).
 
 - Is there an encoding for FKA where divergence is refutable (in some
   non-*-continuous KA)? `fka_red_leq_closed` shows the encoding must at
@@ -282,3 +292,60 @@ inseparability is not needed for undecidability *or* for
 `Σ⁰₁`-completeness. Both follow from one direct reduction plus, for
 completeness, the textbook completeness of halting under `CT_L`. The
 case for inseparability rests on the FKA sandwich (item 1 above).
+
+---
+
+## Session 3: removing `MP` from the m-completeness theorems
+
+Question (2026-11-19, afternoon): can `SigmaComplete.v`'s theorems drop
+the `MP` hypothesis?
+
+**Start 14:49.**
+
+- **14:49-14:50** Idea. `MP` is only used to turn `red_leq → ¬¬ halts`
+  into `red_leq → halts`. But the refutation in `NonHalting.v` is more
+  informative than its statement: every token of `red_ub` is bad *at a
+  finite position* (`tbad t k := ∃ n, Bad (t ⋅ rseg k n)`), and only the
+  lower-bound token needs the infinite run. Plan: instantiate the omega
+  model with a run that, once stuck, repeats its first (genuine) step, so
+  the lower-bound token always exists; the badness witness `n` then
+  decides (bounded search) whether the run got stuck before `n`, and if
+  not, the old prefix argument gives a contradiction. Result: `red_lb ⊑
+  red_ub → terminates` constructively, so `red_leq → reaches (0,(0,0))`
+  without `MP`.
+- **14:50-14:52** `NonHalting.v`: the generic section now takes a decidable
+  `ok : nat → bool` ("step j exists") with `c_step` only for ok steps; the
+  model sequence is `rr j := (w (idx j), w (S (idx j)))` with `idx j := if
+  ok j then j else 0`, so the lower-bound token exists whatever happens.
+  `t0_good` becomes "a bad prefix of length `n` gives a stuck `j`" by a
+  bounded search (`ok_upto`). Old `chain_lb_not_le_chain_ub` is the
+  special case `ok := λ _, true`. Then `red_lb_le_terminates` and
+  `red_leq_reach`, and `PreKA_EQ_red` in `Undec.v`. Everything compiled
+  with two implicit-argument fixes.
+- **14:52-14:53** `Binary.v`: the same instance (`bin_le_terminates`,
+  `bin_le_reach`, `PreKA_EQ_bin_red`), unchanged proof shape.
+- **14:53-14:55** `UnivDirect.v`: here the run enters only through
+  finitely many steps already (`prefix_e_pre` with `m := k`), so the fix
+  was to replace the section hypothesis `nt` by "the first `m` steps
+  exist" in `chain_from`, `run_halt0_free`, `prefix_e_pre`, and to do the
+  bounded search at the one place where `k` is known. `univ_le_stuck`,
+  `univ_leq_reach`, `UNIV_red`.
+- **14:55-14:59** `SigmaComplete.v` drops `MP`; `Print Assumptions` closed
+  for all reductions and m-completeness theorems; `nix build` passes;
+  comments that claimed `MP` was needed updated; this log.
+
+**End 14:59 (about 10 minutes, about 120 changed lines).** Intermediate
+times are approximate (interpolated between the recorded `date` checks at
+14:49 and 14:57).
+
+Why it was easy: the refutation was never really about the infinite run.
+`tbad` and the `TailModel` argument both locate the contradiction at a
+finite position, and only the *existence* of the lower-bound token used
+all steps. Making that token exist unconditionally (repeat a genuine step
+after getting stuck) turns "¬ halts → ⋢" into "⊑ → halts" with the
+halting time bounded by the badness position. Consequence for the
+justification question: in pre-KA the direct route now gives *more* than
+the inseparability route: an axiom-free many-one reduction from halting,
+and m-completeness from `CT_L` alone, where `KA_ineq_m_complete` needs
+`CT_L` and `MP`.
+

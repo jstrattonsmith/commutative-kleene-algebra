@@ -15,9 +15,9 @@
      MM2_HALTS_ON_ZERO x  ->  PreKA_EQ (mm2_to_eq x)             (reduction_yes)
      ~ MM2_HALTS_ON_ZERO x  ->  ~ PreKA_EQ (mm2_to_eq x)          (reduction_no)
 
-   Classically this is a many-one reduction. Constructively the converse of
-   the first line would need Markov's principle, but the two lines are
-   exactly what the library's notion of undecidability needs:
+   This is a genuine many-one reduction, constructively too (PreKA_EQ_red,
+   at the end, via NonHalting.v's red_leq_reach). Already the two lines
+   are exactly what the library's notion of undecidability needs:
    a decider for PreKA_EQ decides the complement of MM2_HALTS_ON_ZERO, hence
    (along the library's reduction chain from SBTM_HALT) the complement of
    SBTM_HALT, which complement_SBTM_HALT_undec turns into co-enumerability
@@ -197,11 +197,11 @@ Qed.
 
 (** * A many-one reduction under Markov's principle alone
 
-    The converse of reduction_yes is the only non-constructive step:
-    PreKA_EQ (mm2_to_eq x) gives ¬¬ MM2_HALTS_ON_ZERO x, and reaching
-    (0,(0,0)) is a decidable search over the run. So Markov's principle
-    (stated as in coq-synthetic-computability, without CT_L) turns the two
-    halves into a genuine many-one reduction from a Σ⁰₁-complete problem. *)
+    The first version of this file: the two halves give PreKA_EQ (mm2_to_eq
+    x) → ¬¬ MM2_HALTS_ON_ZERO x, and reaching (0,(0,0)) is a decidable
+    search over the run, so Markov's principle turns them into a many-one
+    reduction. Superseded by the axiom-free PreKA_EQ_red below; kept since
+    HALTS_ON_ZERO_search is reused. *)
 
 Definition MP := ∀ f : nat → bool, ¬¬ (∃ n, f n = true) → ∃ n, f n = true.
 
@@ -225,3 +225,17 @@ case: x => [[P a] b] eq.
 apply/HALTS_ON_ZERO_search; apply: mp => nex.
 by apply: (reduction_no _ eq) => hoz; apply: nex; apply/HALTS_ON_ZERO_search.
 Qed.
+
+(** * A many-one reduction without Markov's principle
+
+    red_leq_reach (DirectUndec/NonHalting.v) extracts the run reaching
+    (0,(0,0)) from the inequality constructively, so the reduction needs
+    no axiom at all. *)
+
+Theorem PreKA_EQ_red : MM2_HALTS_ON_ZERO ⪯ PreKA_EQ.
+Proof.
+exists mm2_to_eq => x; split; first exact: reduction_yes.
+case: x => [[P a] b] /= /enc_term_reflect e.
+by apply: red_leq_reach; apply/sqsubseteq_iff.
+Qed.
+

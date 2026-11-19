@@ -43,7 +43,6 @@ Section UnivDirect.
 
 Variable P : list mm2_instr.
 Variable s1 : mm2_state.
-Hypothesis nt : ¬ mm2_terminates P s1.
 
 Notation Q := (fin (S (S (length P)))).
 Notation L := (option_setoid (@mm_sym_setoid Q)).
@@ -56,7 +55,17 @@ Notation acts := (active_states P).
 Notation q0 := (Fin.F1 : Q).
 Notation bstar := (bal_star (A := L)).
 
-(** * The infinite run as a word *)
+(** * The infinite run as a word
+
+    The run continues with a stopped configuration once it gets stuck
+    (NonHalting.run); only the steps before a stuck position are used. *)
+
+Notation ok j := (NonHalting.step_ok P (NonHalting.run P s1 j)).
+
+Lemma run_step_ok j :
+  ok j = true →
+  mm2_step P (NonHalting.run P s1 j) (NonHalting.run P s1 (S j)).
+Proof. exact: NonHalting.step_ok_step. Qed.
 
 Definition cj (j : nat) : uconf := uconf_of P (NonHalting.run P s1 j).
 
@@ -66,12 +75,16 @@ Fixpoint cs_from (k n : nat) : list uconf :=
   | S n => cj k :: cs_from (S k) n
   end.
 
-Lemma chain_from k n : uchain prog nxt acts (cs_from k n).
+Lemma chain_from k n :
+  (∀ j, k ≤ j → j < k + n → ok j = true) →
+  uchain prog nxt acts (cs_from k n).
 Proof.
-elim: n k => [|n IH] k //=.
-have [_ step] := NonHalting.run_step nt k.
+elim: n k => [|n IH] k hok //=.
+have step := run_step_ok (hok k ltac:(lia) ltac:(lia)).
 case: (step_uconf step) => act e.
-case: n IH => [|n] IH /=; split => //; split => //; exact: (IH (S k)).
+have IH' := IH (S k) (λ j h1 h2, hok j ltac:(lia) ltac:(lia)).
+clear IH hok; move: IH'.
+by case: n => [|n] IH' /=; split => //; split => //.
 Qed.
 
 Lemma cs_from_snoc k n : cs_from k (S n) = cs_from k n ++ [cj (k + S n)].
@@ -83,11 +96,13 @@ rewrite IH; have -> : k + S (S n) = S k + S n by lia.
 done.
 Qed.
 
-Lemma elem_cs_from c k n : c ∈ cs_from k n → ∃ j, c = cj j.
+Lemma elem_cs_from c k n : c ∈ cs_from k n → ∃ j, j ≤ k + n ∧ c = cj j.
 Proof.
 elim: n k => [|n IH] k /=.
-- by move/elem_of_list_singleton => ->; exists k.
-- by case/elem_of_cons => [->|/IH //]; exists k.
+- by move/elem_of_list_singleton => ->; exists k; split => //; lia.
+- case/elem_of_cons => [->|/IH [j [hj ->]]].
+  + by exists k; split => //; lia.
+  + by exists j; split => //; lia.
 Qed.
 
 Definition Wl (m : nat) : list L := UnivEncoding.run (cs_from 0 m).
@@ -256,23 +271,26 @@ Qed.
 (** * Balanced detector words do not occur in the run *)
 
 Lemma run_halt0_free m u z :
+  (∀ j, j ≤ m → ok j = true) →
   Wl m = u ++ hash :: uword (0, q0, 0) ++ hash :: z → False.
 Proof.
-case/(run_parse prog nxt q0) => cs1 [cs2 [e _]].
+move=> hok; case/(run_parse prog nxt q0) => cs1 [cs2 [e _]].
 have : (0, q0, 0) ∈ cs_from 0 m by rewrite e; set_solver.
-case/elem_cs_from => j ej.
+case/elem_cs_from => j [hj ej].
 have h := uconf_of_halt0 (eq_sym ej).
-have [_ step] := NonHalting.run_step nt j.
+have step := run_step_ok (hok j hj).
 move: step; rewrite h => - [ρ [hat _]].
 by have := MM2_facts.mm2_instr_at_bounds hat; simpl; lia.
 Qed.
 
 Lemma prefix_e_pre m w z :
+  (∀ j, j ≤ m → ok j = true) →
   l (e_pre prog nxt acts q0 (cj 0)) (w, length w) →
   Wl m = w ++ z → False.
 Proof.
-move=> H eW.
-have Hc := chain_from 0 m.
+move=> hok H eW.
+have Hc : uchain prog nxt acts (cs_from 0 m).
+{ by apply: chain_from => j _ h; apply: hok; lia. }
 case/l_join: H => [H|H].
 - case/l_init_errs_inv: H => p [t0 [r [t [Ei [Ht Ew]]]]].
   have [rest erest] : ∃ rest, cs_from 0 m = cj 0 :: rest.
@@ -283,7 +301,7 @@ case/l_join: H => [H|H].
   rewrite Ew -app_assoc in eW.
   case/l_join: H => [/l_join [H|H]|H].
   + case/l_bal_eq: H => Ev _; subst v.
-    apply: (run_halt0_free (m := m) (u := u) (z := z)).
+    apply: (run_halt0_free (m := m) (u := u) (z := z) hok).
     by rewrite eW.
   + case/l_e_shape: H => x [y [Ev [_ Hb]]]; subst v.
     have := nobad_spec (u := u) (x := x) (y := y) (z := z).
@@ -325,7 +343,7 @@ case: (pre_mul M_unit_split Dp Pp) => [[a [p' [_ [Dp' Pp']]]]|[p' [_ [_ D1]]]].
 - by apply: nX; apply/(TailModel.den_fin rr).
 Qed.
 
-Theorem univ_not_le_of_not_terminates : ¬ bstar ⊑ univ_ub_mm2 P s1.
+Theorem univ_le_stuck : bstar ⊑ univ_ub_mm2 P s1 → ∃ j, ok j = false.
 Proof.
 move=> le.
 have tok := tden_le le tden_bstar_tok.
@@ -334,7 +352,7 @@ have P0 : PreT rr 1 (TTok 1 0 1).
   by apply: tsim_equiv; rewrite left_id. }
 move: tok; rewrite /univ_ub_mm2 /univ_ub.
 case=> [He|Hp].
-- rewrite /e_end in He.
+- exfalso; rewrite /e_end in He.
   case: He => [[[H|H]|H]|H].
   + by case: P0 => t [k [ep _]]; move: H; rewrite ep; apply: tokfree_tden_unit.
   + by case: P0 => t [k [ep _]]; move: H; rewrite ep; apply: tokfree_tden_unit.
@@ -371,9 +389,11 @@ case=> [He|Hp].
     have wa_len : wa = length w by lia.
     rewrite wa_len in Ha.
     case: (Wl_pref k) => z ez.
-    apply: (prefix_e_pre (m := k) (z := v ++ z) Ha).
+    case: (@NonHalting.ok_upto (λ j, ok j) (S k)) => [hok|//]; exfalso.
+    apply: (prefix_e_pre (m := k) (z := v ++ z) (λ j h, hok j ltac:(lia)) Ha).
     by rewrite ez -ew /mul /= -app_assoc.
-  + have Hp'' : D (init_errs [] (UnivEncoding.run [cj 0])
+  + exfalso.
+    have Hp'' : D (init_errs [] (UnivEncoding.run [cj 0])
                   ⊔ bstar ⋅ (e_halt0 q0 ⊔ e_shape ⊔ e_win prog nxt acts)) p'.
     { exact: Hp'. }
     case: Hp'' => [H|H].
@@ -382,6 +402,17 @@ case=> [He|Hp].
       exact (@tokfree_init_errs [] (UnivEncoding.run [cj 0]) t k 1 H).
     * exact: (not_pre_bstar_X tokfree_E l_E_nonempty H Pp').
 Qed.
+
+Theorem univ_le_terminates : bstar ⊑ univ_ub_mm2 P s1 → mm2_terminates P s1.
+Proof.
+move=> /univ_le_stuck [j stuck]; exists (NonHalting.run P s1 j); split.
+- exact: NonHalting.run_reach.
+- exact: NonHalting.step_ok_stop.
+Qed.
+
+Theorem univ_not_le_of_not_terminates :
+  ¬ mm2_terminates P s1 → ¬ bstar ⊑ univ_ub_mm2 P s1.
+Proof. by move=> nt /univ_le_terminates. Qed.
 
 End UnivDirect.
 
@@ -447,3 +478,21 @@ apply/Undec.HALTS_ON_ZERO_search; apply: mp => nex.
 apply: (reduction_univ_no _ u) => hoz; apply: nex.
 by apply/Undec.HALTS_ON_ZERO_search.
 Qed.
+
+(** Constructively, without Markov's principle. *)
+
+Theorem univ_leq_reach P s1 :
+  bal_star (A := option_setoid (@mm_sym_setoid (fin (S (S (length P))))))
+    ⊑ univ_ub_mm2 P s1 →
+  clos_refl_trans _ (mm2_step P) s1 (0,(0,0)).
+Proof.
+move=> le; case: (univ_le_terminates le) => s2 [reach stop].
+by rewrite -(univ_soundness (crt_to_rtc _ _ _ reach) stop le).
+Qed.
+
+Theorem UNIV_red : MM2_HALTS_ON_ZERO ⪯ UNIV.
+Proof.
+exists mm2_to_univ => x; split; first exact: reduction_univ_yes.
+case: x => [[P a] b]; exact: univ_leq_reach.
+Qed.
+

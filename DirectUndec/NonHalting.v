@@ -4,9 +4,9 @@
 
      red_leq P s1  is equivalent to  "P reaches (0,(0,0)) from s1"
 
-   in the form red_leq_complete/red_leq_sound below (classically an iff;
-   constructively the converse direction would need Markov's principle,
-   and we do not need it).
+   in the form red_leq_complete/red_leq_sound below, and constructively in
+   the form red_leq_reach (red_leq → reaches (0,(0,0)), no Markov's
+   principle), via the finite-witness version chain_le_stuck.
 
    The refutation is model-theoretic: the language model cannot tell the
    two terms apart (every finite prefix of the infinite run is covered by
@@ -102,7 +102,14 @@ End Run.
     Unit (1, c 0 #) ⋅ (pad_rel e)* is not below
     dpseudo_top ⋅ inj2 (pad_lang PA) ⊔ (the error term of R), whatever PA
     is. Both CKAUndec/Encoding.v's red_lb/red_ub and the binary-alphabet
-    red_lb'/red_ub' of CKAUndec/BinaryAlphabet.v have this shape. *)
+    red_lb'/red_ub' of CKAUndec/BinaryAlphabet.v have this shape.
+
+    The section proves a constructive strengthening (chain_le_stuck): the
+    chain may get stuck (ok j = false: no e-step from c j), and an
+    inequality yields a stuck position. The model's sequence repeats the
+    first step after a stuck position (idx), so the token of the lower
+    bound always exists; the badness of upper-bound tokens is witnessed at
+    a finite position, so a bounded search finds the stuck step. *)
 
 Section Generic.
 
@@ -113,7 +120,9 @@ Variables (e : ka_term (list T * list T)) (L PA : ka_term (list T)).
 Variable R : repr_rel (pad_rel e) (pad_lang L).
 
 Variable c : nat → list T.
-Hypothesis c_step : ∀ j, Unit (c j, c (S j)) ⊑ e.
+Variable ok : nat → bool.
+Hypothesis c_step : ∀ j, ok j = true → Unit (c j, c (S j)) ⊑ e.
+Hypothesis ok0 : ok 0 = true.
 Hypothesis c_ne : ∀ j, c j ≠ [].
 
 Let A := option_setoid T.
@@ -124,10 +133,15 @@ Let Mon := prod_monoid (list_monoid A) (list_monoid A).
 
 Definition w j : list A := map Some (c j) ⋅ [None].
 
-Definition rr j : Mon := (w j, w (S j)).
+Definition idx j : nat := if ok j then j else 0.
+
+Lemma ok_idx j : ok (idx j) = true.
+Proof. by rewrite /idx; case e': (ok j). Qed.
+
+Definition rr j : Mon := (w (idx j), w (S (idx j))).
 
 Lemma rr_le j : Unit (rr j) ⊑ pad_rel e.
-Proof. exact: (sqsubseteq_pad_rel_1 (c_step j)). Qed.
+Proof. exact: (sqsubseteq_pad_rel_1 (c_step (ok_idx j))). Qed.
 
 (** Two components that disagree at some position. *)
 
@@ -152,14 +166,25 @@ by rewrite /mul /= hy => - [].
 Qed.
 
 Lemma rseg_prefix (u : list A) k n :
+  (∀ j, j < k + n → ok j = true) →
   ∃ W, ((u, u ⋅ w k) : Mon) ⋅ rseg rr k n ≡ (W, W ⋅ w (k + n)).
 Proof.
-elim: n u k => [|n IH] u k /=.
+elim: n u k => [|n IH] u k /= hok.
 - by exists u; rewrite right_id Nat.add_0_r.
-- case: (IH (u ⋅ w k) (S k)) => W e'.
+- case: (IH (u ⋅ w k) (S k)) => [j hj|W e']; first by apply: hok; lia.
   exists W; rewrite assoc.
   have -> : k + S n = S k + n by lia.
-  exact: e'.
+  rewrite /rr /idx (hok k ltac:(lia)); exact: e'.
+Qed.
+
+Lemma ok_upto n : (∀ j, j < n → ok j = true) ∨ ∃ j, ok j = false.
+Proof.
+elim: n => [|n [IH|IH]]; [by left => ??; lia| |by right].
+case e': (ok n); last by right; exists n.
+left => j hj.
+have [?|->] : j < n ∨ j = n by lia.
+- exact: IH.
+- exact: e'.
 Qed.
 
 (** The token of the infinite chain lies in the lower bound and is not
@@ -178,9 +203,10 @@ apply: den_tok_unit_mul; apply: den_tok_star => j _.
 exact: rr_le.
 Qed.
 
-Lemma t0_good : ¬ tbad rr Bad t0 0.
+Lemma t0_good : tbad rr Bad t0 0 → ∃ j, ok j = false.
 Proof.
-case=> n; case: (rseg_prefix [] 0 n) => W e'.
+case=> n hb; case: (ok_upto n) => [hok|//]; exfalso.
+case: (@rseg_prefix [] 0 n hok) => W e'; move: hb.
 have -> : t0 ⋅ rseg rr 0 n ≡ (W, W ⋅ w (0 + n)).
 { rewrite -e' /t0 right_id; reflexivity. }
 exact: not_Bad_prefix.
@@ -204,7 +230,7 @@ apply: tokfree_map_star; apply: tokfree_star.
 - move=> j /den_fin_unit /ka_term_diag_spec [_].
   rewrite -l_alt semi_lattice_morphism_join_list elem_of_lang_join_list.
   case=> g [_ /= /leibniz_equiv_iff e'].
-  by have := length_w j; rewrite e' /=; lia.
+  by have := length_w (idx j); rewrite e' /=; lia.
 Qed.
 
 Lemma tokfree_mismatch : tokfree (den rr (@mismatch A _ _)).
@@ -233,7 +259,7 @@ rewrite /chain_ub den_join; case.
             (g := @prod_inj2 (list_monoid A) (list_monoid A))
             (e := pad_lang PA)).
   move=> s j /leibniz_equiv_iff [e' _].
-  by have := length_w j; rewrite -e' /=; lia.
+  by have := length_w (idx j); rewrite -e' /=; lia.
 - rewrite /repr_rel_rtc_error !den_mul.
   apply: (tbad_mul_tok (Bad := Bad) Bad_mul).
   + move=> t' k'; apply: (tbad_mul_tok (Bad := Bad) Bad_mul).
@@ -245,13 +271,35 @@ rewrite /chain_ub den_join; case.
     exact: Bad_dpseudo_top_mismatch.
 Qed.
 
-Theorem chain_lb_not_le_chain_ub : ¬ chain_lb ⊑ chain_ub.
+Theorem chain_le_stuck : chain_lb ⊑ chain_ub → ∃ j, ok j = false.
 Proof.
 move=> le; apply: t0_good; apply: chain_ub_tok_bad.
 exact: den_tok_le le chain_lb_tok.
 Qed.
 
 End Generic.
+
+(** The non-constructive-looking special case: an infinite chain. *)
+
+Section Infinite.
+
+Variable T : setoid.
+Context `{!LeibnizEquiv T, !EqDecision T, !Finite T}.
+
+Variables (e : ka_term (list T * list T)) (L PA : ka_term (list T)).
+Variable R : repr_rel (pad_rel e) (pad_lang L).
+
+Variable c : nat → list T.
+Hypothesis c_step : ∀ j, Unit (c j, c (S j)) ⊑ e.
+Hypothesis c_ne : ∀ j, c j ≠ [].
+
+Theorem chain_lb_not_le_chain_ub : ¬ chain_lb e c ⊑ chain_ub PA R.
+Proof.
+move=> /(chain_le_stuck (ok := λ _, true)) [|//|//|_ //].
+by move=> j _; exact: c_step.
+Qed.
+
+End Infinite.
 
 (** * Refuting red_lb ⊑ red_ub for non-terminating runs *)
 
@@ -294,3 +342,45 @@ Qed.
 Theorem red_leq_complete P s1 :
   clos_refl_trans _ (mm2_step P) s1 (0,(0,0)) → red_leq P s1.
 Proof. move=> reach; exact: mm2_R_completeness (crt_to_rtc _ _ _ reach). Qed.
+
+(** * Constructively: an inequality yields a terminating run
+
+    The stronger form of red_lb_not_le_red_ub, via chain_le_stuck: no
+    Markov's principle is needed to get termination out of red_lb ⊑ red_ub,
+    because the badness of red_ub's tokens is witnessed at a finite
+    position of the run. *)
+
+Definition step_ok P s : bool :=
+  if mm2_step_fun P s is Some _ then true else false.
+
+Lemma step_ok_step P s : step_ok P s = true → mm2_step P s (next_or_self P s).
+Proof.
+rewrite /step_ok /next_or_self.
+by case e: (mm2_step_fun P s) => [s'|] // _; apply/mm2_step_fun_spec.
+Qed.
+
+Lemma step_ok_stop P s : step_ok P s = false → mm2_stop P s.
+Proof.
+rewrite /step_ok; case e: (mm2_step_fun P s) => [//|] _ s'.
+by move/mm2_step_fun_spec; rewrite e.
+Qed.
+
+Theorem red_lb_le_terminates P s1 :
+  red_lb P s1 ⊑ red_ub P → mm2_terminates P s1.
+Proof.
+move=> le.
+case ok0: (step_ok P s1); last first.
+{ exists s1; split; [exact: rt_refl|exact: step_ok_stop]. }
+have [j stuck] := chain_le_stuck (R := repr_rel_mm2_R P)
+  (c := λ j, mm2_config P (run P s1 j)) (ok := λ j, step_ok P (run P s1 j))
+  (λ j h, encoding_complete (step_ok_step h)) ok0
+  (λ j, @mm2_config_ne P (run P s1 j)) le.
+exists (run P s1 j); split; [exact: run_reach|exact: step_ok_stop].
+Qed.
+
+Theorem red_leq_reach P s1 :
+  red_leq P s1 → clos_refl_trans _ (mm2_step P) s1 (0,(0,0)).
+Proof.
+move=> hle; case: (red_lb_le_terminates hle) => s2 [reach stop].
+by rewrite -(mm2_R_soundness (crt_to_rtc _ _ _ reach) stop hle).
+Qed.

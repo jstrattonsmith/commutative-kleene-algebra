@@ -10,11 +10,11 @@
 
    The direct reductions of Undec.v, Binary.v and UnivDirect.v then give
    m-completeness of pre-KA term equality, of its binary version and of
-   balanced universality under CT_L and MP (PreKA_EQ_m_complete,
-   PreKA_EQ_bin_m_complete, UNIV_m_complete). MP is used only where
-   Undec.v's PreKA_EQ_MP_reduction uses it: the refutation of divergent
-   runs gives "equal → ¬¬ halts", and MP turns that into "halts". The
-   statements are literally the library's `m-complete p` (Axioms/EA.v).
+   balanced universality under CT_L alone (PreKA_EQ_m_complete,
+   PreKA_EQ_bin_m_complete, UNIV_m_complete). No MP: the refutation of
+   divergent runs is constructive enough to extract the halting run from
+   the inequality (NonHalting.v's chain_le_stuck). The statements are
+   literally the library's `m-complete p` (Axioms/EA.v).
    The route loads no file of ReducibilityDegrees/ nor EA_L/T_L_Bridge.
 
    The only new MM2-level fact is the converse half of the splice
@@ -194,35 +194,35 @@ split.
   apply Nat.eqb_eq in Ha; now subst.
 Qed.
 
-(** * m-completeness of the pre-KA problems under CT_L and MP *)
+(** * m-completeness of the pre-KA problems under CT_L *)
 
 Lemma red_m_of_reduces {X Y} (p : X → Prop) (r : Y → Prop) :
   Undecidability.Synthetic.Definitions.reduces p r → p ⪯ₘ r.
 Proof. intros [f Hf]; exists f; exact Hf. Qed.
 
-Theorem PreKA_EQ_m_complete : CT_L → Undec.MP →
+Theorem PreKA_EQ_m_complete : CT_L →
   ∀ q : nat → Prop, enumerable q → q ⪯ₘ Undec.PreKA_EQ.
 Proof.
-intros ct mp q Hq.
+intros ct q Hq.
 apply (red_m_transitive MM2_HALTS_ON_ZERO).
 - exact (MM2_HALTS_ON_ZERO_m_complete ct Hq).
-- exact (red_m_of_reduces (Undec.PreKA_EQ_MP_reduction mp)).
+- exact (red_m_of_reduces Undec.PreKA_EQ_red).
 Qed.
 
-Theorem PreKA_EQ_bin_m_complete : CT_L → Undec.MP →
+Theorem PreKA_EQ_bin_m_complete : CT_L →
   ∀ q : nat → Prop, enumerable q → q ⪯ₘ Binary.PreKA_EQ_bin.
 Proof.
-intros ct mp q Hq.
+intros ct q Hq.
 apply (red_m_transitive MM2_HALTS_ON_ZERO).
 - exact (MM2_HALTS_ON_ZERO_m_complete ct Hq).
-- exact (red_m_of_reduces (Binary.PreKA_EQ_bin_MP_reduction mp)).
+- exact (red_m_of_reduces Binary.PreKA_EQ_bin_red).
 Qed.
 
-Theorem UNIV_m_complete : CT_L → Undec.MP →
+Theorem UNIV_m_complete : CT_L →
   ∀ q : nat → Prop, enumerable q → q ⪯ₘ UnivDirect.UNIV.
 Proof.
-intros ct mp q Hq.
+intros ct q Hq.
 apply (red_m_transitive MM2_HALTS_ON_ZERO).
 - exact (MM2_HALTS_ON_ZERO_m_complete ct Hq).
-- exact (red_m_of_reduces (UnivDirect.UNIV_MP_reduction mp)).
+- exact (red_m_of_reduces UnivDirect.UNIV_red).
 Qed.
