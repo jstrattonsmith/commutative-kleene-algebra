@@ -20,6 +20,12 @@ effective-inseparability route.
   `TailModel.v`; about 30 minutes of work.
 - **Total time:** 01:12-02:40 (about 1.5 hours) for everything here, about
   2,500 lines of Rocq, all admit-free.
+- **Σ⁰₁-completeness (session 2): also direct.** `SigmaComplete.v` proves
+  `CT_L → m-complete MM2_HALTS_ON_ZERO` by the textbook argument (no SMN,
+  no inseparability, no Myhill), and composes it with the `MP` reductions:
+  `CT_L → MP → m-complete p` for `PreKA_EQ`, `PreKA_EQ_bin` and `UNIV`.
+  The same hypotheses as `KA_ineq_m_complete`. About 10 minutes, about 230
+  lines; see the session-2 log.
 - **The free KA (FKA): the same route provably cannot work** with this
   encoding. KA proves `red_lb ⊑ red_ub` for a non-halting machine
   (`DirectUndec/FKALoop.v`). This is where an inseparability argument is
@@ -48,6 +54,14 @@ effective-inseparability route.
   `bal_star ⊑ univ_ub_mm2 P s1`; `univ_leq_complete`/`univ_leq_sound`;
   `UNIV_undec : undecidable UNIV` (balanced universality, the machine's
   alphabet part of the instance) and `UNIV_MP_reduction`.
+- `SigmaComplete.v`: `MM2_HALTS_ON_ZERO_m_complete : CT_L → m-complete
+  MM2_HALTS_ON_ZERO`; `PreKA_EQ_m_complete`, `PreKA_EQ_bin_m_complete`,
+  `UNIV_m_complete : CT_L → MP → m-complete _`. The statements are the
+  library's `m-complete` notation verbatim (checked against
+  `Axioms/EA.v`). `Print Assumptions`: closed. Loaded
+  coq-synthetic-computability modules: `Models/CT.v`, `T_L_Extract.v`,
+  `T_L_Uniform.v` and their dependencies, no `ReducibilityDegrees/`,
+  `EA_L*`, `T_L_Bridge.v` or `Basic/Myhill.v`.
 - `FKALoop.v`: `fka_red_leq_closed`, a finite closed reachable set gives
   `FKA red_lb ⊑ FKA red_ub`; `fka_red_leq_not_terminates_fails`, the KA
   analogue of `red_lb_not_le_red_ub` is false.
@@ -129,14 +143,16 @@ difficulty grounds. The direct proof is short, and parts of it are reusable
 3. **Strength of the conclusion.** The effective-inseparability route gives
    m-completeness (`Σ⁰₁`-completeness) of the inequality relation, and
    creativity, under `CT_L`/`MP`. The direct route gives `undecidable`
-   axiom-free, and under `MP` alone a many-one reduction from the
-   halting problem `MM2_HALTS_ON_ZERO` (`PreKA_EQ_MP_reduction`). In the
-   synthetic setting, "every enumerable predicate reduces to `p`"
-   (m-completeness) needs `CT` whatever the route, because it quantifies
-   over arbitrary Coq enumerators. Given `CT`, halting is m-complete and
-   composing with `PreKA_EQ_MP_reduction` makes `PreKA_EQ` m-complete too
-   (not formalized here). So in pre-KA, effective inseparability is not
-   needed even for the stronger statement.
+   axiom-free, a many-one reduction from `MM2_HALTS_ON_ZERO` under `MP`
+   alone, and (`SigmaComplete.v`, session 2) m-completeness under the same
+   `CT_L`/`MP` as the inseparability route. In the synthetic setting
+   m-completeness needs `CT` whatever the route, because it quantifies
+   over arbitrary Coq enumerators; given `CT`, halting is m-complete by
+   the textbook argument and m-completeness transfers along any many-one
+   reduction. So in pre-KA, effective inseparability buys nothing even for
+   the stronger statement. Creativity would follow too, since a creative
+   set (`K`) reduces to any m-complete one (not formalized here). What
+   inseparability still buys is the FKA sandwich above.
 
 So a fair "justification" reads: *in pre-KA a direct reduction exists and
 is easy, for both encodings in this repository, because the absence of star
@@ -145,6 +161,14 @@ In the presence of star induction the natural encoding only yields a
 sandwich, and inseparability is the tool that handles sandwiches.*
 
 ## Open questions
+
+- Can `MP` be dropped from the m-completeness theorems? The direct proof
+  gets `PreKA_EQ (f x) → ¬¬ q x`. A constructive version would extract a
+  halting bound from a pre-KA derivation of `red_lb ⊑ red_ub` (a finite
+  object, so the omega-token refutation should be "finitizable": a
+  derivation only unfolds finitely many stars). The inseparability route
+  needs `MP` too, so this would be a strict improvement, not a parity
+  point.
 
 - Is there an encoding for FKA where divergence is refutable (in some
   non-*-continuous KA)? `fka_red_leq_closed` shows the encoding must at
@@ -218,3 +242,42 @@ sandwich, and inseparability is the tool that handles sandwiches.*
   the goal (and the pre-KA universality variant) is done, and the
   remaining open questions (above) are research questions, not
   formalization chores.
+
+---
+
+## Session 2: Σ⁰₁-completeness without effective inseparability
+
+Question (2026-11-19, afternoon): can m-completeness (`Σ⁰₁`-completeness)
+be obtained in the same direct manner? Answer: yes, under the same `CT_L`
+and `MP` as `CKAUndec/KMComplete.v`, and the work was small.
+
+**Start 14:35, end 14:47 (about 12 minutes, about 230 lines).**
+
+- **14:35-14:38** Surveyed `Axioms/EA.v` (`m-complete p := ∀ q : nat →
+  Prop, enumerable q → q ⪯ₘ p`), `Models/CT.v` (`CT_L_to_EPF_L`),
+  `Models/EA_L.v` and `CKAUndec/Glue/TLToRTarget.v`. Plan: `CT_L →
+  m-complete MM2_HALTS_ON_ZERO` by the textbook argument, then compose with
+  the existing `MP` reductions. No SMN is needed: the reduction maps `x` to
+  the input `(c0, x)` of the one `T_L`-simulating machine, where `c0` is
+  the `EPF_L` code of `x ↦ (μn. e n = Some x); 1`.
+- **14:38-14:41** The one missing MM2 fact: the spliced program of
+  `MM2_Splice.v` halting at `(0,(0,0))` implies `R_TL v m` for some `m`
+  (`halt_sound`). `TLToRTarget.v` only proved the `m ≤ 1` directions it
+  needed. Proof: MM2 → MMA termination, `subcode_sss_terminates` down to
+  the FRACTRAN phase, `fractran_mma_reduction`, then the `qs 1`-valuation
+  of the (non-zero) FRACTRAN output. This needed the FRACTRAN program `Q`
+  itself, so it starts again from `R_TL_FRACTRAN_computable` rather than
+  the opaque `R_TL_MMA2_pinned`. `θ_L`/`R_TL` bridge copied from
+  `T_L_Bridge.v`, which itself loads the inseparability files.
+- **14:41-14:43** `DirectUndec/SigmaComplete.v` compiles (fixes were all
+  implicit-argument noise). `Print Assumptions`: closed for all four
+  theorems. `Print Libraries`: nothing from `ReducibilityDegrees/`,
+  `EA_L*`, `T_L_Bridge.v`, `simple*.v` or `Basic/Myhill.v`. Checked that
+  the statements are the library's `m-complete` notation.
+- **14:43-14:47** `nix build` passes; this write-up and `CLAUDE.md`.
+
+Conclusion for the justification question: in pre-KA effective
+inseparability is not needed for undecidability *or* for
+`Σ⁰₁`-completeness. Both follow from one direct reduction plus, for
+completeness, the textbook completeness of halting under `CT_L`. The
+case for inseparability rests on the FKA sandwich (item 1 above).

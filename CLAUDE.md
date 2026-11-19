@@ -122,8 +122,8 @@ Files are listed in dependency order (`_CoqProject`, which groups them into
 the same sections used below with one-line comments). All files are
 admit-free; no axioms appear anywhere except the two hypotheses named above
 (`CT_L`, `MP`), stated as hypotheses in `CKAUndec/KMComplete.v`,
-`CKAUndec/BinaryAlphabetMComplete.v` and `Universality/UnivMComplete.v`
-(`DirectUndec/` uses neither).
+`CKAUndec/BinaryAlphabetMComplete.v`, `Universality/UnivMComplete.v` and
+`DirectUndec/SigmaComplete.v` (the rest of `DirectUndec/` uses neither).
 
 ### `MM2_Legacy/`: not on the critical path, kept for their own interest
 
@@ -455,10 +455,11 @@ no longer `Local` (`Universality/UnivEncoding.v` reuses them). Unlike
 ### `DirectUndec/`: undecidability without effective inseparability
 
 A direct reduction from MM2 halting to pre-KA term equality, axiom-free (no
-`CT_L`, no `MP`) and loading nothing from `coq-synthetic-computability`;
+`CT_L`, no `MP`) and loading nothing from `coq-synthetic-computability`
+(except `SigmaComplete.v`, which loads only `Models/CT.v` and `T_L_*`);
 see [`DirectUndec/NOTES.md`](DirectUndec/NOTES.md) for the analysis and
 the time log. Builds on `KA/` and `CKAUndec/Encoding.v`; nothing outside the
-directory depends on it. ssreflect throughout.
+directory depends on it. ssreflect throughout, except `SigmaComplete.v`.
 
 37. **`DirectUndec/OmegaModel.v`** (~560 lines): a pre-KA model, generic over
     a monoid `M` and a sequence `r : nat -> M`, whose elements are a
@@ -510,6 +511,17 @@ directory depends on it. ssreflect throughout.
     the run reaches `(0,(0,0))`, and `UNIV_undec`/`UNIV_MP_reduction` (the
     machine's alphabet is part of the instance, as in `Univ c`). Reuses
     `win_sound`/`nobad_run`/`run_parse` on prefixes of the infinite run.
+
+44. **`DirectUndec/SigmaComplete.v`** (~230 lines): `Σ⁰₁`-completeness
+    without effective inseparability. `MM2_HALTS_ON_ZERO_m_complete :
+    CT_L -> m-complete MM2_HALTS_ON_ZERO` by the textbook argument (an
+    `EPF_L` code for the search, fed to `CKAUndec/Glue/TLToRTarget.v`'s
+    machine; no SMN), using the new converse `halt_sound` (the spliced
+    program halts only if `R_TL` is defined). Composed with the `MP`
+    reductions: `PreKA_EQ_m_complete`, `PreKA_EQ_bin_m_complete`,
+    `UNIV_m_complete : CT_L -> MP -> m-complete _`. Plain Ltac, not
+    ssreflect; imports no `ReducibilityDegrees/`, `EA_L*` or
+    `T_L_Bridge.v`.
 
 ## Style Guidelines
 
