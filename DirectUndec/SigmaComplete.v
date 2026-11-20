@@ -14,8 +14,8 @@
    PreKA_EQ_bin_m_complete, UNIV_m_complete). No MP: the refutation of
    divergent runs is constructive enough to extract the halting run from
    the inequality (NonHalting.v's chain_le_stuck). The statements are
-   literally the library's `m-complete p` (Axioms/EA.v).
-   The route loads no file of ReducibilityDegrees/ nor EA_L/T_L_Bridge.
+   stated with the library's `m-complete p` notation (Axioms/EA.v). The
+   route loads no file of ReducibilityDegrees/ nor EA_L/T_L_Bridge.
 
    The only new MM2-level fact is the converse half of the splice
    connection (halt_sound): if the spliced program halts at (0,(0,0)),
@@ -42,6 +42,7 @@ Require Import SyntheticComputability.Models.T_L_Uniform.
 Require Import SyntheticComputability.Shared.partial.
 Require SyntheticComputability.Synthetic.Definitions.
 Require Import SyntheticComputability.Synthetic.reductions.
+Require Import SyntheticComputability.Axioms.EA.
 
 Require kacc.CKAUndec.Glue.TLToRTarget.
 Require kacc.DirectUndec.Undec kacc.DirectUndec.Binary.
@@ -163,10 +164,8 @@ Qed.
 
 (** * Halting is m-complete under CT_L *)
 
-Notation enumerable := SyntheticComputability.Synthetic.Definitions.enumerable.
-
 Theorem MM2_HALTS_ON_ZERO_m_complete : CT_L →
-  ∀ q : nat → Prop, enumerable q → q ⪯ₘ MM2_HALTS_ON_ZERO.
+  m-complete MM2_HALTS_ON_ZERO.
 Proof.
 intros ct q [e He].
 destruct TLToRTarget.R_TL_FRACTRAN_computable as [Q [Qreg spec]].
@@ -201,7 +200,7 @@ Lemma red_m_of_reduces {X Y} (p : X → Prop) (r : Y → Prop) :
 Proof. intros [f Hf]; exists f; exact Hf. Qed.
 
 Theorem PreKA_EQ_m_complete : CT_L →
-  ∀ q : nat → Prop, enumerable q → q ⪯ₘ Undec.PreKA_EQ.
+  m-complete Undec.PreKA_EQ.
 Proof.
 intros ct q Hq.
 apply (red_m_transitive MM2_HALTS_ON_ZERO).
@@ -210,7 +209,7 @@ apply (red_m_transitive MM2_HALTS_ON_ZERO).
 Qed.
 
 Theorem PreKA_EQ_bin_m_complete : CT_L →
-  ∀ q : nat → Prop, enumerable q → q ⪯ₘ Binary.PreKA_EQ_bin.
+  m-complete Binary.PreKA_EQ_bin.
 Proof.
 intros ct q Hq.
 apply (red_m_transitive MM2_HALTS_ON_ZERO).
@@ -219,7 +218,7 @@ apply (red_m_transitive MM2_HALTS_ON_ZERO).
 Qed.
 
 Theorem UNIV_m_complete : CT_L →
-  ∀ q : nat → Prop, enumerable q → q ⪯ₘ UnivDirect.UNIV.
+  m-complete UnivDirect.UNIV.
 Proof.
 intros ct q Hq.
 apply (red_m_transitive MM2_HALTS_ON_ZERO).

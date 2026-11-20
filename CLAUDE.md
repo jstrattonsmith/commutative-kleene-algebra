@@ -314,17 +314,20 @@ stated only in `DirectUndec/`'s superseded `*_MP_reduction` theorems.
     `{(x,y) | x ⊑ y}` relation over that carrier (`K` is one fixed-rhs slice
     of it), via `ka_sqsubseteq_enumerable`.
 
-26. **`CKAUndec/KMComplete.v`** (~120 lines): from `K`'s effective
-    inseparability and enumerability to creativity (`K_creative`, via
-    `Models.EA_L_Myhill`'s `creative_of_eff_insep_L`) and m-completeness
-    (`K_m_complete`, via `Models.MPFree_L`'s `m_complete_K_of`), and on to
-    full Sigma^0_1-completeness of the actual KA-term inequality relation,
-    not just its `K`-slice (`KA_ineq_m_complete`), all conditional on
-    `CT_L` alone. The route is packaged generically over the Prop family
-    `Pred` as `m_complete_of_K_of` (`m_complete_K_of`, then a reduction
-    `K_of Pred ⪯ₘ P` via `red_m_transitive`), which `KA_ineq_m_complete`,
-    `BinaryAlphabetMComplete.v`'s `KA_ineq_bin_m_complete` and the four
-    `Universality/UnivMComplete.v` theorems instantiate.
+26. **`CKAUndec/KMComplete.v`** (~125 lines): m-completeness of `K`
+    (`K_m_complete`) and of the full KA-term inequality relation, not just
+    its `K`-slice (`KA_ineq_m_complete`), conditional on `CT_L` alone.
+    `K` lies between the halting sets `A0_L` and `B1_L` and is enumerable,
+    and `Models.MPFree_L`'s `m_complete_K_of` makes every such set
+    m-complete (Smullyan's race on `A0_L`/`B1_L`); this does not go
+    through the `eff_insep` predicate. Packaged generically over the Prop
+    family `Pred` as `m_complete_of_K_of` (`m_complete_K_of`, then a
+    reduction `K_of Pred ⪯ₘ P` via `red_m_transitive`), which
+    `KA_ineq_m_complete`, `BinaryAlphabetMComplete.v`'s
+    `KA_ineq_bin_m_complete` and the four `Universality/UnivMComplete.v`
+    theorems instantiate. Separately, `K_creative` derives creativity from
+    `K.v`'s effective inseparability (`Models.EA_L_Myhill`'s
+    `creative_of_eff_insep_L`); nothing else uses it.
 
 27. **`CKAUndec/BinaryAlphabet.v`** (~390 lines): the CKA-specific wiring
     that actually closes the source paper's Theorem 18/19 (undecidability/

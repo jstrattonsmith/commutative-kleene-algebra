@@ -1,39 +1,34 @@
-(* The final chain from K's effective inseparability from B1_L to
-   Sigma^0_1-completeness of the full KA-term inequality relation KA_ineq
-   (not just its K-slice) -- the terminal theorem of this development,
-   closing the source paper's Theorem 18/19 over the machine-specific
-   alphabet, conditional on one hypothesis: CT_L (Church's Thesis for
-   Rocq's L). Markov's principle is not needed.
+(* Sigma^0_1-completeness of the full KA-term inequality relation KA_ineq
+   (not just its K-slice), closing the source paper's Theorem 18/19 over
+   the machine-specific alphabet under one hypothesis, CT_L (Church's
+   Thesis for Rocq's L). Markov's principle is not needed.
 
-   --- 1. K_creative: instantiates coq-synthetic-computability's
-   Models/EA_L_Myhill.v (creative_of_eff_insep_L) at P := K c, with
-   CKAUndec/K.v's eff_insep_K_B1_L and CKAUndec/KEnumerable.v's
-   K_enumerable. EA_L_Myhill.v supplies EA_L ct as the EA instance, so
-   `creative` (stated over an ambient EA's own W) and K's
-   effective inseparability (stated over W_L) talk about the same
-   numbering. Effective inseparability with a total witness gives
-   creativity without MP.
+   --- 1. K_m_complete: K is sandwiched between the halting sets A0_L and
+   B1_L (Models/T_L_Bridge.v's A0_L_subset_K_of and K_of_B1_L_disjoint,
+   from CKAUndec/Glue/TLToRTarget.v's connection), and it is enumerable
+   (CKAUndec/KEnumerable.v). Models/MPFree_L.v's m_complete_K_of turns
+   exactly these facts into m-completeness: every enumerable set between
+   A0_L and B1_L is m-complete, by Smullyan's race argument on that pair.
+   This does not go through the eff_insep predicate.
 
-   --- 2. K_m_complete: Myhill's theorem "creative -> m-complete" needs
-   MP in general (coq-synthetic-computability's
-   ReducibilityDegrees/MPFree.v proves it equivalent to MP). For K it is
-   avoided: Models/MPFree_L.v's m_complete_K_of shows every enumerable
-   K_of Pred m-complete under CT_L alone, by Smullyan's race argument for
-   enumerable separators of A0_L and B1_L.
+   --- 2. KA_ineq_m_complete: K is one slice of KA_ineq, fixing the
+   right-hand side to red_ub Prog, whereas the source paper states
+   Theorem 18/19 over the full relation {(x,y) | x ⊑ y}.
+   CKAUndec/KEnumerable.v's reduction K_to_KA_ineq (K ⪯ₘ KA_ineq) carries
+   m-completeness from K to KA_ineq via red_m_transitive. The generic
+   m_complete_of_K_of packages steps 1-2 for any K_of Pred, and is reused
+   by CKAUndec/BinaryAlphabetMComplete.v and Universality/UnivMComplete.v.
 
-   --- 3. KA_ineq_m_complete: K_m_complete only shows m-completeness of
-   K itself, a SLICE of the full KA-term inequality relation KA_ineq
-   (CKAUndec/KEnumerable.v) -- fixing the right-hand side to one
-   specific term, red_ub Prog, and varying only the left -- whereas the
-   source paper's own Theorem 18/19 are stated over the full relation
-   {(x,y) | x ⊑ y}. CKAUndec/KEnumerable.v already builds the reduction
-   K_to_KA_ineq witnessing K ⪯ₘ KA_ineq (used there in the opposite
-   direction, to import KA_ineq's enumerability into K); composing
-   K's m-completeness with that same reduction via red_m_transitive
-   transports m-completeness out of K and into KA_ineq. The generic
-   m_complete_of_K_of packages this route for any K_of Pred, and is
-   reused by CKAUndec/BinaryAlphabetMComplete.v and
-   Universality/UnivMComplete.v. *)
+   --- 3. K_creative, a separate result that the above does not use: K's
+   effective inseparability from B1_L (CKAUndec/K.v's eff_insep_K_B1_L,
+   Theorem 17) gives creativity under CT_L, via Models/EA_L_Myhill.v's
+   creative_of_eff_insep_L. EA_L ct is the EA instance, so `creative`
+   (stated over an ambient EA's W) and eff_insep (over W_L) talk about the
+   same numbering. Going on from creativity to m-completeness by Myhill's
+   theorem would need MP: ReducibilityDegrees/MPFree.v shows that
+   "creative -> m-complete" is equivalent to MP in general, and
+   MPFree_L.v that so is "enumerable and eff_insep from B1_L ->
+   m-complete". *)
 
 From Stdlib Require Import Unicode.Utf8 Arith Lia.
 Require Import ssreflect.
