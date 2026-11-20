@@ -191,9 +191,10 @@ sandwich, and inseparability is the tool that handles sandwiches.*
 - Is there an encoding for FKA where divergence is refutable (in some
   non-*-continuous KA)? `fka_red_leq_closed` shows the encoding must at
   least defeat finite invariants, and likely all regular ones.
-- The same question for KA universality (`Univ_top`, `Σ* ⊑ e`). I expect
-  the `FKALoop.v` phenomenon there too (a looping machine's run words have a
-  regular invariant), but did not formalize it.
+- ~~The same question for KA universality (`Univ_top`, `Σ* ⊑ e`).~~ The
+  `FKALoop.v` phenomenon is there too, formalized in session 5
+  (`FKAUnivLoop.v`): KA proves `Σ* ⊑ univ_top_ub P s1` whenever the start
+  configuration lies on a cycle.
 - Binary-carrier versions of the universality result (`univ_ub_bin`).
   These should follow the same pattern as `Binary.v`, through
   `Universality/BalancedBinary.v`'s transport.
@@ -436,7 +437,7 @@ and m-completeness from `CT_L` alone, where `KA_ineq_m_complete` needs
 `red_leq_reach` stays, since `Undec.v` uses it across files. The removal
 of the superseded `MP` route is left for Jeremy to review first.
 
-## Session 5: the CKA encoding in the free KA, by the sandwich
+## Session 5a: the CKA encoding in the free KA, by the sandwich
 
 Goal: one problem on which the sandwich works in KA and the direct
 reduction provably fails. `fka_red_leq_not_terminates_fails` already
@@ -464,3 +465,48 @@ m-completeness. Start about 21:00 (approximate, reconstructed).
   for the three new `Routes.v` statements.
 
 **End 21:15 (about 15 minutes, about 160 new lines).**
+
+## Session 5b: the `FKALoop.v` phenomenon for KA universality
+
+Start about 21:00 (approximate: reconstructed from the fork's first
+command, 21:09, and the parent's last commit, 20:58).
+
+- **about 21:00-21:09** Reading `FKALoop.v`, `UnivEncoding.v`'s detectors
+  and completeness lemmas, `BalancedKA.v`, `UnivTop.v`. Invariant design:
+  right star induction over `bal_star = bal_gen*` (reading one letter at a
+  time), invariant `r* ⋅ (⨆ i < |r|, take i r) ⊔ e_pre c0 ⋅ bal_star`,
+  "a prefix of the periodic run word r r r ..., or already caught". The
+  catch: the run word is infinite, so the facts from `detect` and
+  `prefix_end` (finite words only) must be made uniform in the number of
+  periods. Resolved by `r* ⊑ 1 ⊔ r ⊔ bal_star ⋅ r ⋅ r` (star induction):
+  after two periods the detector that fires lies in the
+  `bal_star ⋅ (e_halt0 ⊔ e_shape ⊔ e_win)` part of `e_pre` (the
+  unpadded `init_errs` part only matches words shorter than
+  `run [c0]`), and the accepting `e_end` part is also padded with
+  `bal_star`; `bal_star` absorbs the earlier periods. So `detect` and
+  `prefix_end` are only needed on one finite chain of three periods.
+  No dead ends at the design level; the generic lemma (start on a cycle,
+  rather than a finite closed set as in `fka_red_leq_closed`) was the
+  natural form, since `detect` wants a chain.
+- **21:09-21:11** Wrote `FKAUnivLoop.v` in one go: generic
+  `fka_univ_cycle` (any program on a finite state set whose start
+  configuration is on a cycle), the MM2 form `fka_univ_top_cycle`, the
+  instance `fka_univ_top_loop` and `fka_univ_top_not_terminates_fails`.
+- **21:12-21:18** Compile fixes, about ten rounds, all local: explicit
+  `q0` for `detect`/`prefix_end`; `Let`-bound `R`/`B` had to be unfolded
+  by `change` before stating KA lemmas about stars; a `rewrite` of
+  `join_list_right_dist` matched the outer product (because `bal_gen` is
+  itself a `join_list`), fixed by distributing at the `fka` level after
+  `fka_join_list`; `ka_scope` reading `1` in `(1, (0, 0))`. Compiles,
+  `Print Assumptions fka_univ_top_not_terminates_fails`: closed.
+- **21:19-21:21** `Comparison/Routes.v` (`Univ_top_direct_fails`),
+  `Comparison/ROUTES.md`, CLAUDE.md item 44, this entry; `nix build`
+  exit 0, no admits.
+
+`FKAUnivLoop.v` is about 395 lines. The open question above is resolved:
+in KA, universality behaves like `red_leq`, so the direct route fails for
+both encodings, while the sandwich (`Univ_top_m_complete`) is unaffected.
+Not done: the binary-carrier version (`univ_top_ub_bin`), which would
+transport through `BalancedBinary.v`.
+
+**End about 21:23 (total about 23 minutes).**

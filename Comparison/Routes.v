@@ -56,6 +56,7 @@ Require kacc.CKAUndec.BinaryAlphabetMComplete.
 Require kacc.Universality.UnivConnection kacc.Universality.UnivMComplete.
 Require kacc.DirectUndec.Undec kacc.DirectUndec.Binary.
 Require kacc.DirectUndec.UnivDirect kacc.DirectUndec.SigmaComplete.
+Require kacc.DirectUndec.FKAUnivLoop.
 
 Notation MP := SyntheticComputability.CRM.principles.MP.
 
@@ -214,7 +215,7 @@ Qed.
 
 (* No direct counterpart over the binary carrier (not attempted). *)
 
-(** ** Full universality in KA: no direct route *)
+(** ** Full universality in KA: the direct route provably fails *)
 
 Theorem Univ_top_m_complete_sandwich :
   CT_L → ∃ c, m-complete (@UnivMComplete.Univ_top c).
@@ -229,6 +230,12 @@ exists c.
 exact (m_complete_of_K_of_EI Hc (UnivMComplete.K_univ_top_enumerable c)
          (UnivMComplete.K_to_Univ_top_spec c) ct mp).
 Qed.
+
+(* Direct: fails. KA proves full universality for FKALoop.v's loop_prog,
+   which never halts (DirectUndec/FKAUnivLoop.v), so in KA this encoding
+   gives no reduction from halting. *)
+Definition Univ_top_direct_fails :=
+  FKAUnivLoop.fka_univ_top_not_terminates_fails.
 
 Theorem Univ_top_bin_m_complete_sandwich :
   CT_L → m-complete UnivMComplete.Univ_top_bin.
@@ -257,3 +264,4 @@ Print Assumptions KA_ineq_fka_m_complete_sandwich.
 Print Assumptions red_leq_fka_direct_fails.
 Print Assumptions Univ_top_bin_m_complete_EI.
 Print Assumptions Univ_top_bin_m_complete_sandwich.
+Print Assumptions Univ_top_direct_fails.
