@@ -91,7 +91,7 @@ factor; what the paper wants to show is.
 | CKA encoding (`K`, `KA_ineq`) | `eff_insep_K_B1_L`, `K_creative` | yes | yes (`PreKA_EQ`) |
 | Binary alphabet | `eff_insep_K_bin_B1_L` | yes | yes (`PreKA_EQ_bin`) |
 | Universality, pre-KA (`Univ`, `Univ_bin`) | `Routes.v` only | yes | `Univ` only (`UNIV`) |
-| Universality, KA (`Univ_top`, `_bin`) | `Routes.v` only | yes | **no** |
+| Universality, KA (`Univ_top`, `_bin`) | `Routes.v` only | yes | **no** (provably) |
 
 `Universality/` never stated `eff_insep` for its sets. It used EI only
 implicitly, through the old generic lemma. Its EI twins in `Routes.v` are
@@ -105,8 +105,9 @@ machine's alphabet into the instance.
 This gives a clear story:
 - The direct route needs divergent runs to be refuted. That takes about
   1,400 lines of models (`OmegaModel.v`, `TailModel.v`, `NonHalting.v`).
-  It is impossible in KA: `FKALoop.v` shows that KA proves the inequality
-  for some divergent machines.
+  It is impossible in KA: KA proves the inequality for some divergent
+  machines, for the CKA encoding (`FKALoop.v`) and for universality
+  (`FKAUnivLoop.v`: whenever the start configuration lies on a cycle).
 - The sandwich only needs correctness on halting runs. It is the only route
   that reaches the KA results.
 - The EI predicate is a more abstract way to state the same sandwich, and

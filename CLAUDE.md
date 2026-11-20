@@ -523,7 +523,16 @@ directory depends on it. ssreflect throughout, except `SigmaComplete.v`.
     in `Univ c`). Reuses
     `win_sound`/`nobad_run`/`run_parse` on prefixes of the infinite run.
 
-44. **`DirectUndec/SigmaComplete.v`** (~230 lines): `Σ⁰₁`-completeness
+44. **`DirectUndec/FKAUnivLoop.v`** (~395 lines): the `FKALoop.v`
+    phenomenon for KA universality. If the start configuration lies on a
+    cycle, the free KA proves `Σ* ⊑ univ_top_ub P s1`
+    (`fka_univ_top_cycle`, from the generic `fka_univ_cycle`: right star
+    induction over `bal_star` with invariant "a prefix of the periodic run
+    word, or already caught", using `UnivEncoding.v`'s `detect` and
+    `prefix_end` on three periods), so for `loop_prog`
+    (`fka_univ_top_loop`) and `fka_univ_top_not_terminates_fails`.
+
+45. **`DirectUndec/SigmaComplete.v`** (~230 lines): `Σ⁰₁`-completeness
     without effective inseparability. `MM2_HALTS_ON_ZERO_m_complete :
     CT_L -> m-complete MM2_HALTS_ON_ZERO` by the textbook argument (an
     `EPF_L` code for the search, fed to `CKAUndec/Glue/TLToRTarget.v`'s
