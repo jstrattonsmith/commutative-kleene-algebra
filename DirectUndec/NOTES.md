@@ -69,9 +69,9 @@ effective-inseparability route.
 - `NonHalting.v` (session 3): `chain_le_stuck`, an inequality forces the
   chain to get stuck at some decidable position; `red_lb_le_terminates`,
   `red_leq_reach : red_leq P s1 → reaches (0,(0,0))`, constructively.
-  Same in `Binary.v` (`bin_le_terminates`, `bin_le_reach`) and
-  `UnivDirect.v` (`univ_le_stuck`, `univ_le_terminates`,
-  `univ_leq_reach`).
+  Same in `Binary.v` (`bin_le_terminates`) and `UnivDirect.v`
+  (`univ_le_stuck`, `univ_le_terminates`); their `reach` step is inlined
+  in `PreKA_EQ_bin_red`/`UNIV_red` (session 4).
 - `Undec.v`/`Binary.v`/`UnivDirect.v` (session 3): `PreKA_EQ_red`,
   `PreKA_EQ_bin_red`, `UNIV_red : MM2_HALTS_ON_ZERO ⪯ _`, axiom-free. (The
   older `*_MP_reduction` theorems are kept but superseded.)
@@ -430,3 +430,8 @@ and m-completeness from `CT_L` alone, where `KA_ineq_m_complete` needs
   instead of `m_complete_undecidable`; both need only `CT_L` now.
 
 **End 19:17.**
+
+**Addendum 19:26.** Folded `bin_le_reach` and `univ_leq_reach`
+(each a 4-line lemma used once) into `PreKA_EQ_bin_red` and `UNIV_red`;
+`red_leq_reach` stays, since `Undec.v` uses it across files. The removal
+of the superseded `MP` route is left for Jeremy to review first.

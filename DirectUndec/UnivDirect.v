@@ -482,18 +482,11 @@ Qed.
 
 (** Constructively, without Markov's principle. *)
 
-Theorem univ_leq_reach P s1 :
-  bal_star (A := option_setoid (@mm_sym_setoid (fin (S (S (length P))))))
-    ⊑ univ_ub_mm2 P s1 →
-  clos_refl_trans _ (mm2_step P) s1 (0,(0,0)).
-Proof.
-move=> le; case: (univ_le_terminates le) => s2 [reach stop].
-by rewrite -(univ_soundness (crt_to_rtc _ _ _ reach) stop le).
-Qed.
-
 Theorem UNIV_red : MM2_HALTS_ON_ZERO ⪯ UNIV.
 Proof.
 exists mm2_to_univ => x; split; first exact: reduction_univ_yes.
-case: x => [[P a] b]; exact: univ_leq_reach.
+case: x => [[P a] b] /= le.
+case: (univ_le_terminates le) => s2 [reach stop].
+by rewrite -(univ_soundness (crt_to_rtc _ _ _ reach) stop le).
 Qed.
 

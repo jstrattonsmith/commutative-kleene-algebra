@@ -275,13 +275,6 @@ have [j stuck] := chain_le_stuck (R := repr_rel_bin)
 exists (run P s1 j); split; [exact: run_reach|exact: step_ok_stop].
 Qed.
 
-Theorem bin_le_reach s1 :
-  bin_lb s1 ⊑ bin_ub → clos_refl_trans _ (mm2_step P) s1 (0,(0,0)).
-Proof.
-move=> le; case: (bin_le_terminates le) => s2 [reach stop].
-by rewrite -(bin_sound (crt_to_rtc _ _ _ reach) stop le).
-Qed.
-
 End Bin.
 
 (** * Undecidability over the fixed binary carrier *)
@@ -338,7 +331,8 @@ Qed.
 Theorem PreKA_EQ_bin_red : MM2_HALTS_ON_ZERO ⪯ PreKA_EQ_bin.
 Proof.
 exists mm2_to_eq_bin => x; split; first exact: reduction_bin_yes.
-case: x => [[P a] b] /= e.
-by apply: bin_le_reach; apply/sqsubseteq_iff.
+case: x => [[P a] b] /= /sqsubseteq_iff le.
+case: (bin_le_terminates le) => s2 [reach stop].
+by rewrite -(bin_sound (crt_to_rtc _ _ _ reach) stop le).
 Qed.
 
