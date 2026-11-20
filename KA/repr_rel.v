@@ -779,6 +779,22 @@ move/app_inv_tail; move: ys ys'.
 by elim=> [|y ys IH] [|y' ys'] //= [= -> /IH ->].
 Qed.
 
+(* The same from language inclusion alone, as the free KA provides
+   (KA/ka.v's fka_lang); rhs is any term below the error-detector shape. *)
+Lemma repr_rel_rtc_soundness_lang e L ρ rhs (xs ys : list T) :
+  rtc (λ xs' ys', Unit (xs', ys') ⊑ e) xs ys →
+  rhs ⊑ dpseudo_top ⋅ ka_term_inj2 (pad_lang L) ⊔ dpseudo_top ⋅ mismatch ⋅ ρ →
+  l (Unit (1, lift xs ⋅ [None]) ⋅ star (pad_rel e)) ⊑ l rhs →
+  Unit ys ⊑ L.
+Proof.
+move=> /pad_rel_rtc_1 /rtc_prefix [zs Hzs] Hrhs Hl.
+have Hw : Unit (zs, zs ++ lift ys ⋅ [None]) ⊑ rhs.
+{ apply/l_alt; apply: Hl; exact/l_alt. }
+have Hpa : Unit (lift ys ⋅ [None]) ⊑ pad_lang L.
+{ exact: repr_rel_soundness (transitivity Hw Hrhs). }
+case: (sqsubseteq_pad_lang_2 Hpa) => ys' [] /lift_pad_inj -> //.
+Qed.
+
 Lemma finite_state_pad_rel e :
   finite_state (T + T) (Unit ∘ generator_interp) e →
   finite_state (option T + option T) (Unit ∘ generator_interp) (pad_rel e).

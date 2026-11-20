@@ -17,7 +17,9 @@
      (DirectUndec/), plus m-completeness of halting by the textbook
      argument (DirectUndec/SigmaComplete.v). CT_L only, and undecidability
      with no axioms at all. It needs divergent runs to be refuted, which
-     fails in KA (DirectUndec/FKALoop.v), so it has no KA instance.
+     fails in KA (DirectUndec/FKALoop.v), so it has no KA instance; for
+     the CKA encoding in KA, red_leq_fka_direct_fails states the failure
+     next to the EI and sandwich results.
 
    The EI and sandwich routes share everything but one step, how an
    enumerable K_of Pred becomes m-complete (K_of_m_complete_EI vs
@@ -32,6 +34,7 @@ From Stdlib Require Import Unicode.Utf8.
 From Undecidability Require Import FRACTRAN.
 From Undecidability.FRACTRAN Require Import prime_seq.
 From Undecidability.Synthetic Require Undecidability.
+From Undecidability.MinskyMachines Require MM2.
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Models.T_L_Uniform.
 Require Import SyntheticComputability.Models.T_L_Bridge.
@@ -47,6 +50,7 @@ Require SyntheticComputability.CRM.principles.
 
 Require kacc.CKAUndec.Glue.TLToRTarget kacc.CKAUndec.K.
 Require kacc.CKAUndec.KEnumerable kacc.CKAUndec.KMComplete.
+Require kacc.CKAUndec.FKAMComplete kacc.DirectUndec.FKALoop.
 Require kacc.CKAUndec.Glue.BinaryAlphabetConnection.
 Require kacc.CKAUndec.BinaryAlphabetMComplete.
 Require kacc.Universality.UnivConnection kacc.Universality.UnivMComplete.
@@ -122,6 +126,36 @@ Qed.
 Theorem PreKA_EQ_undecidable_direct :
   Undecidability.undecidable Undec.PreKA_EQ.
 Proof. exact Undec.PreKA_EQ_undec. Qed.
+
+(** * Case study 1 in KA: the direct route provably fails *)
+
+(* The same encoding with KA derivability (free KA, star induction) in
+   place of pre-KA derivability. EI and sandwich go through unchanged,
+   since they only ask about halting runs. *)
+
+Theorem KA_ineq_fka_m_complete_sandwich :
+  CT_L → ∃ c, m-complete (@FKAMComplete.KA_ineq_fka c).
+Proof. exact FKAMComplete.KA_ineq_fka_m_complete. Qed.
+
+Theorem KA_ineq_fka_m_complete_EI :
+  CT_L → MP → ∃ c, m-complete (@FKAMComplete.KA_ineq_fka c).
+Proof.
+intros ct mp.
+destruct FKAMComplete.R_TL_R_target_fka_connection as [c Hc].
+exists c.
+exact (m_complete_of_K_of_EI Hc (FKAMComplete.K_fka_enumerable c)
+         (FKAMComplete.K_to_KA_ineq_fka_spec c) ct mp).
+Qed.
+
+(* Direct: the map from machines to inequalities is no longer a reduction
+   from halting. KA proves the inequality for the two-instruction loop
+   [inc_a; dec_a 1], which never halts (DirectUndec/FKALoop.v). *)
+Theorem red_leq_fka_direct_fails :
+  ¬ (∀ P s1, FKAMComplete.red_leq_fka P s1 → MM2.mm2_terminates P s1).
+Proof.
+intros H. apply FKALoop.loop_not_terminates.
+apply H. exact FKALoop.fka_red_leq_loop.
+Qed.
 
 (** * Case study 2: the binary alphabet *)
 
@@ -218,5 +252,8 @@ Print Assumptions PreKA_EQ_m_complete_direct.
 Print Assumptions K_undecidable_EI.
 Print Assumptions K_undecidable_sandwich.
 Print Assumptions PreKA_EQ_undecidable_direct.
+Print Assumptions KA_ineq_fka_m_complete_EI.
+Print Assumptions KA_ineq_fka_m_complete_sandwich.
+Print Assumptions red_leq_fka_direct_fails.
 Print Assumptions Univ_top_bin_m_complete_EI.
 Print Assumptions Univ_top_bin_m_complete_sandwich.

@@ -57,6 +57,8 @@ CKAUndec/Glue/TLToRTarget.v
 CKAUndec/K.v
 CKAUndec/KEnumerable.v
 CKAUndec/KMComplete.v
+# The same in the free KA (KA derivability), by the same route.
+CKAUndec/FKAMComplete.v
 CKAUndec/BinaryAlphabet.v
 CKAUndec/Glue/BinaryAlphabetConnection.v
 CKAUndec/BinaryAlphabetMComplete.v

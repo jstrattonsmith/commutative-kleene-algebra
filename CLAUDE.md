@@ -329,6 +329,16 @@ stated only in `DirectUndec/`'s superseded `*_MP_reduction` theorems.
     `K.v`'s effective inseparability (`Models.EA_L_Myhill`'s
     `creative_of_eff_insep_L`); nothing else uses it.
 
+26a. **`CKAUndec/FKAMComplete.v`** (~110 lines): the same encoding in the
+    free KA. `KA_ineq_fka c` is KA derivability `FKA x ⊑ FKA y` over
+    `KEnumerable.v`'s carrier, and `KA_ineq_fka_m_complete : CT_L -> exists
+    c, m-complete (@KA_ineq_fka c)` goes through `m_complete_of_K_of`
+    unchanged: completeness by `fka_le_of_pre`, soundness for halting runs
+    by `fka_lang` and `Encoding.v`'s language-level
+    `mm2_R_soundness_lang`, enumerability by `KA/ka_enumerable.v`'s
+    `fka_le_enumerable`. The direct route fails for this problem
+    (`DirectUndec/FKALoop.v`); `Comparison/Routes.v` states both.
+
 27. **`CKAUndec/BinaryAlphabet.v`** (~390 lines): the CKA-specific wiring
     that actually closes the source paper's Theorem 18/19 (undecidability/
     completeness stated over the canonical, minimal 2-symbol alphabet

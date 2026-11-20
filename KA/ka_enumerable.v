@@ -198,4 +198,14 @@ apply: (enumerable_reduce (f := fun z => (Unit (lhs ⊔ rhs z), Unit (rhs z)))
 - exact: fka_eq_enumerable.
 Qed.
 
+(* The whole relation, as CKAUndec/FKAMComplete.v needs it. *)
+Theorem fka_le_enumerable :
+  enumerable (fun p : ka_term T * ka_term T => FKA p.1 ⊑ FKA p.2).
+Proof.
+apply: (enumerable_reduce (f := fun p => (Unit (p.1 ⊔ p.2), Unit p.2))
+          (Q := fun p : ka_term (ka_term T) * _ => free_ka_eq p.1 p.2)).
+- move=> p; exact: fka_le_iff.
+- exact: fka_eq_enumerable.
+Qed.
+
 End KaLeqEnumerable.

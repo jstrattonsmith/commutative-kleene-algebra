@@ -435,3 +435,32 @@ and m-completeness from `CT_L` alone, where `KA_ineq_m_complete` needs
 (each a 4-line lemma used once) into `PreKA_EQ_bin_red` and `UNIV_red`;
 `red_leq_reach` stays, since `Undec.v` uses it across files. The removal
 of the superseded `MP` route is left for Jeremy to review first.
+
+## Session 5: the CKA encoding in the free KA, by the sandwich
+
+Goal: one problem on which the sandwich works in KA and the direct
+reduction provably fails. `fka_red_leq_not_terminates_fails` already
+shows the failure for the CKA encoding; what was missing is its KA
+m-completeness. Start about 21:00 (approximate, reconstructed).
+
+- **21:00-21:05** Design. Completeness lifts by `fka_le_of_pre`. Soundness
+  only needs language inclusion (`fka_lang`), but `Encoding.v`'s
+  `mm2_R_soundness` takes a pre-KA inequality, and its proof uses one
+  word of `red_lb` only. The whole relation is needed enumerable, while
+  `ka_enumerable.v` had only fixed-left-hand-side slices.
+- **21:05-21:09** Connection lemmas. `KA/repr_rel.v`:
+  `repr_rel_rtc_soundness_lang` (from `l lhs ⊑ l rhs`); `Encoding.v`:
+  `mm2_R_soundness_lang`. `CKAUndec/FKAMComplete.v`:
+  `mm2_R_completeness_fka`/`_soundness_fka`, `R_TL_R_target_fka_connection`
+  (via `R_TL_connection_of`).
+- **21:09-21:11** Enumerability (`KA/ka_enumerable.v`'s
+  `fka_le_enumerable`, `K_fka_enumerable`) and
+  `KA_ineq_fka_m_complete : CT_L -> exists c, m-complete (@KA_ineq_fka c)`
+  through `m_complete_of_K_of`, unchanged.
+- **21:11-21:13** `Comparison/Routes.v`: `KA_ineq_fka_m_complete_sandwich`,
+  `_EI` (`CT_L`, `MP`), and `red_leq_fka_direct_fails` (the KA inequality
+  does not imply termination: `FKALoop.v`'s loop). `ROUTES.md`, `CLAUDE.md`.
+- **21:13-21:15** `nix build` passes; no admits; `Print Assumptions` closed
+  for the three new `Routes.v` statements.
+
+**End 21:15 (about 15 minutes, about 160 new lines).**

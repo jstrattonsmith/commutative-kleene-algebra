@@ -1314,6 +1314,27 @@ have [//|Hbad] := mm2_R_soundness_aux s1_s2 red_leq.
 exfalso; move/MM2_facts.mm2_stop_index_iff: s2_stop; rewrite /n /=; lia.
 Qed.
 
+(* The same from language inclusion alone, so that it applies to the free
+   KA too (CKAUndec/FKAMComplete.v, through KA/ka.v's fka_lang). *)
+Lemma mm2_R_soundness_lang s1 s2 :
+  rtc (mm2_step P) s1 s2 →
+  mm2_stop P s2 →
+  l (red_lb s1) ⊑ l red_ub →
+  s2 = (0,(0,0)).
+Proof.
+move=> s1_s2 s2_stop.
+rewrite /red_ub /repr_rel_rtc_error -assoc => Hl.
+have pa : Unit (mm2_config s2) ⊑ partially_accepted.
+{ exact: repr_rel_rtc_soundness_lang (encoding_rtc_complete s1_s2)
+    (reflexivity _) Hl. }
+have : s2 = (0,(0,0)) ∨ 0 < s2.1 ≤ n.
+{ rewrite -elem_of_C comm -!l_alt /= in pa *; case: pa => pa; eauto.
+  right; move/leibniz_equiv_iff: pa; rewrite /mm2_config /config_word /=.
+  by case: (s2) => [[|?] [[|?] [|?]]] //=. }
+case=> [//|Hbad].
+exfalso; move/MM2_facts.mm2_stop_index_iff: s2_stop; rewrite /n /=; lia.
+Qed.
+
 Lemma no_step_from_halt w :
   ¬ Unit (mm2_config (0,(0,0)), w) ⊑ mm2_R.
 Proof.

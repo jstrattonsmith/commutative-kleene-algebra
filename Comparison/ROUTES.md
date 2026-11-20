@@ -89,6 +89,7 @@ factor; what the paper wants to show is.
 | Case study | EI results | Sandwich | Direct reduction |
 |---|---|---|---|
 | CKA encoding (`K`, `KA_ineq`) | `eff_insep_K_B1_L`, `K_creative` | yes | yes (`PreKA_EQ`) |
+| CKA encoding in KA (`KA_ineq_fka`) | `Routes.v` only | yes | **provably fails** |
 | Binary alphabet | `eff_insep_K_bin_B1_L` | yes | yes (`PreKA_EQ_bin`) |
 | Universality, pre-KA (`Univ`, `Univ_bin`) | `Routes.v` only | yes | `Univ` only (`UNIV`) |
 | Universality, KA (`Univ_top`, `_bin`) | `Routes.v` only | yes | **no** |
@@ -109,6 +110,16 @@ This gives a clear story:
   for some divergent machines.
 - The sandwich only needs correctness on halting runs. It is the only route
   that reaches the KA results.
+- The CKA encoding shows both on one problem. Adding Kozen's two
+  star-induction axioms (pre-KA → KA) breaks the direct reduction:
+  `red_leq_fka_direct_fails` in `Routes.v` says the KA inequality does not
+  imply termination. The same interface still gives
+  `KA_ineq_fka_m_complete_sandwich` (`CT_L`) and `KA_ineq_fka_m_complete_EI`
+  (`CT_L` + `MP`). The KA version took about 160 new lines:
+  `CKAUndec/FKAMComplete.v` (112), plus a language-level form of the
+  encoding's soundness (`mm2_R_soundness_lang`, `KA/repr_rel.v`'s
+  `repr_rel_rtc_soundness_lang`) and enumerability of the whole KA
+  ordering (`KA/ka_enumerable.v`'s `fka_le_enumerable`).
 - The EI predicate is a more abstract way to state the same sandwich, and
   that abstraction costs `MP` for m-completeness.
 
@@ -168,8 +179,8 @@ SANDWICH             EI                        EPF_L + TLToRTarget's
         |                NEEDS MP
         |                  |
         v                  v
-  KA_ineq, KA_ineq_bin, Univ, Univ_bin, Univ_top, Univ_top_bin
-  (CT_L for the sandwich; CT_L + MP for EI)
+  KA_ineq, KA_ineq_fka, KA_ineq_bin, Univ, Univ_bin, Univ_top,
+  Univ_top_bin (CT_L for the sandwich; CT_L + MP for EI)
 ```
 
 Reading the graph:
