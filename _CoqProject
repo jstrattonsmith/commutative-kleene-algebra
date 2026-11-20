@@ -90,3 +90,7 @@ DirectUndec/FKALoop.v
 DirectUndec/TailModel.v
 DirectUndec/UnivDirect.v
 DirectUndec/SigmaComplete.v
+
+# Comparison/: the EI, sandwich and direct routes to Sigma^0_1-completeness
+# side by side. See Comparison/ROUTES.md.
+Comparison/Routes.v
