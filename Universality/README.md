@@ -15,8 +15,8 @@ nothing outside this directory depends on it.
 
 ## Main results
 
-All results live in `UnivMComplete.v`. Each takes `CT_L` and `MP` as
-hypotheses, exactly as `CKAUndec/KMComplete.v` does, and `Print
+All results live in `UnivMComplete.v`. Each takes `CT_L` as a
+hypothesis, exactly as `CKAUndec/KMComplete.v` does, and `Print
 Assumptions` is otherwise closed.
 
 | Theorem | Problem | Setting | Carrier |

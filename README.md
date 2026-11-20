@@ -57,11 +57,11 @@ between the paper and the formalization.
 ## Main results
 
 All proofs are complete -- there are no admitted lemmas anywhere in the
-development. No axioms appear except two named, standard hypotheses
-(`CT_L`, Church's Thesis for Rocq's `L` language; `MP`, Markov's
-Principle), stated as hypotheses only in the final
-Sigma^0_1-completeness files (`CKAUndec/KMComplete.v`,
-`CKAUndec/BinaryAlphabetMComplete.v`, `Universality/UnivMComplete.v`).
+development. No axioms appear except one named, standard hypothesis
+(`CT_L`, Church's Thesis for Rocq's `L` language), stated as a hypothesis
+only in the final Sigma^0_1-completeness files (`CKAUndec/KMComplete.v`,
+`CKAUndec/BinaryAlphabetMComplete.v`, `Universality/UnivMComplete.v`,
+`DirectUndec/SigmaComplete.v`). Markov's principle is not needed.
 
 - **`mm2_R_soundness`** / **`mm2_R_completeness`** (`CKAUndec/Encoding.v`):
   soundness and completeness of the MM2-as-KA-terms encoding (paper
@@ -72,13 +72,13 @@ Sigma^0_1-completeness files (`CKAUndec/KMComplete.v`,
 - **`CKAUndec/KMComplete.v`** / **`CKAUndec/BinaryAlphabetMComplete.v`**:
   Sigma^0_1-completeness of the KA-term inequality, both per-machine and
   over the paper's own fixed canonical alphabet (paper Theorems 18-19),
-  conditional on `CT_L`/`MP`.
+  conditional on `CT_L`.
 - **`Universality/UnivMComplete.v`**: Sigma^0_1-completeness of balanced
   universality `bal_star ⊑ e` in pre-KA (`Univ_m_complete`,
   `Univ_bin_m_complete`) and of full universality `Σ* ⊑ e` in the free
   KA (`Univ_top_m_complete`, `Univ_top_bin_m_complete`), the `_bin`
   variants over the single fixed carrier `list bool * nat`; conditional
-  on `CT_L`/`MP`. See [`Universality/README.md`](Universality/README.md).
+  on `CT_L`. See [`Universality/README.md`](Universality/README.md).
 
 ## Usage
 

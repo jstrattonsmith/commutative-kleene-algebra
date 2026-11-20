@@ -29,9 +29,15 @@ effective-inseparability route.
 - **No `MP` (session 3).** The reductions `MM2_HALTS_ON_ZERO ⪯ PreKA_EQ`,
   `⪯ PreKA_EQ_bin` and `⪯ UNIV` are now genuine many-one reductions with
   no axiom at all (`PreKA_EQ_red`, `PreKA_EQ_bin_red`, `UNIV_red`), so
-  `CT_L → m-complete p` for all three, *without* `MP`. This is strictly
-  weaker than the `CT_L`/`MP` of the inseparability route
+  `CT_L → m-complete p` for all three, *without* `MP`. At the time this
+  was strictly weaker than the `CT_L`/`MP` of the inseparability route
   (`KA_ineq_m_complete`). About 10 minutes; see the session-3 log.
+- **Both routes need only `CT_L` (session 4).** coq-synthetic-computability
+  now has one notion of effective inseparability (total witness) and an
+  MP-free m-completeness proof for `K_of Pred` (Smullyan's race), and
+  shows the general "creative → m-complete" is equivalent to `MP`. With
+  the library re-pinned, `KA_ineq_m_complete`, `KA_ineq_bin_m_complete`
+  and the four `Univ*_m_complete` take `CT_L` alone; see the session-4 log.
 - **The free KA (FKA): the same route provably cannot work** with this
   encoding. KA proves `red_lb ⊑ red_ub` for a non-halting machine
   (`DirectUndec/FKALoop.v`). This is where an inseparability argument is
@@ -157,13 +163,13 @@ difficulty grounds. The direct proof is short, and parts of it are reusable
 
 3. **Strength of the conclusion.** The effective-inseparability route gives
    m-completeness (`Σ⁰₁`-completeness) of the inequality relation, and
-   creativity, under `CT_L`/`MP`. The direct route gives `undecidable`
-   axiom-free, a many-one reduction from `MM2_HALTS_ON_ZERO` under `MP`
-   alone, and (`SigmaComplete.v`, session 2) m-completeness under the same
-   `CT_L`/`MP` as the inseparability route, and (session 3) under `CT_L`
-   alone, with the many-one reductions now axiom-free. In the synthetic
-   setting
-   m-completeness needs `CT` whatever the route, because it quantifies
+   creativity, under `CT_L` (under `CT_L`/`MP` before session 4). The
+   direct route gives `undecidable` axiom-free, axiom-free many-one
+   reductions from `MM2_HALTS_ON_ZERO` (session 3), and
+   (`SigmaComplete.v`) m-completeness under `CT_L` alone. Both routes now
+   need exactly `CT_L`; `MP` was never needed for these sets, only for the
+   general "creative → m-complete" (see session 4). In the synthetic
+   setting m-completeness needs `CT` whatever the route, because it quantifies
    over arbitrary Coq enumerators; given `CT`, halting is m-complete by
    the textbook argument and m-completeness transfers along any many-one
    reduction. So in pre-KA, effective inseparability buys nothing even for
@@ -368,3 +374,59 @@ and m-completeness from `CT_L` alone, where `KA_ineq_m_complete` needs
   theorems; `principles.v` loads no inseparability file. `nix build`
   passes.
 
+- **15:04-15:12** (the agent, in coq-synthetic-computability) `MP` cannot
+  be removed from the generic theorems: `creative_m_complete_iff_MP` and
+  `MP_of_eff_insep_m_complete` (`ReducibilityDegrees/MPFree.v`, via the
+  set `{x | E ∧ x ∈ A}` for `¬¬E`). But `MP` is not needed for this
+  project's sets: `m_complete_K_of : CT_L → enumerable (K_of Pred) →
+  m-complete (K_of Pred)` (`Models/MPFree_L.v`, Smullyan's race argument
+  for enumerable separators of `A0_L`/`B1_L`).
+- **15:12-18:40** (no work here) Cleanups of the library branch, a handoff
+  note for the partial/total question, and coordination with a separate
+  session in coq-synthetic-computability (`../COORDINATION.md`). Jeremy
+  chose the total witness as the one notion of effective inseparability;
+  that session merged the work into the branch `eff-insep-total`
+  (`304ded0`: bundled `eff_insep_shape`, the partial-witness core and the
+  `..._tot` duplicates removed, partial → creative with `MP` dropped).
+- **about 19:00-19:17** Re-pinned coq-synthetic-computability to
+  `github:arthuraa/coq-synthetic-computability/eff-insep-total` and
+  updated the four affected files:
+  - `CKAUndec/K.v`: Theorem 17 as `eff_insep W_L (K c) B1_L` (total
+    witness, stronger than the paper), plus `eff_insep_partial_K_B1_L` in
+    the paper's partial Definition 5 form, via `eff_insep_to_partial`.
+  - `CKAUndec/KMComplete.v`: `eff_insep_shape_K_of_B1_L` and
+    `eff_insep_shape_K_B1_L` removed; `K_creative` via
+    `creative_of_eff_insep_L`, `K_m_complete` and `m_complete_of_K_of` via
+    `m_complete_K_of`. Everything takes `CT_L` alone.
+  - `CKAUndec/BinaryAlphabetMComplete.v`: `eff_insep_shape_K_bin_B1_L`
+    removed, `K_bin_m_complete` via `m_complete_K_of`; `MP` dropped from
+    `KA_ineq_bin_m_complete`, `K_bin_undecidable`,
+    `KA_ineq_bin_undecidable`.
+  - `Universality/UnivMComplete.v`: `MP` dropped from the four
+    `Univ*_m_complete`.
+
+  `nix build` passes; `Print Assumptions` is closed for
+  `KA_ineq_m_complete`, `K_creative`, `K_undecidable`,
+  `KA_ineq_bin_m_complete`, `KA_ineq_bin_undecidable`, `Univ_m_complete`,
+  `Univ_top_bin_m_complete`, `eff_insep_K_B1_L` and
+  `eff_insep_partial_K_B1_L`. No admits.
+
+  **Code size.** In this repo (Rocq only): `K.v` 99 → 91, `KMComplete.v`
+  174 → 124, `BinaryAlphabetMComplete.v` 233 → 217, `UnivMComplete.v` 194
+  → 193 lines, i.e. 700 → 625 (-75; +111/-186 by `git diff --numstat`).
+  In coq-synthetic-computability (`main` → `eff-insep-total`,
+  `theories/`): +719/-494, net +225. Of that, +408 is new content
+  (`MPFree.v` +223, `MPFree_L.v` +146, `MP_extend` in `principles.v` +39);
+  the restructuring itself is net -183 (`EffectiveInseparabilityCore.v`,
+  `...Generic.v` and `...Transport.v`, 323 lines, deleted and merged into
+  `EffectiveInseparability.v`, +312 there).
+
+  Compared with this repo's `origin/eff-insep-tot` (`e60868d`, pinned to
+  the library's `eff-insep-tot`, which is being deleted): that branch
+  kept both the partial and the total notion, made creativity and
+  undecidability MP-free, and kept `MP` in all m-completeness theorems.
+  This version supersedes it: it has one notion, and m-completeness is
+  MP-free too. Its `K_undecidable` goes through `creative_undecidable`
+  instead of `m_complete_undecidable`; both need only `CT_L` now.
+
+**End 19:17.**

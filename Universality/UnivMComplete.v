@@ -2,7 +2,7 @@
    Universality/UnivEncoding.v, by CKAUndec/KMComplete.v's generic
    m_complete_of_K_of: K_univ c := K_of (R_target_univ c) is effectively
    inseparable from B1_L (via Universality/UnivConnection.v), enumerable (via
-   KA/ka_enumerable.v), hence m-complete under CT_L and MP.
+   KA/ka_enumerable.v), hence m-complete under CT_L.
    Composing with the reduction z ↦ univ_ub_mm2 ... gives m-completeness of
    `Univ c := bal_universal`, i.e. `{e | bal_star ⊑ e}`, the balanced
    universality problem over the carrier `list (option (mm_sym Q)) * nat`.
@@ -30,7 +30,6 @@ From Undecidability.MinskyMachines.Util Require Import MM2_simulator.
 Require Import SyntheticComputability.Models.T_L_Bridge.
 Require Import SyntheticComputability.Models.CT.
 Require Import SyntheticComputability.Axioms.EA.
-Require Import SyntheticComputability.CRM.principles.
 Require Import SyntheticComputability.Synthetic.Definitions
   SyntheticComputability.Synthetic.EnumerabilityFacts
   SyntheticComputability.Synthetic.DecidabilityFacts
@@ -101,7 +100,7 @@ Qed.
 
 End UnivMComplete.
 
-Theorem Univ_m_complete : CT_L -> MP -> exists c, m-complete (@Univ c).
+Theorem Univ_m_complete : CT_L -> exists c, m-complete (@Univ c).
 Proof.
 have [c Hc] := R_TL_R_target_univ_connection; exists c.
 exact: (KMComplete.m_complete_of_K_of Hc (K_univ_enumerable c)
@@ -145,7 +144,7 @@ Qed.
 
 (* Balanced universality over the fixed binary carrier is
    Sigma^0_1-complete. *)
-Theorem Univ_bin_m_complete : CT_L -> MP -> m-complete Univ_bin.
+Theorem Univ_bin_m_complete : CT_L -> m-complete Univ_bin.
 Proof.
 have [c Hc] := R_TL_R_target_univ_bin_connection.
 exact: (KMComplete.m_complete_of_K_of Hc (K_univ_bin_enumerable c)
@@ -156,7 +155,7 @@ Qed.
 
     The same results with `Σ*` on the left, in the free KA. *)
 
-Theorem Univ_top_m_complete : CT_L -> MP -> exists c, m-complete (@Univ_top c).
+Theorem Univ_top_m_complete : CT_L -> exists c, m-complete (@Univ_top c).
 Proof.
 have [c Hc] := R_TL_R_target_univ_top_connection; exists c.
 exact: (KMComplete.m_complete_of_K_of Hc (K_univ_top_enumerable c)
@@ -186,7 +185,7 @@ Qed.
 (* Universality `Σ* ⊑ e` in the free KA over the fixed binary carrier
    `list bool * nat`, i.e. over the letters `0`, `1` and a letter `b`
    commuting with both, is Sigma^0_1-complete. *)
-Theorem Univ_top_bin_m_complete : CT_L -> MP -> m-complete Univ_top_bin.
+Theorem Univ_top_bin_m_complete : CT_L -> m-complete Univ_top_bin.
 Proof.
 have [c Hc] := R_TL_R_target_univ_top_bin_connection.
 exact: (KMComplete.m_complete_of_K_of Hc

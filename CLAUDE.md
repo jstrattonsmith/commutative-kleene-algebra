@@ -94,37 +94,42 @@ real filesystem, with or without `--impure`):
   `coq-synthetic-computability`'s own flake points at the same fork+branch,
   so both projects always resolve the identical source.
 - **coq-synthetic-computability**, pinned to
-  `github:arthuraa/coq-synthetic-computability` (a collaborator's repo,
-  not a fork of it) -- provides `T_L`/`θ_L`/`CT_L`
+  `github:arthuraa/coq-synthetic-computability/eff-insep-total` (a
+  collaborator's repo, not a fork of it; the branch makes the total
+  witness the one notion of effective inseparability and adds the MP-free
+  results below) -- provides `T_L`/`θ_L`/`CT_L`
   (`theories/Models/CT.v`, `T_L_Uniform.v`, `T_L_Extract.v`), the generic
   and `L`-specific effective-inseparability machinery
-  (`theories/ReducibilityDegrees/*.v`, `theories/Models/EffectiveInseparability_L.v`),
-  `EA`/`EPF`/`SMN` (`theories/Axioms/*.v`), and, as of 2026-08-31, the
-  content that used to live in this repo's own (now-deleted)
-  `Computability/` directory -- zero Kleene-algebra content, genuinely
-  reusable, migrated upstream: `theories/ReducibilityDegrees/EffectiveInseparabilityCore.v`
-  (the unbundled effective-inseparability notion + superset-transport,
-  genuinely different from -- not a duplicate of -- the already-present
-  `EffectiveInseparabilityTransport.v`'s bundled version) and
+  (`theories/ReducibilityDegrees/EffectiveInseparability.v`: `eff_insep W
+  A B`, disjointness plus a total witness, no enumerability bundled in;
+  its partial form `eff_insep_partial`, the paper's Definition 5, with
+  `eff_insep_to_partial`; superset transport `eff_insep_superset`;
+  `theories/Models/EffectiveInseparability_L.v`), `EA`/`EPF`/`SMN`
+  (`theories/Axioms/*.v`), and, as of 2026-08-31, the content that used
+  to live in this repo's own (now-deleted) `Computability/` directory --
+  zero Kleene-algebra content, genuinely reusable, migrated upstream:
   `theories/Models/{EA_L,EA_L_Myhill,T_L_Bridge}.v` (`EA_L.v` builds a
   genuine `EA` instance from `CT_L`; `EA_L_Myhill.v`, named to avoid
   colliding with the pre-existing `Basic/Myhill.v` isomorphism-theorem
-  file, derives `creative`/`m-complete` from `eff_insep_shape`;
-  `T_L_Bridge.v` bridges `T_L` to the `mu`-search-shaped `R_TL` and
-  provides the generic `K_of`/`GenericK` "connection -> effective
-  inseparability" argument this project's `CKAUndec/K.v`/
-  `BinaryAlphabetMComplete.v` instantiate).
+  file, derives `creative` from `eff_insep` without `MP`
+  (`creative_of_eff_insep_L`); `T_L_Bridge.v` bridges `T_L` to the
+  `mu`-search-shaped `R_TL` and provides the generic `K_of`/`GenericK`
+  "connection -> effective inseparability" argument this project's
+  `CKAUndec/K.v`/`BinaryAlphabetMComplete.v` instantiate).
+  `theories/Models/MPFree_L.v`'s `m_complete_K_of` makes every enumerable
+  `K_of Pred` m-complete under `CT_L` alone (Smullyan's race argument);
+  `theories/ReducibilityDegrees/MPFree.v` shows that the general
+  "creative -> m-complete" is equivalent to `MP`.
 - **MetaRocq** (transitive via coq-library-undecidability)
 
 ## File Structure
 
 Files are listed in dependency order (`_CoqProject`, which groups them into
 the same sections used below with one-line comments). All files are
-admit-free; no axioms appear anywhere except the two hypotheses named above
-(`CT_L`, `MP`), stated as hypotheses in `CKAUndec/KMComplete.v`,
-`CKAUndec/BinaryAlphabetMComplete.v` and `Universality/UnivMComplete.v`,
-and `CT_L` alone in `DirectUndec/SigmaComplete.v` (the rest of
-`DirectUndec/` uses neither, apart from the superseded `*_MP_reduction`).
+admit-free; no axioms appear anywhere except the hypothesis `CT_L`, stated
+in `CKAUndec/KMComplete.v`, `CKAUndec/BinaryAlphabetMComplete.v`,
+`Universality/UnivMComplete.v` and `DirectUndec/SigmaComplete.v`, and `MP`,
+stated only in `DirectUndec/`'s superseded `*_MP_reduction` theorems.
 
 ### `MM2_Legacy/`: not on the critical path, kept for their own interest
 
@@ -292,13 +297,14 @@ and `CT_L` alone in `DirectUndec/SigmaComplete.v` (the rest of
     `CKAUndec/Glue/BinaryAlphabetConnection.v` and
     `Universality/UnivConnection.v`.
 
-24. **`CKAUndec/K.v`** (~105 lines): closes Theorem 17. Defines `z_vec`,
+24. **`CKAUndec/K.v`** (~90 lines): closes Theorem 17. Defines `z_vec`,
     `K z := R_target c (...)` -- a genuine `red_lb ⊑ red_ub` KA-term-level
     statement -- and proves it's effectively inseparable from `B1_L` (in the
     unbundled sense both source papers state their own Theorem 17 in:
     disjointness plus a witness function, no enumerability required), via
-    `coq-synthetic-computability`'s `ReducibilityDegrees.EffectiveInseparabilityCore`'s
-    superset-transport lemma (Kuznetsov's Proposition 9).
+    `T_L_Bridge.v`'s `eff_insep_K_of_B1_L` (Kuznetsov's Proposition 9).
+    `eff_insep_K_B1_L` has a total witness, which is stronger than the
+    papers' Definition 5; `eff_insep_partial_K_B1_L` is that partial form.
 
 25. **`CKAUndec/KEnumerable.v`** (~110 lines): shows `K` is genuinely
     enumerable, by identifying `CKAUndec/Encoding.v`'s carrier monoid (a
@@ -308,20 +314,17 @@ and `CT_L` alone in `DirectUndec/SigmaComplete.v` (the rest of
     `{(x,y) | x ⊑ y}` relation over that carrier (`K` is one fixed-rhs slice
     of it), via `ka_sqsubseteq_enumerable`.
 
-26. **`CKAUndec/KMComplete.v`** (~135 lines): the full chain from `K`'s
-    bundled effective inseparability (`eff_insep_shape_K_B1_L`, upgrading
-    `CKAUndec/K.v`'s unbundled result now that enumerability is in hand)
-    through Myhill's theorem (`K_creative`, `K_m_complete`, instantiating
-    `coq-synthetic-computability`'s `Models.EA_L_Myhill`'s generic machinery
-    at `P := K c`, conditional on `CT_L`/`MP`) to full Sigma^0_1-completeness
-    of the actual KA-term inequality relation, not just its `K`-slice
-    (`KA_ineq_m_complete`). The route is packaged generically over the
-    Prop family `Pred` as `eff_insep_shape_K_of_B1_L` and
-    `m_complete_of_K_of` (effective inseparability of `K_of Pred`, Myhill,
-    then a reduction `K_of Pred ⪯ₘ P` via `red_m_transitive`), which
-    `KA_ineq_m_complete`, `BinaryAlphabetMComplete.v`'s
-    `KA_ineq_bin_m_complete` and the four `Universality/UnivMComplete.v`
-    theorems instantiate.
+26. **`CKAUndec/KMComplete.v`** (~120 lines): from `K`'s effective
+    inseparability and enumerability to creativity (`K_creative`, via
+    `Models.EA_L_Myhill`'s `creative_of_eff_insep_L`) and m-completeness
+    (`K_m_complete`, via `Models.MPFree_L`'s `m_complete_K_of`), and on to
+    full Sigma^0_1-completeness of the actual KA-term inequality relation,
+    not just its `K`-slice (`KA_ineq_m_complete`), all conditional on
+    `CT_L` alone. The route is packaged generically over the Prop family
+    `Pred` as `m_complete_of_K_of` (`m_complete_K_of`, then a reduction
+    `K_of Pred ⪯ₘ P` via `red_m_transitive`), which `KA_ineq_m_complete`,
+    `BinaryAlphabetMComplete.v`'s `KA_ineq_bin_m_complete` and the four
+    `Universality/UnivMComplete.v` theorems instantiate.
 
 27. **`CKAUndec/BinaryAlphabet.v`** (~390 lines): the CKA-specific wiring
     that actually closes the source paper's Theorem 18/19 (undecidability/
@@ -350,7 +353,7 @@ and `CT_L` alone in `DirectUndec/SigmaComplete.v` (the rest of
     used `K`/`red_leq` as an opaque interface (verified faithful to the
     original via a reflexivity-level check, `K_eq_K_of_R_target`) -- so `K`'s
     and the new `K_bin`'s properties are proven by the SAME lemmas, not two
-    copies. Closes with `KA_ineq_bin_m_complete : CT_L -> MP -> m-complete
+    copies. Closes with `KA_ineq_bin_m_complete : CT_L -> m-complete
     KA_ineq_bin` -- unlike `KA_ineq_m_complete` (one instance per machine
     `c`), this needs no existential over `c`: the embedded carrier `Tm_bin`
     is a single, fixed algebra (the canonical two-symbol alphabet),
@@ -442,16 +445,15 @@ no longer `Local` (`Universality/UnivEncoding.v` reuses them). Unlike
 36. **`Universality/UnivMComplete.v`** (~200 lines): `K_univ c := K_of
     (R_target_univ c)` is enumerable, so the balanced universality problem
     `Univ c := bal_universal`, i.e. `{e | bal_star ⊑ e}`, is m-complete
-    (conditional on `CT_L`/`MP`; `Univ_m_complete`). Over the fixed carrier `list
-    bool * nat`, `Univ_bin_m_complete : CT_L -> MP -> m-complete Univ_bin`
+    (conditional on `CT_L`; `Univ_m_complete`). Over the fixed carrier
+    `list bool * nat`, `Univ_bin_m_complete : CT_L -> m-complete Univ_bin`
     needs no existential over the machine. In the free KA, full
     universality `Univ_top c := fka_universal`, i.e. `{e | KA ⊢ Σ* ⊑ e}`,
     is m-complete too
     (`Univ_top_m_complete`, `Univ_top_bin_m_complete`; enumerability from
     `KA/ka_enumerable.v`). Each proof is one instance of
-    `CKAUndec/KMComplete.v`'s `m_complete_of_K_of`, which
-    combines `eff_insep_shape_K_of_B1_L`, `m_complete_of_eff_insep_shape`
-    and the reduction out of `K_of`.
+    `CKAUndec/KMComplete.v`'s `m_complete_of_K_of`, which combines
+    `m_complete_K_of` and the reduction out of `K_of`.
 
 ### `DirectUndec/`: undecidability without effective inseparability
 
